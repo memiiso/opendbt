@@ -1,0 +1,51 @@
+name: Build and Test
+
+env:
+  USE_BAZEL_VERSION: "5.4.1"
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - '.idea/**'
+      - '.run/**'
+  pull_request:
+    branches: [ main ]
+    paths-ignore:
+      - '.github/**'
+      - '.idea/**'
+      - '.run/**'
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        # commented out to save from github limits
+        # python-version: [ "3.8", "3.9", "3.10", "3.11" ]
+        # dbt-version: [ "1.6", "1.7", "1.8" ]
+        python-version: [ "3.9" ]
+        dbt-version: [ "1.7", "1.8" ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          dbt-version: ${{ matrix.dbt-version }}
+      - name: Build & Install
+        run: |
+          pip install -q .[test]
+          pip install -q coverage pylint
+          pip install -q dbt-core==${{ matrix.dbt-version }}.* dbt-duckdb==${{ matrix.dbt-version }}.* --force-reinstall
+          python --version
+          python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
+          python -m compileall -f opendbt setup.py
+      - name: Run Tests
+        run: |
+          python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
+          python -m coverage run --source=./tests/ -m unittest discover -s tests/
+          python -m coverage report -m ./opendbt/*.py setup.py

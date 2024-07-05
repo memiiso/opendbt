@@ -1,0 +1,22 @@
+version: '2'
+
+services:
+  airflow:
+    build:
+      dockerfile: tests/resources/airflow/Dockerfile
+      # NOTE The path can be absolute or relative.
+      # If it is relative, it is resolved from the Compose file's parent folder.
+      context: ./../../../
+    image: opendbt_airflow
+    entrypoint: airflow standalone
+    volumes:
+      # NOTE The path can be absolute or relative.
+      - ./airflow/webserver_config.py:/opt/airflow/webserver_config.py
+      - ./airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - ./dags:/opt/airflow/dags:rw
+#      - ./../../../:/opt/airflow/plugins:rw
+    environment:
+      - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
+      - AIRFLOW_ENVIRONMENT=LOCAL
+    ports:
+      - "8080"
