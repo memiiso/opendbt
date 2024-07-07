@@ -1,8 +1,5 @@
 name: Build and Test
 
-env:
-  USE_BAZEL_VERSION: "5.4.1"
-
 on:
   push:
     branches: [ main ]

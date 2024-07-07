@@ -8,22 +8,6 @@ from dbt.adapters.duckdb import DuckDBAdapter
 from opendbt import Utils
 
 
-# NOTE! used for testing
-class DuckDBAdapterV1Custom_before_dbt18(DuckDBAdapter):
-    def __init__(self, config) -> None:
-        print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
-        super().__init__(config=config)
-        raise Exception("Custom user defined test adapter activated, exception")
-
-
-# NOTE! used for testing
-class DuckDBAdapterV1Custom_afer_dbt18(DuckDBAdapter):
-    def __init__(self, config, mp_context: SpawnContext) -> None:
-        print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
-        super().__init__(config=config, mp_context=mp_context)
-        raise Exception("Custom user defined test adapter activated, exception")
-
-
 class DuckDBAdapterV2Custom(DuckDBAdapter):
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
@@ -39,3 +23,19 @@ model(dbt=dbtObj(None), session=None)
             fp.close()
             print(f"Created temp py file {fp.name}")
             Utils.runcommand(command=['python', fp.name])
+
+
+# NOTE! used for testing
+class DuckDBAdapterV1Custom_before_dbt18(DuckDBAdapter):
+    def __init__(self, config) -> None:
+        print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
+        super().__init__(config=config)
+        raise Exception("Custom user defined test adapter activated, exception")
+
+
+# NOTE! used for testing
+class DuckDBAdapterV1Custom_afer_dbt18(DuckDBAdapter):
+    def __init__(self, config, mp_context: SpawnContext) -> None:
+        print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
+        super().__init__(config=config, mp_context=mp_context)
+        raise Exception("Custom user defined test adapter activated, exception")
