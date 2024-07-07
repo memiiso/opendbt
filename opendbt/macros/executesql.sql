@@ -1,4 +1,4 @@
-{% materialization execute, supported_languages=['sql']%}
+{% materialization executesql, supported_languages=['sql']%}
 
 {#
   modified version of table materialization. it executes compiled sql statement as is.

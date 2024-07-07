@@ -1,4 +1,4 @@
-{{ config(materialized='execute') }}
+{{ config(materialized='executesql') }}
 
 
 create or replace table my_execute_dbt_model
