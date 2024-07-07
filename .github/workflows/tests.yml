@@ -21,11 +21,8 @@ jobs:
     strategy:
       matrix:
         # commented out to save from github limits
-        # python-version: [ "3.8", "3.9", "3.10", "3.11" ]
-        # dbt-version: [ "1.6", "1.7", "1.8" ]
-        python-version: [ "3.9" ]
+        python-version: [ "3.8", "3.9", "3.10", "3.11" ]
         dbt-version: [ "1.7", "1.8" ]
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}

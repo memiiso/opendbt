@@ -16,5 +16,5 @@ custom Python methods tailored to your advanced needs.
 - Execute Python Model Locally
 - Enable Model-Level Orchestration Using Airflow
 
-please see [EXAMPLES.md](docs/EXAMPLES.md).
+please see [examples](docs/EXAMPLES.md).
 
