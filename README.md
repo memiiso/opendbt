@@ -5,17 +5,17 @@
 The `opendbt` library extends the capabilities of dbt. It unlocks many customizations, allowing you to tailor dbt to
 your specific needs and data workflows.
 
-Forexample create custom transformations by customizing existing adapters
+Forexample creating custom transformations by customizing existing adapters
 
 With `opendbt` you can go beyond the core functionalities of dbt by seamlessly integrating your customized adapter and
-providing jinja with
-custom Python methods tailored to your advanced needs.
+provide jinja with further adapter/python methods. Enabling custom python methods tailored to your advanced needs.
 
 # Sample use cases, examples
 
 - Use customised adapter, provide jinja with custom python methods
 - Execute Python Model(Python code) Locally
 - Enable Model-Level Orchestration Using Airflow
+- Create page on Airflow Server to serve DBT docs
 
 please see [examples](docs/EXAMPLES.md).
 
