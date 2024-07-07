@@ -67,3 +67,19 @@ p = OpenDbtAirflowProject(resource_type='test', project_dir="/dbt/project_dir", 
                           target='dev', tag="MY_TAG")
 p.load_dbt_tasks(dag=dag, start_node=start, end_node=end)
 ```
+
+## Create page on Airflow Server to serve DBT docs
+
+While its very practical to use airflow for dbt executions, it can be also used to server dbt docs.
+
+here is how:
+**Step-1:** Create python file under airflow `/{airflow}/plugins` directory, with following code.
+Adjust the given path to the folder where dbt docs are published
+
+https://github.com/memiiso/opendbt/blob/154b3e26981d157da70ebb98f1a1576f1fa55832/tests/resources/airflow/plugins/airflow_dbtdocs_page.py#L1-L6
+
+**Step-2:** Restart airflow, and check that new link `DBT Docs` is created.
+![airflow-dbt-docs-link.png](assets%2Fairflow-dbt-docs-link.png)
+
+**Step-3:** open the link and browse dbt docs
+![airflow-dbt-docs-page.png](assets%2Fairflow-dbt-docs-page.png)
