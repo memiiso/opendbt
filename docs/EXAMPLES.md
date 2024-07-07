@@ -6,7 +6,7 @@ When you want to add more methods to existing adapter and make this methods avai
 you can use `dbt_custom_adapter` variable and provide your adapter class.
 
 **Step-1:** Extend existing adapter
-https://github.com/memiiso/opendbt/blob/ddf0b1bac379aa42961900f35dfc9938b1bc19c4/opendbt/examples.py#L10-L26
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/opendbt/examples.py#L10-L26
 
 **Step-2:** Edit `dbt_project.yml` file, set `dbt_custom_adapter` variable to the class name of the new adapter.
 ```yml
@@ -29,20 +29,20 @@ this is useful for the scenarios where data is imported from external API.
 
 **Step-1:** Extend existing adapter, Add new adapter method which runs given python code.
 
-https://github.com/memiiso/opendbt/blob/ddf0b1bac379aa42961900f35dfc9938b1bc19c4/opendbt/examples.py#L10-L26
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/opendbt/examples.py#L10-L26
 
 **Step-2:** Create materialization, where from the jonja we call this new adapter method
 
-https://github.com/memiiso/opendbt/blob/ddf0b1bac379aa42961900f35dfc9938b1bc19c4/opendbt/macros/executepython.sql#L1-L26
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/opendbt/macros/executepython.sql#L1-L26
 
 **Step-3:** Create model using the materialization
 
-https://github.com/memiiso/opendbt/blob/ddf0b1bac379aa42961900f35dfc9938b1bc19c4/tests/resources/dbttest/models/my_executepython_dbt_model.py#L1-L22
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/tests/resources/dbttest/models/my_executepython_dbt_model.py#L1-L22
 
 ## Enable Model-Level Orchestration Using Airflow
 
 **Step-1:** Create Dag to run dbt project
-https://github.com/memiiso/opendbt/blob/ddf0b1bac379aa42961900f35dfc9938b1bc19c4/tests/resources/airflow/dags/dbt_workflow.py#L17-L32
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/tests/resources/airflow/dags/dbt_workflow.py#L17-L32
 
 ![airflow-dbt-flow.png](assets%2Fairflow-dbt-flow.png)
 
@@ -76,7 +76,7 @@ here is how:
 **Step-1:** Create python file under airflow `/{airflow}/plugins` directory, with following code.
 Adjust the given path to the folder where dbt docs are published
 
-https://github.com/memiiso/opendbt/blob/154b3e26981d157da70ebb98f1a1576f1fa55832/tests/resources/airflow/plugins/airflow_dbtdocs_page.py#L1-L6
+https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/tests/resources/airflow/plugins/airflow_dbtdocs_page.py#L1-L6
 
 **Step-2:** Restart airflow, and check that new link `DBT Docs` is created.
 ![airflow-dbt-docs-link.png](assets%2Fairflow-dbt-docs-link.png)
