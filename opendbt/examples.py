@@ -18,24 +18,25 @@ class DuckDBAdapterV2Custom(DuckDBAdapter):
 # NOTE this is local python execution so session is None
 model(dbt=dbtObj(None), session=None)
         """
-        with tempfile.NamedTemporaryFile(suffix=f'__{model_unique_id}.py', delete=False) as fp:
+        with tempfile.NamedTemporaryFile(suffix=f'__{model_unique_id}.py', delete=True) as fp:
             fp.write(__py_code.encode('utf-8'))
-            fp.close()
+            fp.flush()
             print(f"Created temp py file {fp.name}")
             Utils.runcommand(command=['python', fp.name])
+            fp.close()
 
 
 # NOTE! used for testing
-class DuckDBAdapterV1Custom_before_dbt18(DuckDBAdapter):
+class DuckDBAdapterTestingOnlyDbt17(DuckDBAdapter):
     def __init__(self, config) -> None:
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
         super().__init__(config=config)
-        raise Exception("Custom user defined test adapter activated, exception")
+        raise Exception("Custom user defined test adapter activated, test exception")
 
 
 # NOTE! used for testing
-class DuckDBAdapterV1Custom_afer_dbt18(DuckDBAdapter):
+class DuckDBAdapterTestingOnlyDbt18(DuckDBAdapter):
     def __init__(self, config, mp_context: SpawnContext) -> None:
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
         super().__init__(config=config, mp_context=mp_context)
-        raise Exception("Custom user defined test adapter activated, exception")
+        raise Exception("Custom user defined test adapter activated, test exception")
