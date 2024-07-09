@@ -5,7 +5,7 @@ from unittest import TestCase
 from packaging.version import Version
 
 from opendbt import OpenDbtProject
-from opendbt.client import DBT_VERISON
+from opendbt.client import DBT_VERSION
 
 
 class TestOpenDbtProject(TestCase):
@@ -13,7 +13,7 @@ class TestOpenDbtProject(TestCase):
     DBTTEST_DIR = RESOURCES_DIR.joinpath("dbttest")
 
     def test_run_with_custom_adapter(self):
-        if Version(DBT_VERISON.to_version_string(skip_matcher=True)) > Version("1.8.0"):
+        if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
             dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterV1Custom_afer_dbt18'
         else:
             dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterV1Custom_before_dbt18'

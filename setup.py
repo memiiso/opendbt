@@ -13,7 +13,7 @@ setup(
             'opendbt = opendbt:main',
         ],
     },
-    version='0.2.0',
+    version='0.3.0',
     packages=find_packages(),
     author="Memiiso Organization",
     description='Python opendbt',
