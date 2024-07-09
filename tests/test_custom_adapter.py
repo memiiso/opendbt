@@ -14,9 +14,9 @@ class TestOpenDbtProject(TestCase):
 
     def test_run_with_custom_adapter(self):
         if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
-            dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterV1Custom_afer_dbt18'
+            dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterTestingOnlyDbt18'
         else:
-            dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterV1Custom_before_dbt18'
+            dbt_custom_adapter = 'opendbt.examples.DuckDBAdapterTestingOnlyDbt17'
 
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,
                             args=['--vars', f"{{'dbt_custom_adapter': '{dbt_custom_adapter}'}}"])

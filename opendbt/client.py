@@ -26,6 +26,7 @@ else:
 
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
 
+
 class OpenDbtCli:
 
     @staticmethod
