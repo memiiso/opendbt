@@ -21,6 +21,7 @@ class OpenDbtExecutorOperator(BaseOperator):
                  profiles_dir: Path = None,
                  select: str = None,
                  args: list = None,
+                 use_subprocess: bool = True,
                  execution_timeout=timedelta(minutes=60), **kwargs) -> None:
         super().__init__(execution_timeout=execution_timeout, **kwargs)
 
@@ -28,6 +29,7 @@ class OpenDbtExecutorOperator(BaseOperator):
         self.command = command
         self.profiles_dir: Path = profiles_dir
         self.target = target
+        self.use_subprocess = use_subprocess
         self.args = args if args else []
 
         if select:
@@ -46,7 +48,7 @@ class OpenDbtExecutorOperator(BaseOperator):
         runner = opendbt.OpenDbtProject(project_dir=self.project_dir,
                                         profiles_dir=self.profiles_dir,
                                         target=self.target)
-        runner.run(command=self.command, args=self.args, use_subprocess=True)
+        runner.run(command=self.command, args=self.args, use_subprocess=self.use_subprocess)
 
 
 class OpenDbtAirflowProject(opendbt.OpenDbtProject):
