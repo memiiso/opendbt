@@ -21,6 +21,7 @@ class OpenDbtExecutorOperator(BaseOperator):
                  profiles_dir: Path = None,
                  select: str = None,
                  args: list = None,
+                 # without using subprocess airflow randomly gets deadlock
                  use_subprocess: bool = True,
                  execution_timeout=timedelta(minutes=60), **kwargs) -> None:
         super().__init__(execution_timeout=execution_timeout, **kwargs)
