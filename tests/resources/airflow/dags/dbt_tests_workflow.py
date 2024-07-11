@@ -15,9 +15,9 @@ default_args = {
 }
 
 with DAG(
-        dag_id='dbt_workflow',
+        dag_id='dbt_tests_workflow',
         default_args=default_args,
-        description='DAG To run dbt',
+        description='DAG To run dbt tests',
         schedule_interval=None,
         start_date=days_ago(3),
         catchup=False,
@@ -29,4 +29,4 @@ with DAG(
     DBT_PROJ_DIR = Path("/opt/dbttest")
 
     p = OpenDbtAirflowProject(project_dir=DBT_PROJ_DIR, profiles_dir=DBT_PROJ_DIR, target='dev')
-    p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, include_singular_tests=True, include_dbt_seeds=True)
+    p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, resource_type='test')
