@@ -60,8 +60,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                        end_node: BaseOperator = None,
                        tag: str = None,
                        resource_type="all",
-                       run_dbt_seeds=False,
-                       run_singular_tests=False) -> Tuple[BaseOperator, BaseOperator]:
+                       include_dbt_seeds=False,
+                       include_singular_tests=False) -> Tuple[BaseOperator, BaseOperator]:
         """
         This method is used to add dbt tasks to Given DAG.
 
@@ -81,7 +81,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                                  dag=dag)
         end_node = end_node if end_node else EmptyOperator(task_id='dbt-%s-end' % self.project_dir.name, dag=dag)
 
-        if run_dbt_seeds:
+        if include_dbt_seeds:
             # add dbt seeds job after start node abd before all other dbt jobs
             first_node = start_node
             start_node = OpenDbtExecutorOperator(dag=dag,
@@ -106,7 +106,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
             if resource_type == "test" and not str(node.name).startswith("source_"):
                 if node.resource_type == "test":
                     dbt_tasks[node.unique_id] = OpenDbtExecutorOperator(dag=dag,
-                                                                        task_id=node.unique_id.rsplit('.', 1)[0],
+                                                                        task_id=node.unique_id,
                                                                         project_dir=self.project_dir,
                                                                         profiles_dir=self.profiles_dir,
                                                                         target=self.target,
@@ -132,7 +132,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                 # we are skipping model tests because they are included above with model execution( `build` command)
                 # source table tests
                 dbt_tasks[node.unique_id] = OpenDbtExecutorOperator(dag=dag,
-                                                                    task_id=node.unique_id.rsplit('.', 1)[0],
+                                                                    task_id=node.unique_id,
                                                                     project_dir=self.project_dir,
                                                                     profiles_dir=self.profiles_dir,
                                                                     target=self.target,
@@ -153,7 +153,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                             task.set_upstream(dbt_tasks[upstream_id])
 
         singular_tests = None
-        if run_singular_tests:
+        if include_singular_tests:
             singular_tests = OpenDbtExecutorOperator(dag=dag,
                                                      task_id=f"{self.project_dir.name}_singular_tests",
                                                      project_dir=self.project_dir,
@@ -167,7 +167,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                 # set downstream dependencies for the end nodes.
                 self.log.debug(f"Setting downstream  of {task.task_id} -> {end_node.task_id}")
 
-                if run_singular_tests and singular_tests:
+                if include_singular_tests and singular_tests:
                     task.set_downstream(singular_tests)
                 else:
                     task.set_downstream(end_node)
@@ -177,6 +177,6 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                 self.log.debug(f"Setting upstream  of {task.task_id} -> {start_node}")
                 task.set_upstream(start_node)
 
-        if run_singular_tests:
+        if include_singular_tests:
             singular_tests.set_downstream(end_node)
         return start_node, end_node
