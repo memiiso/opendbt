@@ -124,7 +124,7 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                                     profiles_dir=self.profiles_dir,
                                                                     target=self.target,
                                                                     command="build",
-                                                                    select=node.alias
+                                                                    select=node.name
                                                                     )
 
             if node.resource_type == "test" and str(node.name).startswith("source_") and resource_type in ["all",
