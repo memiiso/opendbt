@@ -27,7 +27,7 @@ setup(
     install_requires=["dbt-duckdb>=1.6"],
     extras_require={
         "airflow": ["apache-airflow"],
-        "test": ["testcontainers>=3.7,<4.8"],
+        "test": ["testcontainers>=3.7,<4.9"],
     },
     python_requires='>=3.8'
 )
