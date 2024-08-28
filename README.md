@@ -10,12 +10,12 @@ Forexample creating custom transformations by customizing existing adapters.
 With `opendbt` you can go beyond the core functionalities of dbt by seamlessly integrating your customized adapter and
 provide jinja with further adapter/python methods.
 
-# Examples use cases
+# Example use cases
 
-- Use customised adapter, provide jinja with custom python methods
-- Execute Python Model(Python code) Locally
-- Enable Model-Level Orchestration Using Airflow
-- Create page on Airflow Server to serve DBT docs
+- Use customised adapter, provide jinja with additional custom python methods added to adapter
+- Execute Python model(Python code) locally
+- Enable Granular Model-Level Orchestration Using Airflow
+- Create page on Airflow Server to serve DBT docs as a page of airflow server
 
 For more details please see [examples](docs/EXAMPLES.md).
 
