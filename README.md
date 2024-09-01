@@ -12,10 +12,10 @@ provide jinja with further adapter/python methods.
 
 # Example use cases
 
-- Use customised adapter, provide jinja with additional custom python methods added to adapter
+- Create and use new adapter using OOP inheritance, provide jinja with additional custom python methods with your own adapter
 - Execute Python model(Python code) locally
 - Enable Granular Model-Level Orchestration Using Airflow
-- Create page on Airflow Server to serve DBT docs as a page of airflow server
+- Create page on Airflow Server to serve DBT docs as a new page under airflow UI
 
 For more details please see [examples](docs/EXAMPLES.md).
 
@@ -30,7 +30,7 @@ pip install https://github.com/memiiso/opendbt/archive/master.zip --upgrade --us
 install version from github:
 
 ```shell
-pip install https://github.com/memiiso/opendbt/archive/refs/tags/0.2.0.zip --upgrade --user
+pip install https://github.com/memiiso/opendbt/archive/refs/tags/0.4.0.zip --upgrade --user
 ```
 
 ### Contributors
