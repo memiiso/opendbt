@@ -3,6 +3,7 @@ import importlib
 DBT_CUSTOM_ADAPTER_VAR = 'dbt_custom_adapter'
 import shutil
 from pathlib import Path
+import click
 
 
 def get_custom_adapter_config_value(self, config: 'AdapterRequiredConfig') -> str:
@@ -43,5 +44,5 @@ def GenerateTask_run(self):
         if index_html.is_file() and index_html.exists():
             # override default dbt provided index.html with user index.html file
             shutil.copyfile(index_html, target)
-            print(f"Using user provided documentation page: {index_html.as_posix()}")
+            click.echo(f"Using user provided documentation page: {index_html.as_posix()}")
             break
