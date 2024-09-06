@@ -1,5 +1,3 @@
-import dbt
-from dbt.adapters.base.plugin import AdapterPlugin
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.contracts.results import RunResult
@@ -11,21 +9,25 @@ DBT_VERSION = get_dbt_version()
 # ================================================================================================================
 # Monkey Patching! Override dbt lib AdapterContainer.register_adapter method with new one above
 # ================================================================================================================
-from opendbt import dbtcommon
+from opendbt import dbtcommon as opendbt_dbtcommon
+from dbt.adapters.factory import AdapterContainer
 
-# STEP-1 add new methods
-dbt.adapters.factory.AdapterContainer.get_custom_adapter_config_value = dbtcommon.get_custom_adapter_config_value
-dbt.adapters.factory.AdapterContainer.get_custom_adapter_class_by_name = dbtcommon.get_custom_adapter_class_by_name
-# # STEP-2 override existing method
 if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
-    from opendbt import dbt18
-
-    dbt.adapters.factory.AdapterContainer.register_adapter = dbt18.register_adapter
+    from opendbt import dbt18 as opendbt
+    from dbt.task.docs.generate import GenerateTask
 else:
-    from opendbt import dbt17
+    from opendbt import dbt17 as opendbt
+    from dbt.task.generate import GenerateTask
 
-    dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
-
+# ================= add new methods =======================================================
+AdapterContainer.get_custom_adapter_config_value = opendbt_dbtcommon.get_custom_adapter_config_value
+AdapterContainer.get_custom_adapter_class_by_name = opendbt_dbtcommon.get_custom_adapter_class_by_name
+# ================= override existing methods ==============================================
+# dbt docs overrides
+GenerateTask.dbt_run = GenerateTask.run
+GenerateTask.run = opendbt_dbtcommon.GenerateTask_run
+# Adapter inheritance override
+AdapterContainer.register_adapter = opendbt.register_adapter
 
 class OpenDbtCli:
 
@@ -54,4 +56,7 @@ class OpenDbtCli:
 
         if _exception is None:
             DbtRuntimeError(f"DBT execution failed!")
-        raise _exception
+        if _exception:
+            raise _exception
+        else:
+            return result
