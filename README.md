@@ -16,6 +16,7 @@ provide jinja with further adapter/python methods.
 - Execute Python model(Python code) locally
 - Enable Granular Model-Level Orchestration Using Airflow
 - Create page on Airflow Server to serve DBT docs as a new page under airflow UI
+- Use customized dbt docs page, by providing custom index.html page
 
 For more details please see [examples](docs/EXAMPLES.md).
 
