@@ -17,19 +17,26 @@ from opendbt import dbtcommon
 dbt.adapters.factory.AdapterContainer.get_custom_adapter_config_value = dbtcommon.get_custom_adapter_config_value
 dbt.adapters.factory.AdapterContainer.get_custom_adapter_class_by_name = dbtcommon.get_custom_adapter_class_by_name
 # # STEP-2 override existing method
-dbt.task.generate.GenerateTask.dbt_run = dbt.task.generate.GenerateTask.run
-dbt.task.generate.GenerateTask.run = dbtcommon.GenerateTask_run
-dbt.task.serve.ServeTask.run = dbtcommon.ServeTask_run
 
 if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
     from opendbt import dbt18
+    # dbt docs overrides
     from dbt.task.docs import DOCS_INDEX_FILE_PATH
 
+    dbt.task.docs.generate.GenerateTask.dbt_run = dbt.task.docs.generate.GenerateTask
+    dbt.task.docs.generate.GenerateTask.run = dbtcommon.GenerateTask_run
+    dbt.task.docs.serve.ServeTask.run = dbtcommon.ServeTask_run
+    # adapter inheritance overrides
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt18.register_adapter
 else:
     from opendbt import dbt17
+    # dbt docs overrides
     from dbt.include.global_project import DOCS_INDEX_FILE_PATH
 
+    dbt.task.generate.GenerateTask.dbt_run = dbt.task.generate.GenerateTask.run
+    dbt.task.generate.GenerateTask.run = dbtcommon.GenerateTask_run
+    dbt.task.serve.ServeTask.run = dbtcommon.ServeTask_run
+    # adapter inheritance overrides
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
 
 class OpenDbtCli:
