@@ -15,11 +15,9 @@ from dbt.adapters.factory import AdapterContainer
 if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
     from opendbt import dbt18 as opendbt
     from dbt.task.docs.generate import GenerateTask
-    from dbt.task.docs.serve import ServeTask
 else:
     from opendbt import dbt17 as opendbt
     from dbt.task.generate import GenerateTask
-    from dbt.task.serve import ServeTask
 
 # ================= add new methods =======================================================
 AdapterContainer.get_custom_adapter_config_value = opendbt_dbtcommon.get_custom_adapter_config_value
@@ -28,7 +26,6 @@ AdapterContainer.get_custom_adapter_class_by_name = opendbt_dbtcommon.get_custom
 # dbt docs overrides
 GenerateTask.dbt_run = GenerateTask.run
 GenerateTask.run = opendbt_dbtcommon.GenerateTask_run
-ServeTask.run = opendbt_dbtcommon.ServeTask_run
 # Adapter inheritance override
 AdapterContainer.register_adapter = opendbt.register_adapter
 
