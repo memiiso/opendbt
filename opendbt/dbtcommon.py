@@ -60,7 +60,6 @@ def ServeTask_run(self):
     user_doc_found = False
     for dir in self.config.docs_paths:
         index_html = Path(self.config.project_root).joinpath(dir).joinpath('index.html')
-        print("Cheking: " + index_html.as_posix())
         if index_html.is_file() and index_html.exists():
             # override default dbt provided index.html with user index.html file
             shutil.copyfile(index_html, target)
