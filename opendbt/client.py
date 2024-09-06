@@ -24,8 +24,8 @@ if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
     from dbt.task.docs import DOCS_INDEX_FILE_PATH
     from dbt.task.docs.generate import GenerateTask
     from dbt.task.docs.serve import ServeTask
-
     ##
+    # dbt docs overrides
     GenerateTask.dbt_run = dbt.task.docs.generate.GenerateTask.run
     GenerateTask.run = dbtcommon.GenerateTask_run
     ServeTask.run = dbtcommon.ServeTask_run
@@ -71,4 +71,7 @@ class OpenDbtCli:
 
         if _exception is None:
             DbtRuntimeError(f"DBT execution failed!")
-        raise _exception
+        if _exception:
+            raise _exception
+        else:
+            return result
