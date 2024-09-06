@@ -17,7 +17,7 @@ seed-paths: [ "seeds" ]
 # include "opendbt/macros/" macros!
 macro-paths: [ "macros", "../../../opendbt/macros/" ]
 snapshot-paths: [ "snapshots" ]
-# include "opendbt/docs/" macros!
+# include "opendbt/docs/" project folder!
 docs-paths: [ "../../../opendbt/docs/" ]
 
 clean-targets: # directories to be removed by `dbt clean`
