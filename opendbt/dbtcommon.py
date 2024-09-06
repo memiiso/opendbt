@@ -9,7 +9,6 @@ from http.server import SimpleHTTPRequestHandler
 from pathlib import Path
 
 import click
-from dbt.include.global_project import DOCS_INDEX_FILE_PATH
 
 
 def get_custom_adapter_config_value(self, config: 'AdapterRequiredConfig') -> str:

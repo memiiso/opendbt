@@ -23,10 +23,12 @@ dbt.task.serve.ServeTask.run = dbt17.ServeTask_run
 
 if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
     from opendbt import dbt18
+    from dbt.task.docs import DOCS_INDEX_FILE_PATH
 
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt18.register_adapter
 else:
     from opendbt import dbt17
+    from dbt.include.global_project import DOCS_INDEX_FILE_PATH
 
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
 
