@@ -13,18 +13,18 @@ DBT_VERSION = get_dbt_version()
 # ================================================================================================================
 # Monkey Patching! Override dbt lib AdapterContainer.register_adapter method with new one above
 # ================================================================================================================
-from opendbt.overrides import common, OpenDbtGenerateTask
+from opendbt.overrides import common
 import dbt
 if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
     from opendbt.overrides import dbt18
 
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt18.register_adapter
-    dbt.task.docs.generate.GenerateTask = OpenDbtGenerateTask
+    dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
 else:
     from opendbt.overrides import dbt17
 
     dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
-    dbt.task.generate.GenerateTask = OpenDbtGenerateTask
+    dbt.task.generate.GenerateTask = common.OpenDbtGenerateTask
 
 # ================= add new methods =======================================================
 dbt.adapters.factory.AdapterContainer.get_custom_adapter_config_value = common.get_custom_adapter_config_value
