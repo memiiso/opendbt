@@ -24,6 +24,10 @@ class TestOpenDbtProject(TestCase):
             sys.tracebacklimit = 0
             dp.run(command="compile")
         self.assertTrue("Custom user defined test adapter activated" in str(context.exception))
+        with self.assertRaises(Exception) as context:
+            sys.tracebacklimit = 0
+            dp.run(command="compile")
+        self.assertTrue("Custom user defined test adapter activated" in str(context.exception))
 
     def test_run_with_custom_adapter_mmodule_not_found(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,

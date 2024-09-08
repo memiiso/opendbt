@@ -1,5 +1,7 @@
 import argparse
 
+import dbt
+from dbt.adapters import factory
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.contracts.results import RunResult
@@ -14,22 +16,17 @@ DBT_VERSION = get_dbt_version()
 # Monkey Patching! Override dbt lib AdapterContainer.register_adapter method with new one above
 # ================================================================================================================
 from opendbt.overrides import common
-import dbt
-if Version(DBT_VERSION.to_version_string(skip_matcher=True)) > Version("1.8.0"):
-    from opendbt.overrides import dbt18
 
-    dbt.adapters.factory.AdapterContainer.register_adapter = dbt18.register_adapter
+if Version(get_dbt_version().to_version_string(skip_matcher=True)) > Version("1.8.0"):
     dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
 else:
-    from opendbt.overrides import dbt17
-
-    dbt.adapters.factory.AdapterContainer.register_adapter = dbt17.register_adapter
     dbt.task.generate.GenerateTask = common.OpenDbtGenerateTask
+factory.FACTORY = common.OpenDbtAdapterContainer()
 
-# ================= add new methods =======================================================
-dbt.adapters.factory.AdapterContainer.get_custom_adapter_config_value = common.get_custom_adapter_config_value
-dbt.adapters.factory.AdapterContainer.get_custom_adapter_class_by_name = common.get_custom_adapter_class_by_name
-# ================= override existing methods ==============================================
+
+# ================================================================================================================
+# End Monkey Patching!
+# ================================================================================================================
 
 class OpenDbtCli:
 
