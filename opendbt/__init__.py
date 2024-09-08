@@ -17,10 +17,10 @@ DBT_VERSION = get_dbt_version()
 # ================================================================================================================
 from opendbt.overrides import common
 
-if Version(get_dbt_version().to_version_string(skip_matcher=True)) > Version("1.8.0"):
-    dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
-else:
+if Version(get_dbt_version().to_version_string(skip_matcher=True)) < Version("1.8.0"):
     dbt.task.generate.GenerateTask = common.OpenDbtGenerateTask
+else:
+    dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
 factory.FACTORY = common.OpenDbtAdapterContainer()
 
 

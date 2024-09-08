@@ -9,12 +9,12 @@ from packaging.version import Version
 
 from dbt.version import get_installed_version as get_dbt_version
 
-if Version(get_dbt_version().to_version_string(skip_matcher=True)) > Version("1.8.0"):
-    from dbt.task.docs.generate import GenerateTask
-    from opendbt.overrides.dbt18 import AdapterContainerDbtOverride
-else:
+if Version(get_dbt_version().to_version_string(skip_matcher=True)) < Version("1.8.0"):
     from dbt.task.generate import GenerateTask
     from opendbt.overrides.dbt17 import AdapterContainerDbtOverride
+else:
+    from dbt.task.docs.generate import GenerateTask
+    from opendbt.overrides.dbt18 import AdapterContainerDbtOverride
 
 
 class OpenDbtAdapterContainer(AdapterContainerDbtOverride):
