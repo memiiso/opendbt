@@ -4,8 +4,8 @@ from unittest import TestCase
 
 from packaging.version import Version
 
-from opendbt import OpenDbtProject
-from opendbt.client import DBT_VERSION
+from opendbt import DBT_VERSION
+from opendbt.project import OpenDbtProject
 
 
 class TestOpenDbtProject(TestCase):
