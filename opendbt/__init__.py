@@ -1,33 +1,14 @@
 import argparse
 
-import dbt
-from dbt.adapters import factory
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.contracts.results import RunResult
 from dbt.exceptions import DbtRuntimeError
-from dbt.version import get_installed_version as get_dbt_version
-from packaging.version import Version
 
 from opendbt.logger import OpenDbtLogger
+from opendbt.overrides import patch_dbt
 
-DBT_VERSION = get_dbt_version()
-# ================================================================================================================
-# Monkey Patching! Override dbt lib AdapterContainer.register_adapter method with new one above
-# ================================================================================================================
-from opendbt.overrides import common
-
-if Version(get_dbt_version().to_version_string(skip_matcher=True)) < Version("1.8.0"):
-    dbt.task.generate.GenerateTask = common.OpenDbtGenerateTask
-else:
-    dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
-factory.FACTORY = common.OpenDbtAdapterContainer()
-
-
-# ================================================================================================================
-# End Monkey Patching!
-# ================================================================================================================
-
+patch_dbt()
 class OpenDbtCli:
 
     @staticmethod

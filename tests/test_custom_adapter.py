@@ -2,12 +2,12 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+from dbt.version import get_installed_version as get_dbt_version
 from packaging.version import Version
 
-from opendbt import DBT_VERSION
 from opendbt.project import OpenDbtProject
 
-
+DBT_VERSION = get_dbt_version()
 class TestOpenDbtProject(TestCase):
     RESOURCES_DIR = Path(__file__).parent.joinpath("resources")
     DBTTEST_DIR = RESOURCES_DIR.joinpath("dbttest")

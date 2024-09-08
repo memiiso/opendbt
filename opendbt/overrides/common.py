@@ -6,10 +6,9 @@ from pathlib import Path
 
 import click
 from packaging.version import Version
+import dbt
 
-from dbt.version import get_installed_version as get_dbt_version
-
-if Version(get_dbt_version().to_version_string(skip_matcher=True)) < Version("1.8.0"):
+if Version(dbt.version.get_installed_version().to_version_string(skip_matcher=True)) < Version("1.8.0"):
     from dbt.task.generate import GenerateTask
     from opendbt.overrides.dbt17 import AdapterContainerDbtOverride
 else:
