@@ -10,7 +10,7 @@ from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import RunResult
 from dbt.exceptions import DbtRuntimeError
 
-from opendbt.overrides import patch_dbt
+from opendbt.dbt import patch_dbt
 from opendbt.utils import Utils
 
 ######################
