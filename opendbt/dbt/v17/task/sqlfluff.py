@@ -15,8 +15,7 @@ class SqlFluffTasks(CompileTask):
     def __init__(self, args, config, manifest):
         super().__init__(args, config, manifest)
         self.sqlfluff_config = FluffConfig.from_path(path=self.config.project_root)
-
-    def lint(self) -> CatalogArtifact:
+        self.linter = Linter(self.sqlfluff_config)
         # dummy result
         run_result = RunExecutionResult(
             results=[],
@@ -25,7 +24,7 @@ class SqlFluffTasks(CompileTask):
             # args=dbt.utils.args_to_dict(self.args),
             args={},
         )
-        results = CatalogArtifact.from_results(
+        self.results = CatalogArtifact.from_results(
             nodes={},
             sources={},
             generated_at=datetime.utcnow(),
@@ -33,15 +32,24 @@ class SqlFluffTasks(CompileTask):
             compile_results=run_result,
         )
 
+    def lint(self) -> CatalogArtifact:
         os.chdir(self.config.project_root)
-        linter = Linter(self.sqlfluff_config)
-        result = linter.lint_paths(paths=(self.config.project_root,))
-        violations: list = result.get_violations()
-        results.errors = violations
+        lint_result = self.linter.lint_paths(paths=(self.config.project_root,))
+        return self.return_result(lint_result=lint_result)
+
+    def fix(self) -> CatalogArtifact:
+        os.chdir(self.config.project_root)
+        lint_result = self.linter.lint_paths(paths=(self.config.project_root,), fix=True, apply_fixes=True)
+        return self.return_result(lint_result=lint_result)
+
+    def return_result(self, lint_result):
+        violations: list = lint_result.get_violations()
+        self.results.errors = violations
         if violations:
             print("SqlFluff Linting Errors")
             print("\n".join([str(item) for item in violations]))
-        return results
+        return self.results
+
 
     @classmethod
     def interpret_results(self, results: Optional[CatalogResults]) -> bool:

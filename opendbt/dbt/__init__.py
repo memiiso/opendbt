@@ -13,6 +13,7 @@ def patch_dbt():
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
         dbt.cli.main.sqlfluff = opendbt.dbt.v17.cli.main.sqlfluff
         dbt.cli.main.sqlfluff_lint = opendbt.dbt.v17.cli.main.sqlfluff_lint
+        dbt.cli.main.sqlfluff_fix = opendbt.dbt.v17.cli.main.sqlfluff_fix
         dbt.task.generate.GenerateTask = OpenDbtGenerateTask
         dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
     else:

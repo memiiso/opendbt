@@ -11,3 +11,7 @@ class TestDbtDocs(TestCase):
     def test_run_sqlfluff_lint(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR)
         dp.run(command="sqlfluff", args=['lint'])
+
+    def test_run_sqlfluff_fix(self):
+        dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR)
+        dp.run(command="sqlfluff", args=['fix'])
