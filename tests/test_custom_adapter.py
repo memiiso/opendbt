@@ -5,7 +5,7 @@ from unittest import TestCase
 from dbt.version import get_installed_version as get_dbt_version
 from packaging.version import Version
 
-from opendbt.project import OpenDbtProject
+from opendbt import OpenDbtProject
 
 DBT_VERSION = get_dbt_version()
 class TestOpenDbtProject(TestCase):

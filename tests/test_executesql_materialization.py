@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from opendbt.project import OpenDbtProject
+from opendbt import OpenDbtProject
 
 
 class TestOpenDbtProject(TestCase):
