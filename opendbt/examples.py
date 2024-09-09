@@ -5,7 +5,7 @@ from typing import Dict
 from dbt.adapters.base import available
 from dbt.adapters.duckdb import DuckDBAdapter
 
-from opendbt import Utils
+from opendbt.utils import Utils
 
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):

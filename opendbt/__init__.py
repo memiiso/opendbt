@@ -1,15 +1,23 @@
 import argparse
 import logging
 import os
-import subprocess
 import sys
 from pathlib import Path
 
+from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.contracts.graph.manifest import Manifest
+from dbt.contracts.results import RunResult
+from dbt.exceptions import DbtRuntimeError
 
-import opendbt.client
+from opendbt.overrides import patch_dbt
+from opendbt.utils import Utils
 
+######################
+patch_dbt()
+
+
+######################
 
 class OpenDbtLogger:
     _log = None
@@ -25,6 +33,39 @@ class OpenDbtLogger:
                 handler.setLevel(logging.INFO)
                 self._log.addHandler(handler)
         return self._log
+
+
+class OpenDbtCli:
+
+    @staticmethod
+    def run(args: list) -> dbtRunnerResult:
+        """
+        Run dbt with the given arguments.
+
+        :param args: The arguments to pass to dbt.
+        :return: The result of the dbt run.
+        """
+        # https://docs.getdbt.com/reference/programmatic-invocations
+        dbt = DbtCliRunner()
+        result: dbtRunnerResult = dbt.invoke(args)
+        if result.success:
+            return result
+
+        # print query for user to run and see the failing rows
+        rer: RunResult
+
+        _exception = result.exception if result.exception else None
+        if (_exception is None and result.result and result.result.results and
+                len(result.result.results) > 0 and result.result.results[0].message
+        ):
+            _exception = DbtRuntimeError(result.result.results[0].message)
+
+        if _exception is None:
+            DbtRuntimeError(f"DBT execution failed!")
+        if _exception:
+            raise _exception
+        else:
+            return result
 
 
 class OpenDbtProject(OpenDbtLogger):
@@ -54,11 +95,14 @@ class OpenDbtProject(OpenDbtLogger):
             run_args.remove("--no-write-json")
 
         if use_subprocess:
+            shell = False
+            self.log.info("Working dir is %s" % os.getcwd())
+            self.log.info("Running command (shell=%s) `%s`" % (shell, " ".join(command)))
             Utils.runcommand(command=['opendbt'] + run_args)
             return None
         else:
             self.log.info(f"Running `dbt {' '.join(run_args)}`")
-            return client.OpenDbtCli.run(args=run_args)
+            return OpenDbtCli.run(args=run_args)
 
     def manifest(self, partial_parse=True, no_write_manifest=True) -> Manifest:
         args = []
@@ -78,28 +122,10 @@ class OpenDbtProject(OpenDbtLogger):
         self.run(command="docs", args=_args)
 
 
-class Utils(object):
-
-    @staticmethod
-    def runcommand(command: list, shell=False):
-        logger = OpenDbtLogger()
-
-        logger.log.info("Working dir is %s" % os.getcwd())
-        logger.log.info("Running command (shell=%s) `%s`" % (shell, " ".join(command)))
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1,
-                              universal_newlines=True, shell=shell) as p:
-            for line in p.stdout:
-                if line:
-                    print(line.strip())
-
-        if p.returncode != 0:
-            raise subprocess.CalledProcessError(p.returncode, p.args)
-
-
 def main():
     p = argparse.ArgumentParser()
     _, args = p.parse_known_args()
-    client.OpenDbtCli.run(args=args)
+    OpenDbtCli.run(args=args)
 
 
 if __name__ == "__main__":

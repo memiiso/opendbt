@@ -2,12 +2,12 @@ import sys
 from pathlib import Path
 from unittest import TestCase
 
+from dbt.version import get_installed_version as get_dbt_version
 from packaging.version import Version
 
 from opendbt import OpenDbtProject
-from opendbt.client import DBT_VERSION
 
-
+DBT_VERSION = get_dbt_version()
 class TestOpenDbtProject(TestCase):
     RESOURCES_DIR = Path(__file__).parent.joinpath("resources")
     DBTTEST_DIR = RESOURCES_DIR.joinpath("dbttest")
@@ -20,6 +20,10 @@ class TestOpenDbtProject(TestCase):
 
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,
                             args=['--vars', f"{{'dbt_custom_adapter': '{dbt_custom_adapter}'}}"])
+        with self.assertRaises(Exception) as context:
+            sys.tracebacklimit = 0
+            dp.run(command="compile")
+        self.assertTrue("Custom user defined test adapter activated" in str(context.exception))
         with self.assertRaises(Exception) as context:
             sys.tracebacklimit = 0
             dp.run(command="compile")
