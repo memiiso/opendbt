@@ -4,7 +4,7 @@ from typing import Optional
 
 from dbt.contracts.results import (
     CatalogResults,
-    CatalogArtifact,
+    CatalogArtifact, RunExecutionResult,
 )
 from dbt.task.compile import CompileTask
 from sqlfluff.core import Linter, FluffConfig
@@ -17,12 +17,20 @@ class SqlFluffTasks(CompileTask):
         self.sqlfluff_config = FluffConfig.from_path(path=self.config.project_root)
 
     def lint(self) -> CatalogArtifact:
+        # dummy result
+        run_result = RunExecutionResult(
+            results=[],
+            elapsed_time=0.0,
+            generated_at=datetime.utcnow(),
+            # args=dbt.utils.args_to_dict(self.args),
+            args={},
+        )
         results = CatalogArtifact.from_results(
             nodes={},
             sources={},
             generated_at=datetime.utcnow(),
             errors=None,
-            compile_results=None,
+            compile_results=run_result,
         )
 
         os.chdir(self.config.project_root)
