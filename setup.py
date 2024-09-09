@@ -24,7 +24,7 @@ setup(
     include_package_data=True,
     license="Apache License 2.0",
     test_suite='tests',
-    install_requires=["dbt-duckdb>=1.6"],
+    install_requires=["dbt-duckdb>=1.6", "sqlfluff", "sqlfluff-templater-dbt"],
     extras_require={
         "airflow": ["apache-airflow"],
         "test": ["testcontainers>=3.7,<4.9"],
