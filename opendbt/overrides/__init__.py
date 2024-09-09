@@ -13,6 +13,3 @@ def patch_dbt():
     else:
         dbt.task.docs.generate.GenerateTask = common.OpenDbtGenerateTask
     dbt.adapters.factory.FACTORY = common.OpenDbtAdapterContainer()
-    # ================================================================================================================
-    # End Monkey Patching!
-    # ================================================================================================================
