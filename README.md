@@ -1,11 +1,21 @@
 [![License](http://img.shields.io/:license-apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
+![logo-badge](https://github.com/mac-s-g/github-help-wanted/blob/master/src/images/logo-full.png?raw=true)
+
+### Enhancing dbt with Python Runtime Patching
+
+This project leverages Python to extend dbt's core functionality. By dynamically modifying dbt's source code, we're
+adding new capabilities.
+
+**Your Contributions Matter**: We welcome your input. If you have a more efficient or elegant approach to achieving the
+same results, please share it with us."
+
 # opendbt
 
 The `opendbt` library extends the capabilities of dbt. It unlocks many customizations, allowing you to tailor dbt to
 your specific needs and data workflows.
 
-Forexample creating custom transformations by customizing existing adapters.
+Forexample creating custom transformations by customizing existing adapters using object-oriented inheritance.
 
 With `opendbt` you can go beyond the core functionalities of dbt by seamlessly integrating your customized adapter and
 provide jinja with further adapter/python methods.
