@@ -30,6 +30,7 @@ class SqlFluffTasks(CompileTask):
         result = linter.lint_paths(paths=(self.config.project_root,))
         violations: list = result.get_violations()
         success = True if not violations else False
+        results.errors = violations
         if violations:
             print("SqlFluff Linting Errors")
             print("\n".join([str(item) for item in violations]))

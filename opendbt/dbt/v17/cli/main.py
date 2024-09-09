@@ -54,6 +54,6 @@ def sqlfluff_lint(ctx, **kwargs):
         ctx.obj["manifest"],
     )
 
-    results = task.run()
+    results = task.lint()
     success = task.interpret_results(results)
     return results, success
