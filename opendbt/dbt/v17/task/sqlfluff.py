@@ -34,7 +34,7 @@ class SqlFluffTasks(CompileTask):
 
     def lint(self) -> CatalogArtifact:
         os.chdir(self.config.project_root)
-        lint_result = self.linter.lint_paths(paths=(self.config.project_root,))
+        lint_result = self.linter.lint_path(path=self.config.project_root)
         return self.return_result(lint_result=lint_result)
 
     def fix(self) -> CatalogArtifact:
@@ -47,7 +47,7 @@ class SqlFluffTasks(CompileTask):
         self.results.errors = violations
         if violations:
             print("SqlFluff Linting Errors")
-            print("\n".join([str(item) for item in violations]))
+            print("\n".join([str(item) for item in lint_result.as_records()]))
         return self.results
 
 
