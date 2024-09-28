@@ -9,6 +9,7 @@ from dbt.contracts.results import (
 from dbt.task.compile import CompileTask
 from sqlfluff.cli import commands
 from sqlfluff.core import Linter, FluffConfig
+from sqlfluff.core.linter.linted_dir import LintedDir
 
 
 class SqlFluffTasks(CompileTask):
@@ -43,10 +44,27 @@ class SqlFluffTasks(CompileTask):
         # lint_result = commands.fix(paths=(self.config.project_root))
         # lint_result = self.linter.lint_paths(paths=(self.config.project_root,), fix=True, apply_fixes=True)
         # Instantiate the linter
-        lnt, formatter = commands.get_linter_and_formatter(self.sqlfluff_config)
+        lnt, formatter = commands.get_linter_and_formatter(cfg=self.sqlfluff_config)
         # Dispatch the detailed config from the linter.
-        lint_result = formatter.dispatch_config(lnt)
-        lnt.fix(formatter=formatter)
+        # lint_result = formatter.dispatch_config(lnt)
+        # sys.exit(1)
+
+        lint_result: LintedDir = lnt.lint_path(
+            path=self.config.project_root,
+            fix=True,
+            # ignore_non_existent_files=False,
+            # processes=None,
+            # If --check is set, then don't apply any fixes until the end.
+            # apply_fixes=not check,
+            # fixed_file_suffix=fixed_suffix,
+            # fix_even_unparsable=fix_even_unparsable,
+            # If --check is not set, then don't apply any fixes until the end.
+            # NOTE: This should enable us to limit the memory overhead of keeping
+            # a large parsed project in memory unless necessary.
+            # retain_files=check,
+        )
+        # formatter.dispatch_config(lnt)
+        # lnt.fix(formatter=formatter)
 
         return self.return_result(lint_result=lint_result)
 
