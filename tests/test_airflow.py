@@ -19,9 +19,9 @@ class TestAirflowBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._compose = DockerCompose(filepath=cls.resources_dir.joinpath('airflow').as_posix(),
+        cls._compose = DockerCompose(cls.resources_dir.joinpath('airflow').as_posix(),
                                      compose_file_name="docker-compose.yaml",
-                                     # build=True
+                                     build=True
                                      )
         cls._compose.stop()
         cls._compose.start()

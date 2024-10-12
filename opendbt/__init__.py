@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import sys
+import tempfile
 from pathlib import Path
 
 from dbt.cli.main import dbtRunner as DbtCliRunner
@@ -94,15 +95,18 @@ class OpenDbtProject(OpenDbtLogger):
         if write_json:
             run_args.remove("--no-write-json")
 
-        if use_subprocess:
+        if False:
             shell = False
             self.log.info("Working dir is %s" % os.getcwd())
             self.log.info("Running command (shell=%s) `%s`" % (shell, " ".join(command)))
             Utils.runcommand(command=['opendbt'] + run_args)
             return None
         else:
-            self.log.info(f"Running `dbt {' '.join(run_args)}`")
-            return OpenDbtCli.run(args=run_args)
+            with tempfile.TemporaryDirectory() as tmp_working_dir:
+                os.chdir(tmp_working_dir)
+                self.log.info(f"Running `dbt {' '.join(run_args)}`")
+                self.log.info("CWD is %s" % os.getcwd())
+                return OpenDbtCli.run(args=run_args)
 
     def manifest(self, partial_parse=True, no_write_manifest=True) -> Manifest:
         args = []
