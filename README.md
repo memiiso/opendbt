@@ -20,10 +20,10 @@ provide jinja with further adapter/python methods.
 
 # Example use cases
 
-- Create and use new adapter using OOP inheritance, provide jinja with additional custom python methods with your own adapter
-- Execute Python code Python code locally, import data from web apis. without remote python execution.
+- Customize existing adapter using OOP inheritance, provide jinja with additional python methods with your customized adapter
+- Execute local Python code as dbt python model. forexample import data from web apis using a dbt model.
 - Enable Granular Model-Level Orchestration Using Airflow
-- Create page on Airflow Server to serve DBT docs as a new page under airflow UI
+- Create page on Airflow Server to serve DBT docs as a airflow page under airflow UI
 - Use customized dbt docs page, by providing custom index.html page
 
 For more details please see [examples](docs/EXAMPLES.md).
