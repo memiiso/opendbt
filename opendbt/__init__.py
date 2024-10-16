@@ -56,7 +56,7 @@ class OpenDbtCli:
         rer: RunResult
 
         _exception = result.exception if result.exception else None
-        if (_exception is None and result.result and result.result.results and
+        if (_exception is None and hasattr(result.result, 'results') and result.result.results and
                 len(result.result.results) > 0 and result.result.results[0].message
         ):
             _exception = DbtRuntimeError(result.result.results[0].message)
