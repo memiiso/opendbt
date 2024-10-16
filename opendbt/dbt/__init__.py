@@ -22,3 +22,7 @@ def patch_dbt():
             f"Unsupported dbt version {dbt_version}, please make sure dbt version is supported/integrated by opendbt")
 
     # shared code patches
+    import opendbt.dbt.shared.cli.main
+    dbt.cli.main.sqlfluff = opendbt.dbt.shared.cli.main.sqlfluff
+    dbt.cli.main.sqlfluff_lint = opendbt.dbt.shared.cli.main.sqlfluff_lint
+    dbt.cli.main.sqlfluff_fix = opendbt.dbt.shared.cli.main.sqlfluff_fix
