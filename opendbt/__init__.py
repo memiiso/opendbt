@@ -2,13 +2,11 @@ import argparse
 import logging
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.results import RunResult
 from dbt.exceptions import DbtRuntimeError
 
 from opendbt.dbt import patch_dbt
@@ -53,8 +51,6 @@ class OpenDbtCli:
             return result
 
         # print query for user to run and see the failing rows
-        rer: RunResult
-
         _exception = result.exception if result.exception else None
         if (_exception is None and hasattr(result.result, 'results') and result.result.results and
                 len(result.result.results) > 0 and result.result.results[0].message
@@ -62,7 +58,7 @@ class OpenDbtCli:
             _exception = DbtRuntimeError(result.result.results[0].message)
 
         if _exception is None:
-            DbtRuntimeError(f"DBT execution failed!")
+            raise DbtRuntimeError(f"DBT execution failed!")
         if _exception:
             raise _exception
         else:
@@ -95,18 +91,15 @@ class OpenDbtProject(OpenDbtLogger):
         if write_json:
             run_args.remove("--no-write-json")
 
-        if False:
+        if use_subprocess:
             shell = False
             self.log.info("Working dir is %s" % os.getcwd())
             self.log.info("Running command (shell=%s) `%s`" % (shell, " ".join(command)))
             Utils.runcommand(command=['opendbt'] + run_args)
             return None
         else:
-            with tempfile.TemporaryDirectory() as tmp_working_dir:
-                os.chdir(tmp_working_dir)
-                self.log.info(f"Running `dbt {' '.join(run_args)}`")
-                self.log.info("CWD is %s" % os.getcwd())
-                return OpenDbtCli.run(args=run_args)
+            self.log.info(f"Running `dbt {' '.join(run_args)}`")
+            return OpenDbtCli.run(args=run_args)
 
     def manifest(self, partial_parse=True, no_write_manifest=True) -> Manifest:
         args = []
