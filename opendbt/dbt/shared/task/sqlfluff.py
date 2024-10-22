@@ -45,8 +45,8 @@ class SqlFluffTasks(CompileTask):
             errors=violations if violations else None,
             compile_results=run_result,
         )
-        setattr(result, 'exception', Exception(f"Linting {num_violations} errors found!"))
         if num_violations > 0:
+            setattr(result, 'exception', Exception(f"Linting {num_violations} errors found!"))
             result.exception = Exception(f"Linting {num_violations} errors found!")
 
         return result
@@ -75,7 +75,7 @@ class SqlFluffTasks(CompileTask):
             fix=True,
             apply_fixes=True
         )
-        result = self.get_result(lint_result.total_time, lint_result.get_violations(), 0)
+        result = self.get_result(lint_result.total_time, [], 0)
         return result
 
     @classmethod
