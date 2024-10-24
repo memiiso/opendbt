@@ -37,6 +37,7 @@ jobs:
           python --version
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
           python -m compileall -f opendbt setup.py
+          python -m pylint opendbt setup.py
       - name: Run Tests
         run: |
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"

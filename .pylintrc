@@ -1,0 +1,11 @@
+[MASTER]
+disable=
+    C,R, # (convention and refactor):
+    W, # warnings
+    E0401, # (import-error)
+    E0611, # (no-name-in-module)
+    C0114, # missing-module-docstring
+    C0301, # Line too long (112/100) (line-too-long)
+    W1201, # Specify string format arguments as logging function parameters (logging-not-lazy)
+    W0703, # Catching too general exception Exception (broad-except)
+    W0212, #: Access to a protected member
