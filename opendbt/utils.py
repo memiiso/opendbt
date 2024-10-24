@@ -1,6 +1,7 @@
 import subprocess
 
-class Utils(object):
+
+class Utils():
 
     @staticmethod
     def runcommand(command: list, shell=False):

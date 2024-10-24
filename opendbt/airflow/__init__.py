@@ -52,6 +52,7 @@ class OpenDbtExecutorOperator(BaseOperator):
         runner.run(command=self.command, args=self.args, use_subprocess=self.use_subprocess)
 
 
+# pylint: disable=too-many-locals, too-many-branches
 class OpenDbtAirflowProject(opendbt.OpenDbtProject):
 
     def load_dbt_tasks(self,

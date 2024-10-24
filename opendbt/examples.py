@@ -30,6 +30,7 @@ model(dbt=dbtObj(None), session=None)
 class DuckDBAdapterTestingOnlyDbt17(DuckDBAdapter):
     def __init__(self, config) -> None:
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
+        # pylint: disable=no-value-for-parameter
         super().__init__(config=config)
         raise Exception("Custom user defined test adapter activated, test exception")
 
