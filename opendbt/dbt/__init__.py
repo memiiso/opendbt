@@ -10,11 +10,13 @@ def patch_dbt():
     if dbt_version >= Version("1.7.0") and dbt_version < Version("1.8.0"):
         from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
+        # pylint: disable=no-member
         dbt.task.generate.GenerateTask = OpenDbtGenerateTask
         dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
     elif dbt_version >= Version("1.8.0") and dbt_version < Version("1.9.0"):
         from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
+        # pylint: disable=no-member
         dbt.task.docs.generate.GenerateTask = OpenDbtGenerateTask
         dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
     else:
