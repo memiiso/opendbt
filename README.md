@@ -2,45 +2,46 @@
 [![License](http://img.shields.io/:license-apache%202.0-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 ![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)
 
-### Enhancing dbt with Python Runtime Patching
-
-This project adds new capabilities to dbt-core by dynamically modifying dbt's source code.
-
-**Your Contributions Matter**: We welcome your input. If you have a any idea, suggestion or feature you like to add to dbt please share with us or open new pull request. All contibutions are welcome.
-
 # opendbt
 
-The `opendbt` library extends dbt-core. It unlocks many customizations, allowing you to tailor dbt to
-your specific needs and data workflows.
+This project adds new capabilities to dbt-core by dynamically modifying dbt's source code.
+dbt is a popular solution for batch data processing in data analytics. While it operates on
+an [open-core model](https://opencoreventures.com/blog/2023-07-open-core-is-misunderstood-business-model/), which can
+sometimes limit the inclusion of community features in the open-source version. no worries opendbt is here to solve it.
+opendbt offers a fully open-source package to address these concerns. OpenDBT builds upon dbt-core, adding valuable
+features without altering its core code.
 
-Forexample creating custom adapter by object-oriented inheritance and extending existing adapters.
+`opendbt` unlocks many customizations, allowing you to tailor dbt to your specific needs and data workflows.
 
-With `opendbt` you can go beyond the core functionalities of dbt by seamlessly integrating your customized adapter and
-provide jinja with further adapter/python methods.
+With `opendbt` you can go beyond the core functionalities of dbt. For example seamlessly integrating your customized
+adapter and providing jinja context with further adapter/python methods.
 
-# Example use cases
+# Features
 
-- Customize existing adapter using OOP inheritance, provide jinja with additional python methods with your customized adapter
-- Execute local Python code as dbt python model. forexample import data from web apis using a dbt model.
-- Enable Granular Model-Level Orchestration Using Airflow
-- Create page on Airflow Server to serve DBT docs as a airflow page under airflow UI
-- Use customized dbt docs page, by providing custom index.html page
+- Customize Existing Adapters: Leverage object-oriented programming (OOP) inheritance to create custom adapters that
+  inherit from existing ones. Additionally, you can provide Jinja with custom Python methods within your adapter.
+- Execute Local Python Code: Use dbt Python models to run local Python code. For example, you could import data from web
+  APIs directly within your dbt model.
+- Granular Model-Level Orchestration with Airflow: Integrate Airflow for fine-grained control over model execution.
+- Serve dbt Docs in Airflow UI: Create a custom page on the Airflow server that displays dbt documentation as an Airflow
+  UI page.
+- Customized dbt Docs: Replace the default dbt documentation page with your own custom index.html file.
 
-For more details please see [examples](docs/EXAMPLES.md).
+For detailed examples, see: [examples](docs/EXAMPLES.md).
 
 ## Installation
-
-install from github:
-
-```shell
-pip install https://github.com/memiiso/opendbt/archive/master.zip --upgrade --user
-```
 
 install version from github:
 
 ```shell
 pip install https://github.com/memiiso/opendbt/archive/refs/tags/0.4.0.zip --upgrade --user
 ```
+
+## **Your Contributions Matter**
+
+The project completely open-source, using the Apache 2.0 license.
+opendbt still is a young project and there are things to improve.
+Please feel free to test it, give feedback, open feature requests or send pull requests.
 
 ### Contributors
 
