@@ -92,7 +92,7 @@ class OpenDbtProject(OpenDbtLogger):
 
         if use_subprocess:
             shell = False
-            self.log.info(f"Working dir is {os.getcwd()}")
+            self.log.info(f"Working dir: {os.getcwd()}")
             py_executable = sys.executable if sys.executable else 'python'
             self.log.info(f"Python executable: {py_executable}")
             __command = [py_executable, '-m', 'opendbt'] + run_args
