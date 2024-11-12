@@ -94,7 +94,9 @@ class OpenDbtProject(OpenDbtLogger):
             shell = False
             self.log.info("Working dir is %s" % os.getcwd())
             self.log.info("Running command (shell=%s) `%s`" % (shell, " ".join(command)))
-            Utils.runcommand(command=['opendbt'] + run_args)
+            py_executable = sys.executable if sys.executable else 'python'
+            self.log.info(f"Using python executable: {py_executable}")
+            Utils.runcommand(command=[py_executable, '-m', 'opendbt'] + run_args)
             return None
         else:
             self.log.info(f"Running `dbt {' '.join(run_args)}`")
