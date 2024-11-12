@@ -23,6 +23,8 @@ def patch_dbt():
 
     # shared code patches
     import opendbt.dbt.shared.cli.main
+    import opendbt.dbt.shared.task.run
     dbt.cli.main.sqlfluff = opendbt.dbt.shared.cli.main.sqlfluff
     dbt.cli.main.sqlfluff_lint = opendbt.dbt.shared.cli.main.sqlfluff_lint
     dbt.cli.main.sqlfluff_fix = opendbt.dbt.shared.cli.main.sqlfluff_fix
+    dbt.task.run.ModelRunner = opendbt.dbt.shared.task.run.ModelRunner
