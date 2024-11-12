@@ -1,4 +1,3 @@
-import argparse
 import logging
 import os
 import sys
@@ -117,13 +116,3 @@ class OpenDbtProject(OpenDbtLogger):
     def generate_docs(self, args: list = None):
         _args = ["generate"] + args if args else []
         self.run(command="docs", args=_args)
-
-
-def main():
-    p = argparse.ArgumentParser()
-    _, args = p.parse_known_args()
-    OpenDbtCli.run(args=args)
-
-
-if __name__ == "__main__":
-    main()

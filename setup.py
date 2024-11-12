@@ -10,7 +10,7 @@ setup(
     name='opendbt',
     entry_points={
         'console_scripts': [
-            'opendbt = opendbt:main',
+            'opendbt = opendbt.__main__:main',
         ],
     },
     version="0.7.0",
@@ -27,7 +27,7 @@ setup(
     install_requires=["dbt-duckdb>=1.6", "sqlfluff", "sqlfluff-templater-dbt"],
     extras_require={
         "airflow": ["apache-airflow"],
-        "test": ["testcontainers>=3.7,<4.9"],
+        "test": ["testcontainers>=3.7,<4.9", "apache-airflow"],
     },
     python_requires='>=3.8'
 )
