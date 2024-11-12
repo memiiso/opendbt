@@ -8,10 +8,10 @@ This project adds new capabilities to dbt-core by dynamically modifying dbt's so
 dbt is a popular solution for batch data processing in data analytics. While it operates on
 an [open-core model](https://opencoreventures.com/blog/2023-07-open-core-is-misunderstood-business-model/), which can
 sometimes limit the inclusion of community features in the open-source version. no worries opendbt is here to solve it.
-opendbt offers a fully open-source package to address these concerns. OpenDBT builds upon dbt-core, adding valuable
-features without altering its core code.
+opendbt offers a fully open-source package to address these concerns. **OpenDBT builds upon dbt-core, adding valuable
+features without changing dbt-core code.**
 
-`opendbt` unlocks many customizations, allowing you to tailor dbt to your specific needs and data workflows.
+`opendbt` unlocks many customization which are not in dbt-core, allowing end user to tailor dbt to his/her specific needs and data workflows.
 
 With `opendbt` you can go beyond the core functionalities of dbt. For example seamlessly integrating your customized
 adapter and providing jinja context with further adapter/python methods.
