@@ -19,9 +19,10 @@ jobs:
 
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: [ "3.8", "3.9", "3.10", "3.11" ]
-        dbt-version: [ "1.7", "1.8" ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+        dbt-version: [ "1.7", "1.8", "1.9" ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -32,7 +33,7 @@ jobs:
       - name: Build & Install
         run: |
           pip install -q coverage pylint
-          pip install -q dbt-core==${{ matrix.dbt-version }}.* dbt-duckdb==${{ matrix.dbt-version }}.* --force-reinstall --upgrade
+          pip install -q dbt-core==${{ matrix.dbt-version }}.* dbt-duckdb==${{ matrix.dbt-version }}.* --force-reinstall --upgrade --pre
           # FIX for protobuf issue: https://github.com/dbt-labs/dbt-core/issues/9759
           pip install -q "apache-airflow" "protobuf>=4.25.3,<5.0.0" "opentelemetry-proto<1.28.0" --prefer-binary
           pip install -q .[test] --prefer-binary
