@@ -12,6 +12,8 @@ def patch_dbt():
         dbt.task.generate.GenerateTask = OpenDbtGenerateTask
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
         dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
+        from opendbt.dbt.v17.task.run import ModelRunner
+        dbt.task.run.ModelRunner = ModelRunner
     elif dbt_version >= Version("1.8.0") and dbt_version < Version("1.9.0"):
         from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
         dbt.task.docs.generate.GenerateTask = OpenDbtGenerateTask
