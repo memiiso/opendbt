@@ -28,9 +28,7 @@ test = ["testcontainers>=3.7,<4.9", "apache-airflow"]
 
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.packages]
-find = { }  # Scanning implicit namespaces is active by default
+packages = ["opendbt"]
 
 [project.scripts]
 opendbt = "opendbt.__main__:main"
