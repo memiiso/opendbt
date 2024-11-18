@@ -38,9 +38,9 @@ jobs:
           pip install -q .[test] --prefer-binary
           python --version
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
-          python -m compileall -f opendbt setup.py
+          python -m compileall -f opendbt
       - name: Run Tests
         run: |
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
           python -m coverage run --source=./tests/ -m unittest discover -s tests/
-          python -m coverage report -m ./opendbt/*.py setup.py
+          python -m coverage report -m ./opendbt/*.py
