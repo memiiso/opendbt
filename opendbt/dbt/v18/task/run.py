@@ -10,7 +10,7 @@ from dbt_common.events.functions import fire_event
 class ModelRunner(run.ModelRunner):
 
     def print_result_adapter_response(self, result):
-        if hasattr(result, 'adapter_response'):
+        if hasattr(result, 'adapter_response') and result.adapter_response:
             if result.status == NodeStatus.Error:
                 status = result.status
                 level = EventLevel.ERROR
