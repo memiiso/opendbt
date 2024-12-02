@@ -60,8 +60,7 @@ class OpenDbtCli:
             raise DbtRuntimeError(f"DBT execution failed!")
         if _exception:
             raise _exception
-        else:
-            return result
+        return result
 
 
 class OpenDbtProject(OpenDbtLogger):
@@ -99,9 +98,9 @@ class OpenDbtProject(OpenDbtLogger):
             self.log.info(f"Running command (shell={shell}) `{' '.join(__command)}`")
             Utils.runcommand(command=__command)
             return None
-        else:
-            self.log.info(f"Running `dbt {' '.join(run_args)}`")
-            return OpenDbtCli.run(args=run_args)
+
+        self.log.info(f"Running `dbt {' '.join(run_args)}`")
+        return OpenDbtCli.run(args=run_args)
 
     def manifest(self, partial_parse=True, no_write_manifest=True) -> Manifest:
         args = []

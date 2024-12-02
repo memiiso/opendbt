@@ -1,0 +1,12 @@
+[MASTER]
+disable=
+    C, # convention
+    W, # warnings
+    import-error,
+    no-name-in-module,
+    too-many-arguments,
+    too-many-positional-arguments,
+    too-few-public-methods,
+    no-member,
+    unexpected-keyword-arg,
+    R0801 # Similar lines in 2 files

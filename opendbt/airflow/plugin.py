@@ -1,5 +1,7 @@
 from pathlib import Path
 
+
+# pylint: disable=inconsistent-return-statements
 def init_plugins_dbtdocs_page(dbt_docs_dir: Path):
     from airflow.plugins_manager import AirflowPlugin
     from flask import Blueprint
