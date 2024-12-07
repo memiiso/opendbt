@@ -1,29 +1,39 @@
-import tempfile
+import importlib
 from multiprocessing.context import SpawnContext
+from pathlib import Path
 from typing import Dict
 
 from dbt.adapters.base import available
 from dbt.adapters.duckdb import DuckDBAdapter
 
-from opendbt.utils import Utils
-
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):
+
+    def abs_compiled_path(self, parsed_model: Dict) -> Path:
+        project_root = Path(self.config.project_root)
+        if 'compiled_path' in parsed_model:
+            return project_root.joinpath(parsed_model['compiled_path'])
+        else:
+            run_path = project_root.joinpath(self.config.target_path).joinpath("compiled")
+            package_name = parsed_model['package_name']
+            original_file_path = parsed_model['original_file_path']
+            build_path = run_path.joinpath(package_name).joinpath(original_file_path)
+            return project_root.joinpath(build_path)
+
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
-        model_unique_id = parsed_model.get('unique_id')
-        __py_code = f"""
-{compiled_code}
-
-# NOTE this is local python execution so session is None
-model(dbt=dbtObj(None), session=None)
-        """
-        with tempfile.NamedTemporaryFile(suffix=f'__{model_unique_id}.py', delete=True) as fp:
-            fp.write(__py_code.encode('utf-8'))
-            fp.flush()
-            print(f"Created temp py file {fp.name}")
-            Utils.runcommand(command=['python', fp.name])
-            fp.close()
+        # full path to the compiled model file
+        model_compiled_file_abs_path = self.abs_compiled_path(parsed_model)
+        model_name = parsed_model['name']
+        # Load the module spec
+        spec = importlib.util.spec_from_file_location(model_name, model_compiled_file_abs_path)
+        # Create a module object
+        module = importlib.util.module_from_spec(spec)
+        # Load the module
+        spec.loader.exec_module(module)
+        # Access and call `model` function of the model! NOTE: session argument is None here.
+        dbt = module.dbtObj(None)
+        module.model(dbt, None)
 
 
 # NOTE! used for testing
