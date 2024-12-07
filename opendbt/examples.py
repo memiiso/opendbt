@@ -1,6 +1,6 @@
 import importlib
+import tempfile
 from multiprocessing.context import SpawnContext
-from pathlib import Path
 from typing import Dict
 
 from dbt.adapters.base import available
@@ -9,31 +9,24 @@ from dbt.adapters.duckdb import DuckDBAdapter
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):
 
-    def abs_compiled_path(self, parsed_model: Dict) -> Path:
-        project_root = Path(self.config.project_root)
-        if 'compiled_path' in parsed_model:
-            return project_root.joinpath(parsed_model['compiled_path'])
-
-        compiled_path = project_root.joinpath(self.config.target_path).joinpath("compiled")
-        package_name = parsed_model['package_name']
-        original_file_path = parsed_model['original_file_path']
-        abs_compiled_path = compiled_path.joinpath(package_name).joinpath(original_file_path)
-        return project_root.joinpath(abs_compiled_path)
-
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
-        # full path to the compiled model file
-        model_compiled_file_abs_path = self.abs_compiled_path(parsed_model)
-        model_name = parsed_model['name']
-        # Load the module spec
-        spec = importlib.util.spec_from_file_location(model_name, model_compiled_file_abs_path)
-        # Create a module object
-        module = importlib.util.module_from_spec(spec)
-        # Load the module
-        spec.loader.exec_module(module)
-        # Access and call `model` function of the model! NOTE: session argument is None here.
-        dbt = module.dbtObj(None)
-        module.model(dbt, None)
+        with tempfile.NamedTemporaryFile(suffix=f'.py', delete=True) as model_file:
+            model_file.write(compiled_code.lstrip().encode('utf-8'))
+            model_file.flush()
+            print(f"Created temp py file {model_file.name}")
+            # load and execute python code!
+            model_name = parsed_model['name']
+            # Load the module spec
+            spec = importlib.util.spec_from_file_location(model_name, model_file.name)
+            # Create a module object
+            module = importlib.util.module_from_spec(spec)
+            # Load the module
+            spec.loader.exec_module(module)
+            # Access and call `model` function of the model! NOTE: session argument is None here.
+            dbt = module.dbtObj(None)
+            module.model(dbt, None)
+            model_file.close()
 
 
 # NOTE! used for testing
