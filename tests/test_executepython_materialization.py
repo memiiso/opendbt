@@ -11,9 +11,14 @@ class TestOpenDbtProject(TestCase):
     def test_run_executepython_materialization(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,
                             args=['--vars', 'dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom'])
-        dp.run(command="run", args=['--select', 'my_executepython_dbt_model'])
+        dp.run(command="run", args=['--select', 'my_executepython_model'])
+
+    def test_run_executepython_dlt_pipeline(self):
+        dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,
+                            args=['--vars', 'dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom'])
+        dp.run(command="run", args=['--select', 'my_executepython_dlt_model'])
 
     def test_run_executepython_materialization_subprocess(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR,
                             args=['--vars', 'dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom'])
-        dp.run(command="run", args=['--select', 'my_executepython_dbt_model'], use_subprocess=True)
+        dp.run(command="run", args=['--select', 'my_executepython_model'], use_subprocess=True)
