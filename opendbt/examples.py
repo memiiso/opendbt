@@ -1,3 +1,4 @@
+import importlib
 import tempfile
 from multiprocessing.context import SpawnContext
 from typing import Dict
@@ -5,25 +6,27 @@ from typing import Dict
 from dbt.adapters.base import available
 from dbt.adapters.duckdb import DuckDBAdapter
 
-from opendbt.utils import Utils
-
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):
+
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
-        model_unique_id = parsed_model.get('unique_id')
-        __py_code = f"""
-{compiled_code}
-
-# NOTE this is local python execution so session is None
-model(dbt=dbtObj(None), session=None)
-        """
-        with tempfile.NamedTemporaryFile(suffix=f'__{model_unique_id}.py', delete=True) as fp:
-            fp.write(__py_code.encode('utf-8'))
-            fp.flush()
-            print(f"Created temp py file {fp.name}")
-            Utils.runcommand(command=['python', fp.name])
-            fp.close()
+        with tempfile.NamedTemporaryFile(suffix=f'.py', delete=True) as model_file:
+            model_file.write(compiled_code.lstrip().encode('utf-8'))
+            model_file.flush()
+            print(f"Created temp py file {model_file.name}")
+            # load and execute python code!
+            model_name = parsed_model['name']
+            # Load the module spec
+            spec = importlib.util.spec_from_file_location(model_name, model_file.name)
+            # Create a module object
+            module = importlib.util.module_from_spec(spec)
+            # Load the module
+            spec.loader.exec_module(module)
+            # Access and call `model` function of the model! NOTE: session argument is None here.
+            dbt = module.dbtObj(None)
+            module.model(dbt, None)
+            model_file.close()
 
 
 # NOTE! used for testing
