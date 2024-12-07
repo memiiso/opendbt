@@ -13,12 +13,12 @@ class DuckDBAdapterV2Custom(DuckDBAdapter):
         project_root = Path(self.config.project_root)
         if 'compiled_path' in parsed_model:
             return project_root.joinpath(parsed_model['compiled_path'])
-        else:
-            run_path = project_root.joinpath(self.config.target_path).joinpath("compiled")
-            package_name = parsed_model['package_name']
-            original_file_path = parsed_model['original_file_path']
-            build_path = run_path.joinpath(package_name).joinpath(original_file_path)
-            return project_root.joinpath(build_path)
+
+        compiled_path = project_root.joinpath(self.config.target_path).joinpath("compiled")
+        package_name = parsed_model['package_name']
+        original_file_path = parsed_model['original_file_path']
+        abs_compiled_path = compiled_path.joinpath(package_name).joinpath(original_file_path)
+        return project_root.joinpath(abs_compiled_path)
 
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
