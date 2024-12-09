@@ -32,6 +32,8 @@ adapter and providing jinja context with further adapter/python methods.
 
 For detailed examples, see: [examples](docs/EXAMPLES.md).
 
+![opendbt-airflow-ui.png](docs/assets/opendbt-airflow-ui.png)
+
 ## Installation
 
 install version from github:
