@@ -29,5 +29,8 @@ class TestOpenDbtProject(TestCase):
                              include_dbt_seeds=True)
 
             for j in dag.tasks:
+                # don't run the model we created to fail
+                if 'my_failing_dbt_model' in j.task_id:
+                    continue
                 # run all dbt tasks trough airflow operator
                 j.execute({})

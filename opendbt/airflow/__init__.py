@@ -46,9 +46,9 @@ class OpenDbtExecutorOperator(BaseOperator):
         """
         Execute the dbt command.
         """
-        runner = OpenDbtAirflowProject(project_dir=self.project_dir,
-                                       profiles_dir=self.profiles_dir,
-                                       target=self.target)
+        runner = opendbt.OpenDbtProject(project_dir=self.project_dir,
+                                        profiles_dir=self.profiles_dir,
+                                        target=self.target)
         runner.run(command=self.command, args=self.args, use_subprocess=self.use_subprocess)
 
 
