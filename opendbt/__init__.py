@@ -105,8 +105,8 @@ class OpenDbtProject(OpenDbtLogger):
         """
         if 'vars' in self.project_dict:
             return self.project_dict['vars']
-        else:
-            return {}
+
+        return {}
 
     def run(self, command: str = "build", target: str = None, args: list = None, use_subprocess: bool = False,
             write_json: bool = False) -> dbtRunnerResult:
