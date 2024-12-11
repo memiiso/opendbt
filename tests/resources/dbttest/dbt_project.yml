@@ -39,3 +39,4 @@ models:
 
 vars:
   dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom
+  dbt_callbacks: opendbt.airflow.callbacks.email_model_warnings_callback,opendbt.airflow.callbacks.email_test_errors_callback
