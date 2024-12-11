@@ -5,7 +5,9 @@ from pathlib import Path
 
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
+from dbt.config import PartialProject
 from dbt.contracts.graph.manifest import Manifest
+from dbt.contracts.results import RunResult
 from dbt.exceptions import DbtRuntimeError
 
 from opendbt.dbt import patch_dbt
@@ -36,31 +38,34 @@ class OpenDbtLogger:
 class OpenDbtCli:
 
     @staticmethod
-    def run(args: list) -> dbtRunnerResult:
+    def run(args: list, callbacks: list = None) -> dbtRunnerResult:
         """
         Run dbt with the given arguments.
 
+        :param callbacks:
         :param args: The arguments to pass to dbt.
         :return: The result of the dbt run.
         """
+        callbacks = callbacks if callbacks else []
         # https://docs.getdbt.com/reference/programmatic-invocations
-        dbt = DbtCliRunner()
-        result: dbtRunnerResult = dbt.invoke(args)
+        dbtcr = DbtCliRunner(callbacks=callbacks)
+        result: dbtRunnerResult = dbtcr.invoke(args)
         if result.success:
             return result
 
-        # print query for user to run and see the failing rows
-        _exception = result.exception if result.exception else None
-        if (_exception is None and hasattr(result.result, 'results') and result.result.results and
-                len(result.result.results) > 0 and result.result.results[0].message
-        ):
-            _exception = DbtRuntimeError(result.result.results[0].message)
+        if result.exception:
+            raise result.exception
 
-        if _exception is None:
-            raise DbtRuntimeError(f"DBT execution failed!")
-        if _exception:
-            raise _exception
-        return result
+        # take error message and raise it as exception
+        for _result in result.result:
+            _result: RunResult
+            _result_messages = ""
+            if _result.status == 'error':
+                _result_messages += f"{_result_messages}\n"
+            if _result_messages:
+                raise DbtRuntimeError(msg=_result.message)
+
+        raise DbtRuntimeError(msg=f"DBT execution failed!")
 
 
 class OpenDbtProject(OpenDbtLogger):
@@ -76,6 +81,32 @@ class OpenDbtProject(OpenDbtLogger):
         self.profiles_dir: Path = profiles_dir
         self.target: str = target if target else self.DEFAULT_TARGET
         self.args = args if args else []
+        self._project: PartialProject = None
+
+    @property
+    def project(self) -> PartialProject:
+        if not self._project:
+            self._project = PartialProject.from_project_root(project_root=self.project_dir.as_posix(),
+                                                             verify_version=True)
+
+        return self._project
+
+    @property
+    def project_dict(self) -> dict:
+        return self.project.project_dict
+
+    @property
+    def project_vars(self) -> dict:
+        """
+        :return: dict: Variables defined in the `dbt_project.yml` file, `vars`.
+                Note:
+                    This method only retrieves global project variables specified within the `dbt_project.yml` file.
+                    Variables passed via command-line arguments are not included in the returned dictionary.
+        """
+        if 'vars' in self.project_dict:
+            return self.project_dict['vars']
+        else:
+            return {}
 
     def run(self, command: str = "build", target: str = None, args: list = None, use_subprocess: bool = False,
             write_json: bool = False) -> dbtRunnerResult:
