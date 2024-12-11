@@ -14,7 +14,8 @@ class TestOpenDbtProject(TestCase):
 
     def test_run_run(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR)
-        dp.run(command="run", args=['--select', 'my_first_dbt_model+'], use_subprocess=True)
+        dp.run(command="run", args=['--select', 'my_first_dbt_model+', "--exclude", "my_failing_dbt_model"],
+               use_subprocess=True)
 
     def test_project_attributes(self):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR)
