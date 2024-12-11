@@ -29,6 +29,7 @@ adapter and providing jinja context with further adapter/python methods.
 - Customized dbt Docs: Replace the default dbt documentation page with your own custom index.html file.
 - Run end to end ETL pipeline with dbt
   using [dlt](https://dlthub.com/) [integration](https://github.com/memiiso/opendbt/issues/40)
+- Register dbt callbacks within a dbt project to trigger custom actions or alerts based on selected dbt events.
 
 For detailed examples, see: [examples](docs/EXAMPLES.md).
 

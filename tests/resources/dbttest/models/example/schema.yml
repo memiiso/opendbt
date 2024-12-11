@@ -7,9 +7,17 @@ models:
     columns:
       - name: id
         description: "The primary key for this table"
-        data_tests:
-          - unique
-          - not_null
+        tests:
+          - unique:
+              config:
+                severity: error
+                error_if: ">1000"
+                warn_if: ">0"
+          - not_null:
+              config:
+                severity: error
+                error_if: ">1000"
+                warn_if: ">0"
 
   - name: my_second_dbt_model
     description: "A starter dbt model"

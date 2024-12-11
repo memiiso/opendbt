@@ -1,4 +1,5 @@
 import importlib
+import logging
 import sys
 import tempfile
 from multiprocessing.context import SpawnContext
@@ -83,3 +84,27 @@ class DuckDBAdapterTestingOnlyDbt18(DuckDBAdapter):
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
         super().__init__(config=config, mp_context=mp_context)
         raise Exception("Custom user defined test adapter activated, test exception")
+
+
+def email_dbt_test_callback(event: "EventMsg"):
+    if event.info.name == "LogTestResult" and event.info.level in ["warn", "error"]:
+        logging.getLogger('dbtcallbacks').warning("DBT callback `email_dbt_test_callback` called!")
+        email_subject = f"[DBT] test {event.info.level} raised"
+        email_html_content = f"""Following test raised {event.info.level}!
+dbt msg: {event.info.msg}
+dbt test: {event.data.name}
+dbt node_relation: {event.data.node_info.node_relation}
+--------------- full data ---------------
+dbt data: {event.data}
+"""
+        try:
+            # send email alert using airflow
+            from airflow.utils.email import send_email
+            send_email(
+                subject=email_subject,
+                to="my-slack-notification-channel@slack.com",
+                html_content=email_html_content
+            )
+        except Exception as _:
+            # Used by unittest, expecting airflow error
+            logging.getLogger('dbtcallbacks').error("Airflow send_email failed! this is expected for unit testing!")
