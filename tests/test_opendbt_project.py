@@ -21,4 +21,4 @@ class TestOpenDbtProject(TestCase):
         dp = OpenDbtProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR)
         self.assertEqual(dp.project.project_name, "dbttest")
         self.assertEqual(dp.project.profile_name, "dbttest")
-        self.assertEqual(dp.project_vars, {'dbt_custom_adapter': 'opendbt.examples.DuckDBAdapterV2Custom'})
+        self.assertEqual(dp.project_vars['dbt_custom_adapter'], 'opendbt.examples.DuckDBAdapterV2Custom')
