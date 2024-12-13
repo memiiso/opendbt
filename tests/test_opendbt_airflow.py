@@ -4,7 +4,7 @@ from unittest import TestCase
 from airflow import DAG
 from airflow.utils.dates import days_ago
 
-from opendbt.airflow import OpenDbtAirflowProject
+from opendbt.airflow import OpenDbtAirflowProject, OpenDbtExecutorOperator
 
 
 class TestOpenDbtProject(TestCase):
@@ -32,6 +32,8 @@ class TestOpenDbtProject(TestCase):
                 # don't run the model we created to fail
                 if 'my_failing_dbt_model' in j.task_id:
                     continue
-                # run all dbt tasks trough airflow operator
-                j.execute({})
 
+                if isinstance(j, OpenDbtExecutorOperator):
+                    # skip dbt tests which are triggering callbacks
+                    j.command = "run" if j.command == "build" else j.command
+                j.execute({})

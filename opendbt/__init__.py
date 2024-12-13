@@ -88,11 +88,11 @@ class OpenDbtCli:
         :param callbacks:
         :return: The result of the dbt run.
         """
-        run_callbacks = self.project_callbacks + callbacks if callbacks else []
+        run_callbacks = self.project_callbacks + callbacks if callbacks else self.project_callbacks
         run_args = args if args else []
         if "--project-dir" not in run_args:
             run_args += ["--project-dir", self.project_dir.as_posix()]
-        return self.run(args=args, callbacks=run_callbacks)
+        return self.run(args=run_args, callbacks=run_callbacks)
 
     @staticmethod
     def run(args: list, callbacks: list = None) -> dbtRunnerResult:
