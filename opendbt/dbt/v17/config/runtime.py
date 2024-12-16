@@ -3,13 +3,19 @@ from pathlib import Path
 from typing import Mapping
 
 from dbt.config import RuntimeConfig
-from dbt.config.project import load_yml_dict
+from dbt.config.project import path_exists, _load_yaml
 from dbt.constants import DEPENDENCIES_FILE_NAME
 from dbt.exceptions import (
     DbtProjectError, NonUniquePackageNameError,
 )
 from typing_extensions import override
 
+
+def load_yml_dict(file_path):
+    ret = {}
+    if path_exists(file_path):
+        ret = _load_yaml(file_path) or {}
+    return ret
 
 # pylint: disable=too-many-ancestors
 @dataclass
