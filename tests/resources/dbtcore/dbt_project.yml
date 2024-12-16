@@ -4,16 +4,15 @@ version: '1.0.0'
 profile: 'dbtcore'
 
 macro-paths: [ "macros", "../../../opendbt/macros/" ]
-snapshot-paths: [ "snapshots" ]
 docs-paths: [ "../../../opendbt/docs/" ]
 
-clean-targets: # directories to be removed by `dbt clean`
+clean-targets:
   - "target"
   - "dbt_packages"
+  - "logs"
 
 models:
   dbtcore:
-    # Config indicated by + and applies to all files under models/example/
     example:
       +materialized: view
 

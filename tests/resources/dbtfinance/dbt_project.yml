@@ -7,3 +7,4 @@ profile: 'dbtfinance'
 clean-targets:
   - "target"
   - "dbt_packages"
+  - "logs"

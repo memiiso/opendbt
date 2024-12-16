@@ -28,8 +28,13 @@ adapter and providing jinja context with further adapter/python methods.
   UI page.
 - Customized dbt Docs: Replace the default dbt documentation page with your own custom index.html file.
 - Run end to end ETL pipeline with dbt
-  using [dlt](https://dlthub.com/) [integration](https://github.com/memiiso/opendbt/issues/40)
-- Register dbt callbacks within a dbt project to trigger custom actions or alerts based on selected dbt events.
+  using [dlt extract and load](https://dlthub.com/) [integration](https://github.com/memiiso/opendbt/issues/40)
+- Register [dbt callbacks](https://docs.getdbt.com/reference/programmatic-invocations#registering-callbacks) within a
+  dbt project to trigger custom actions or alerts based on selected dbt events.
+- Use multi project dbt-mesh setup,
+  using [cross-project references](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies#how-to-write-cross-project-ref).
+  ex: `{{ ref('jaffle_finance', 'monthly_revenue') }}`
+  - This feature was only available in "dbt Cloud Enterprise" so far.
 
 For detailed examples, see: [examples](docs/EXAMPLES.md).
 

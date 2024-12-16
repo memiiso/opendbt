@@ -41,5 +41,5 @@ class TestOpenDbtCli(BaseDbtTest):
     def test_cli_run_cross_project_ref_models(self):
         dpf = OpenDbtCli(project_dir=self.DBTFINANCE_DIR)
         dpc = OpenDbtCli(project_dir=self.DBTCORE_DIR)
-        dpc.invoke(args=['run', '--select', 'my_core_table1', "--profiles-dir", dpc.project_dir.as_posix()])
         dpf.invoke(args=['run', '--select', 'my_cross_project_ref_model', "--profiles-dir", dpf.project_dir.as_posix()])
+        dpc.invoke(args=['run', '--select', 'my_core_table1', "--profiles-dir", dpc.project_dir.as_posix()])
