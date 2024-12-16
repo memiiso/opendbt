@@ -45,7 +45,6 @@ class OpenDbtRuntimeConfig(RuntimeConfig):
 
             # additionally load `projects` defined in `dependencies.yml`
             for project_name, project in self.load_dependence_projects():
-                print(f"WARN: loading:{project_name} , project:{project}")
                 if project_name in self.dependencies:
                     raise NonUniquePackageNameError(project_name)
                 self.dependencies[project_name] = project

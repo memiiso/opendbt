@@ -9,6 +9,7 @@ from opendbt.dbt import patch_dbt
 patch_dbt()
 from opendbt.utils import Utils
 ######################
+
 from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.config import PartialProject
@@ -105,7 +106,6 @@ class OpenDbtCli:
         :return: The result of the dbt run.
         """
         callbacks = callbacks if callbacks else []
-        patch_dbt()
         # https://docs.getdbt.com/reference/programmatic-invocations
         dbtcr = DbtCliRunner(callbacks=callbacks)
         result: dbtRunnerResult = dbtcr.invoke(args)
