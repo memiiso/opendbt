@@ -26,7 +26,7 @@ with DAG(
     start = EmptyOperator(task_id="start")
     end = EmptyOperator(task_id="end")
 
-    DBT_PROJ_DIR = Path("/opt/dbttest")
+    DBT_PROJ_DIR = Path("/opt/dbtcore")
 
     p = OpenDbtAirflowProject(project_dir=DBT_PROJ_DIR, profiles_dir=DBT_PROJ_DIR, target='dev')
     p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, include_singular_tests=True, include_dbt_seeds=True)

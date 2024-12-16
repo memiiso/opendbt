@@ -1,4 +1,4 @@
-dbttest:
+dbtcore:
   outputs:
     dev:
       type: duckdb

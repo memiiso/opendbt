@@ -4,9 +4,11 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/tests/resources/dbttest/logs" />
-      <excludeFolder url="file://$MODULE_DIR$/tests/resources/dbttest/target" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/opendbt.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/tests/resources/dbtcore/logs" />
+      <excludeFolder url="file://$MODULE_DIR$/tests/resources/dbtcore/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -1,15 +1,11 @@
-from pathlib import Path
-from unittest import TestCase
-
 from airflow import DAG
 from airflow.utils.dates import days_ago
 
+from base_dbt_test import BaseDbtTest
 from opendbt.airflow import OpenDbtAirflowProject, OpenDbtExecutorOperator
 
 
-class TestOpenDbtProject(TestCase):
-    RESOURCES_DIR = Path(__file__).parent.joinpath("resources")
-    DBTTEST_DIR = RESOURCES_DIR.joinpath("dbttest")
+class TestOpenDbtProject(BaseDbtTest):
 
     def get_dag(self):
         return DAG(
@@ -23,7 +19,7 @@ class TestOpenDbtProject(TestCase):
     def test_run_dbt_as_airflow_task(self):
         with self.get_dag() as dag:
             # load dbt jobs to airflow dag
-            p = OpenDbtAirflowProject(project_dir=self.DBTTEST_DIR, profiles_dir=self.DBTTEST_DIR, target='dev')
+            p = OpenDbtAirflowProject(project_dir=self.DBTCORE_DIR, profiles_dir=self.DBTCORE_DIR, target='dev')
             p.load_dbt_tasks(dag=dag,
                              include_singular_tests=True,
                              include_dbt_seeds=True)
