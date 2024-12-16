@@ -1,0 +1,9 @@
+name: 'dbtfinance'
+version: '1.0.0'
+
+profile: 'dbtfinance'
+
+# directories to be removed by `dbt clean`
+clean-targets:
+  - "target"
+  - "dbt_packages"

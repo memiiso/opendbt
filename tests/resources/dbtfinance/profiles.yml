@@ -1,4 +1,4 @@
-dbtcore:
+dbtfinance:
   outputs:
     dev:
       type: duckdb

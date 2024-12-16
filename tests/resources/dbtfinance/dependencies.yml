@@ -1,0 +1,7 @@
+#packages:
+#  - package: dbt-labs/dbt_utils
+#    version: 1.1.1
+
+# case-sensitive and matches the 'name' in the 'dbt_project.yml'
+projects:
+  - name: dbtcore
