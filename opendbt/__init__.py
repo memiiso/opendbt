@@ -4,7 +4,8 @@ from opendbt.dbt import patch_dbt
 patch_dbt()
 ######################
 from opendbt.utils import Utils
-######################import logging
+######################
+import logging
 import os
 import sys
 from pathlib import Path
