@@ -1,4 +1,5 @@
 import dbt
+from dbt import version
 from packaging.version import Version
 
 
@@ -6,7 +7,7 @@ def patch_dbt():
     # ================================================================================================================
     # Monkey Patching! Override dbt lib code with new one
     # ================================================================================================================
-    dbt_version = Version(dbt.version.get_installed_version().to_version_string(skip_matcher=True))
+    dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
     if Version("1.6.0") <= dbt_version < Version("1.8.0"):
         from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
         dbt.task.generate.GenerateTask = OpenDbtGenerateTask
