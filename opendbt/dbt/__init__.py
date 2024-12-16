@@ -9,6 +9,8 @@ def patch_dbt():
     # ================================================================================================================
     dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
     if Version("1.6.0") <= dbt_version < Version("1.8.0"):
+        from opendbt.dbt.v17.config.runtime import OpenDbtRuntimeConfig
+        dbt.config.RuntimeConfig = OpenDbtRuntimeConfig
         from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
         dbt.task.generate.GenerateTask = OpenDbtGenerateTask
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
@@ -16,6 +18,8 @@ def patch_dbt():
         from opendbt.dbt.v17.task.run import ModelRunner
         dbt.task.run.ModelRunner = ModelRunner
     elif Version("1.8.0") <= dbt_version < Version("1.10.0"):
+        from opendbt.dbt.v18.config.runtime import OpenDbtRuntimeConfig
+        dbt.config.RuntimeConfig = OpenDbtRuntimeConfig
         from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
         dbt.task.docs.generate.GenerateTask = OpenDbtGenerateTask
         from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
