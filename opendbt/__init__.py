@@ -1,16 +1,18 @@
+import logging
+import os
+import sys
+from pathlib import Path
+
+######################
+from dbt.cli.main import dbtRunner as DbtCliRunner
+
 ######################
 from opendbt.dbt import patch_dbt
 
 patch_dbt()
 ######################
 from opendbt.utils import Utils
-######################
-import logging
-import os
-import sys
-from pathlib import Path
 
-from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.config import PartialProject
 from dbt.contracts.graph.manifest import Manifest
