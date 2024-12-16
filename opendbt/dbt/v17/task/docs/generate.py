@@ -20,5 +20,6 @@ class OpenDbtGenerateTask(GenerateTask):
 
     def run(self):
         # Call the original dbt run method
-        super().run()
+        result = super().run()
         self.deploy_user_index_html()
+        return result

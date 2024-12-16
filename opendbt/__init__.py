@@ -4,15 +4,13 @@ import sys
 from pathlib import Path
 
 ######################
-from dbt.cli.main import dbtRunner as DbtCliRunner
-
-######################
 from opendbt.dbt import patch_dbt
 
 patch_dbt()
-######################
 from opendbt.utils import Utils
+######################
 
+from dbt.cli.main import dbtRunner as DbtCliRunner
 from dbt.cli.main import dbtRunnerResult
 from dbt.config import PartialProject
 from dbt.contracts.graph.manifest import Manifest
@@ -39,8 +37,9 @@ class OpenDbtLogger:
 
 class OpenDbtCli:
 
-    def __init__(self, project_dir: Path, callbacks: list = None):
+    def __init__(self, project_dir: Path, profiles_dir: Path = None, callbacks: list = None):
         self.project_dir: Path = Path(get_nearest_project_dir(project_dir.as_posix()))
+        self.profiles_dir: Path = profiles_dir
         self._project: PartialProject = None
         self._user_callbacks = callbacks if callbacks else []
         self._project_callbacks = None
@@ -93,6 +92,8 @@ class OpenDbtCli:
         run_args = args if args else []
         if "--project-dir" not in run_args:
             run_args += ["--project-dir", self.project_dir.as_posix()]
+        if "--profiles-dir" not in run_args and self.profiles_dir:
+            run_args += ["--profiles-dir", self.profiles_dir.as_posix()]
         return self.run(args=run_args, callbacks=run_callbacks)
 
     @staticmethod
@@ -156,7 +157,7 @@ class OpenDbtProject(OpenDbtLogger):
         self.profiles_dir: Path = profiles_dir
         self.target: str = target if target else self.DEFAULT_TARGET
         self.args = args if args else []
-        self.cli: OpenDbtCli = OpenDbtCli(project_dir=self.project_dir)
+        self.cli: OpenDbtCli = OpenDbtCli(project_dir=self.project_dir, profiles_dir=self.profiles_dir)
 
     @property
     def project(self) -> PartialProject:
