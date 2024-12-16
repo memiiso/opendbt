@@ -15,8 +15,8 @@ services:
       - ./airflow/airflow.cfg:/opt/airflow/airflow.cfg
       - ./dags:/opt/airflow/dags:rw
       - ./plugins:/opt/airflow/plugins:rw
-      - ./../dbttest:/opt/dbttest:rw
-      - ./../../../opendbt/macros:/opt/dbttest/macros:rw
+      - ./../dbtcore:/opt/dbtcore:rw
+      - ./../../../opendbt/macros:/opt/dbtcore/macros:rw
     environment:
       - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
       - AIRFLOW_ENVIRONMENT=LOCAL
