@@ -14,7 +14,7 @@ class BaseDbtTest(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        dpf = OpenDbtCli(project_dir=BaseDbtTest.DBTFINANCE_DIR)
-        dpc = OpenDbtCli(project_dir=BaseDbtTest.DBTCORE_DIR)
-        dpc.invoke(args=["clean"])
+        dpf = OpenDbtCli(project_dir=BaseDbtTest.DBTFINANCE_DIR, profiles_dir=BaseDbtTest.DBTFINANCE_DIR)
+        dpc = OpenDbtCli(project_dir=BaseDbtTest.DBTCORE_DIR, profiles_dir=BaseDbtTest.DBTCORE_DIR)
+        dpf.invoke(args=["clean"])
         dpc.invoke(args=["clean"])
