@@ -1,0 +1,39 @@
+name: Build and Test DBT Version
+
+on:
+  workflow_call:
+    inputs:
+      dbt-version:
+        required: true
+        type: string
+
+jobs:
+  test-dbt-version:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          dbt-version: ${{ inputs.dbt-version }}
+      - name: Build & Install DBT ${{ inputs.dbt-version }}
+        run: |
+          pip install -q coverage pylint
+          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-version }}.* --force-reinstall --upgrade
+          # FIX for protobuf issue: https://github.com/dbt-labs/dbt-core/issues/9759
+          pip install -q "apache-airflow" "protobuf>=4.25.3,<5.0.0" "opentelemetry-proto<1.28.0" --prefer-binary
+          pip install -q .[test] --prefer-binary
+          python --version
+          python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
+          python -m compileall -f opendbt
+          python -m pylint opendbt
+      - name: Run Tests
+        run: |
+          python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
+          python -m coverage run --source=./tests/ -m unittest discover -s tests/
+          python -m coverage report -m ./opendbt/*.py
