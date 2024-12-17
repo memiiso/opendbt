@@ -16,6 +16,7 @@ services:
       - ./dags:/opt/airflow/dags:rw
       - ./plugins:/opt/airflow/plugins:rw
       - ./../dbtcore:/opt/dbtcore:rw
+      - ./../dbtfinance:/opt/dbtfinance:rw
       - ./../../../opendbt/macros:/opt/dbtcore/macros:rw
     environment:
       - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
