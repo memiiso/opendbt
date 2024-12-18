@@ -21,7 +21,9 @@ adapter and providing jinja context with further adapter/python methods.
 
 - Customize Existing Adapters: Leverage OOP to create custom adapters that extends existing ones. With this user
   could provide more python features to jinja
-- Execute Local Python Code: Use dbt Python models to run local Python code. For example, you could import data from web
+- Execute Local Python Code: Use dbt Python models
+  to [run local Python code](https://medium.com/@ismail-simsek/make-dbt-great-again-ec34f3b661f5). For example, you
+  could import data from web
   APIs directly within your dbt model.
 - Granular Model-Level Orchestration with Airflow: Integrate Airflow for fine-grained control over model execution.
 - Serve dbt Docs in Airflow UI: Create a custom page on the Airflow server that displays dbt documentation as an Airflow
