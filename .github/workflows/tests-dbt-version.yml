@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          dbt-version: ${{ inputs.dbt-version }}
+          cache: 'pip' # caching pip dependencies
       - name: Build & Install DBT ${{ inputs.dbt-version }}
         run: |
           pip install -q coverage pylint
