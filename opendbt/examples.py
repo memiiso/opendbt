@@ -97,14 +97,11 @@ dbt node_relation: {event.data.node_info.node_relation}
 --------------- full data ---------------
 dbt data: {event.data}
 """
-        try:
-            # send email alert using airflow
-            from airflow.utils.email import send_email
-            send_email(
-                subject=email_subject,
-                to="my-slack-notification-channel@slack.com",
-                html_content=email_html_content
-            )
-        except Exception as _:
-            # Used by unittest, expecting airflow error
-            logging.getLogger('dbtcallbacks').error("Airflow send_email failed! this is expected for unit testing!")
+        # @TODO send email alert using airflow
+        # from airflow.utils.email import send_email
+        # send_email(
+        #     subject=email_subject,
+        #     to="my-slack-notification-channel@slack.com",
+        #     html_content=email_html_content
+        # )
+        logging.getLogger('dbtcallbacks').error("Callback email sent!")

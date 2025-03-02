@@ -1,23 +1,12 @@
-import logging
 import os
 import sys
 from pathlib import Path
 
-######################
-from opendbt.dbt import patch_dbt
-
-patch_dbt()
+# IMPORTANT! this will import the overrides, and activates the patches
+# IMPORTANT! `opendbt.dbt` import needs to happen before any `dbt` import
+from opendbt.dbt import *
 from opendbt.logger import OpenDbtLogger
 from opendbt.utils import Utils
-######################
-
-from dbt.cli.main import dbtRunner as DbtCliRunner
-from dbt.cli.main import dbtRunnerResult
-from dbt.config import PartialProject
-from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.results import RunResult
-from dbt.exceptions import DbtRuntimeError
-from dbt.task.base import get_nearest_project_dir
 
 class OpenDbtCli:
 

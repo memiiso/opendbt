@@ -4,7 +4,10 @@ from pathlib import Path
 import click
 from dbt.task.docs.generate import GenerateTask
 
+from opendbt.runtime_patcher import PatchClass
 
+
+@PatchClass(module_name="dbt.task.docs.generate", target_name="GenerateTask")
 class OpenDbtGenerateTask(GenerateTask):
 
     def deploy_user_index_html(self):

@@ -5,14 +5,15 @@ from typing import Mapping
 from dbt.config import RuntimeConfig
 from dbt.config.project import load_yml_dict
 from dbt.constants import DEPENDENCIES_FILE_NAME
-from dbt.exceptions import (
-    DbtProjectError, NonUniquePackageNameError,
-)
+from dbt.exceptions import DbtProjectError, NonUniquePackageNameError
 from typing_extensions import override
 
+from opendbt.runtime_patcher import PatchClass
 
 # pylint: disable=too-many-ancestors
 @dataclass
+@PatchClass(module_name="dbt.config", target_name="RuntimeConfig")
+@PatchClass(module_name="dbt.cli.requires", target_name="RuntimeConfig")
 class OpenDbtRuntimeConfig(RuntimeConfig):
     def load_dependence_projects(self):
         dependencies_yml_dict = load_yml_dict(f"{self.project_root}/{DEPENDENCIES_FILE_NAME}")

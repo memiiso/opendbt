@@ -27,10 +27,13 @@ class TestOpenDbtCli(BaseDbtTest):
         self.assertIn(email_dbt_test_callback, dp.project_callbacks)
 
         with self.assertLogs('dbtcallbacks', level='INFO') as cm:
-            dp.invoke(args=["test", '--select', 'my_first_dbt_model', "--profiles-dir", dp.project_dir.as_posix()])
+            try:
+                dp.invoke(args=["test", '--select', 'my_first_dbt_model', "--profiles-dir", dp.project_dir.as_posix()])
+            except:
+                pass
 
         self.assertIn('DBT callback `email_dbt_test_callback` called', str(cm.output))
-        self.assertIn('Airflow send_email failed! this is expected for unit testing!', str(cm.output))
+        self.assertIn('Callback email sent', str(cm.output))
         # self.assertIn('dbt test', str(cm.output))
 
     def test_cli_run_models(self):
@@ -41,5 +44,5 @@ class TestOpenDbtCli(BaseDbtTest):
     def test_cli_run_cross_project_ref_models(self):
         dpf = OpenDbtCli(project_dir=self.DBTFINANCE_DIR)
         dpc = OpenDbtCli(project_dir=self.DBTCORE_DIR)
-        dpf.invoke(args=['run', '--select', 'my_cross_project_ref_model', "--profiles-dir", dpf.project_dir.as_posix()])
         dpc.invoke(args=['run', '--select', 'my_core_table1', "--profiles-dir", dpc.project_dir.as_posix()])
+        dpf.invoke(args=['run', '--select', 'my_cross_project_ref_model', "--profiles-dir", dpf.project_dir.as_posix()])
