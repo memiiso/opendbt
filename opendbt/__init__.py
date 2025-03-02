@@ -7,6 +7,7 @@ from pathlib import Path
 from opendbt.dbt import patch_dbt
 
 patch_dbt()
+from opendbt.logger import OpenDbtLogger
 from opendbt.utils import Utils
 ######################
 
@@ -17,23 +18,6 @@ from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import RunResult
 from dbt.exceptions import DbtRuntimeError
 from dbt.task.base import get_nearest_project_dir
-
-
-class OpenDbtLogger:
-    _log = None
-
-    @property
-    def log(self) -> logging.Logger:
-        if self._log is None:
-            self._log = logging.getLogger(name="opendbt")
-            if not self._log.hasHandlers():
-                handler = logging.StreamHandler(sys.stdout)
-                formatter = logging.Formatter("[%(asctime)s] {%(filename)s:%(lineno)d} %(levelname)s - %(message)s")
-                handler.setFormatter(formatter)
-                handler.setLevel(logging.INFO)
-                self._log.addHandler(handler)
-        return self._log
-
 
 class OpenDbtCli:
 
