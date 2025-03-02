@@ -6,7 +6,10 @@ from dbt.task import run
 from dbt_common.events.base_types import EventLevel
 from dbt_common.events.functions import fire_event
 
+from opendbt.runtime_patcher import PatchClass
 
+
+@PatchClass(module_name="dbt.task.run", target_name="ModelRunner")
 class ModelRunner(run.ModelRunner):
 
     def print_result_adapter_response(self, result):

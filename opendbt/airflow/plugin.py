@@ -52,7 +52,6 @@ def init_plugins_dbtdocs_page(dbt_docs_dir: Path):
         # static_url_path='/dbtdocsview'
     )
 
-
     class AirflowDbtDocsPlugin(AirflowPlugin):
         name = "DBT Docs Plugin"
         flask_blueprints = [bp]

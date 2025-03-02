@@ -7,9 +7,13 @@ from dbt.events.functions import fire_event
 from dbt.events.types import AdapterRegistered
 from dbt.semver import VersionSpecifier
 
+from opendbt.runtime_patcher import PatchClass
 
+
+@PatchClass(module_name="dbt.adapters.factory", target_name="AdapterContainer")
 class OpenDbtAdapterContainer(factory.AdapterContainer):
     DBT_CUSTOM_ADAPTER_VAR = 'dbt_custom_adapter'
+
     def register_adapter(self, config: 'AdapterRequiredConfig') -> None:
         # ==== CUSTOM CODE ====
         # ==== END CUSTOM CODE ====

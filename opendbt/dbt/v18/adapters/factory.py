@@ -11,9 +11,13 @@ from dbt.adapters.factory import Adapter
 from dbt_common.events.base_types import EventLevel
 from dbt_common.events.functions import fire_event
 
+from opendbt.runtime_patcher import PatchClass
 
+
+@PatchClass(module_name="dbt.adapters.factory", target_name="AdapterContainer")
 class OpenDbtAdapterContainer(factory.AdapterContainer):
     DBT_CUSTOM_ADAPTER_VAR = 'dbt_custom_adapter'
+
     def register_adapter(
             self,
             config: 'AdapterRequiredConfig',

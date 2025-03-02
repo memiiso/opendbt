@@ -1,37 +1,27 @@
-import dbt
 from dbt import version
 from packaging.version import Version
 
+import opendbt.dbt.shared.cli.main
+from opendbt.runtime_patcher import RuntimePatcher
 
-def patch_dbt():
-    # ================================================================================================================
-    # Monkey Patching! Override dbt lib code with new one
-    # ================================================================================================================
-    dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
-    if Version("1.6.0") <= dbt_version < Version("1.8.0"):
-        from opendbt.dbt.v17.config.runtime import OpenDbtRuntimeConfig
-        dbt.config.RuntimeConfig = OpenDbtRuntimeConfig
-        from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
-        dbt.task.generate.GenerateTask = OpenDbtGenerateTask
-        from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
-        dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
-        from opendbt.dbt.v17.task.run import ModelRunner
-        dbt.task.run.ModelRunner = ModelRunner
-    elif Version("1.8.0") <= dbt_version < Version("1.10.0"):
-        from opendbt.dbt.v18.config.runtime import OpenDbtRuntimeConfig
-        dbt.config.RuntimeConfig = OpenDbtRuntimeConfig
-        from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
-        dbt.task.docs.generate.GenerateTask = OpenDbtGenerateTask
-        from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
-        dbt.adapters.factory.FACTORY = OpenDbtAdapterContainer()
-        from opendbt.dbt.v18.task.run import ModelRunner
-        dbt.task.run.ModelRunner = ModelRunner
-    else:
-        raise Exception(
-            f"Unsupported dbt version {dbt_version}, please make sure dbt version is supported/integrated by opendbt")
+dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
+if Version("1.6.0") <= dbt_version < Version("1.8.0"):
+    from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
+    from opendbt.dbt.v17.config.runtime import OpenDbtRuntimeConfig
+    from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
+    from opendbt.dbt.v17.task.run import ModelRunner
+elif Version("1.8.0") <= dbt_version < Version("1.10.0"):
+    from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
+    from opendbt.dbt.v18.config.runtime import OpenDbtRuntimeConfig
+    from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
+    from opendbt.dbt.v18.task.run import ModelRunner
+else:
+    raise Exception(
+        f"Unsupported dbt version {dbt_version}, please make sure dbt version is supported/integrated by opendbt")
 
-    # shared code patches
-    import opendbt.dbt.shared.cli.main
-    dbt.cli.main.sqlfluff = opendbt.dbt.shared.cli.main.sqlfluff
-    dbt.cli.main.sqlfluff_lint = opendbt.dbt.shared.cli.main.sqlfluff_lint
-    dbt.cli.main.sqlfluff_fix = opendbt.dbt.shared.cli.main.sqlfluff_fix
+RuntimePatcher(module_name="dbt.adapters.factory").patch_attribute(attribute_name="FACTORY",
+                                                                   new_value=OpenDbtAdapterContainer())
+# shared code patches
+from opendbt.dbt.shared.cli.main import sqlfluff
+from opendbt.dbt.shared.cli.main import sqlfluff_lint
+from opendbt.dbt.shared.cli.main import sqlfluff_fix

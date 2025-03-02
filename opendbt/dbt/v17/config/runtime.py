@@ -10,6 +10,8 @@ from dbt.exceptions import (
 )
 from typing_extensions import override
 
+from opendbt.runtime_patcher import PatchClass
+
 
 def load_yml_dict(file_path):
     ret = {}
@@ -17,8 +19,10 @@ def load_yml_dict(file_path):
         ret = _load_yaml(file_path) or {}
     return ret
 
+
 # pylint: disable=too-many-ancestors
 @dataclass
+@PatchClass(module_name="dbt.config", target_name="RuntimeConfig")
 class OpenDbtRuntimeConfig(RuntimeConfig):
     def load_dependence_projects(self):
         dependencies_yml_dict = load_yml_dict(f"{self.project_root}/{DEPENDENCIES_FILE_NAME}")

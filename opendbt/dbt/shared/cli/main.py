@@ -3,12 +3,14 @@ from dbt.cli import requires, params as p
 from dbt.cli.main import global_flags, cli
 
 from opendbt.dbt.shared.task.sqlfluff import SqlFluffTasks
+from opendbt.runtime_patcher import PatchFunction
 
 
 # dbt docs
 @cli.group()
 @click.pass_context
 @global_flags
+@PatchFunction(module_name="dbt.cli.main", target_name="sqlfluff")
 def sqlfluff(ctx, **kwargs):
     """Generate or serve the documentation website for your project"""
 
@@ -45,6 +47,7 @@ def sqlfluff(ctx, **kwargs):
 @requires.project
 @requires.runtime_config
 @requires.manifest(write=False)
+@PatchFunction(module_name="dbt.cli.main", target_name="sqlfluff_lint")
 def sqlfluff_lint(ctx, **kwargs):
     """Generate the documentation website for your project"""
     task = SqlFluffTasks(
@@ -90,6 +93,7 @@ def sqlfluff_lint(ctx, **kwargs):
 @requires.project
 @requires.runtime_config
 @requires.manifest(write=False)
+@PatchFunction(module_name="dbt.cli.main", target_name="sqlfluff_lint")
 def sqlfluff_fix(ctx, **kwargs):
     """Generate the documentation website for your project"""
     task = SqlFluffTasks(

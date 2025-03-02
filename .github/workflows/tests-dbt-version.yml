@@ -28,6 +28,7 @@ jobs:
           # FIX for protobuf issue: https://github.com/dbt-labs/dbt-core/issues/9759
           pip install -q "apache-airflow" "protobuf>=4.25.3,<5.0.0" "opentelemetry-proto<1.28.0" --prefer-binary
           pip install -q .[test] --prefer-binary
+          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-version }}.* --force-reinstall --upgrade
           python --version
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
           python -m compileall -f opendbt
