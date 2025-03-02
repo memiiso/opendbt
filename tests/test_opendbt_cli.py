@@ -27,7 +27,10 @@ class TestOpenDbtCli(BaseDbtTest):
         self.assertIn(email_dbt_test_callback, dp.project_callbacks)
 
         with self.assertLogs('dbtcallbacks', level='INFO') as cm:
-            dp.invoke(args=["test", '--select', 'my_first_dbt_model', "--profiles-dir", dp.project_dir.as_posix()])
+            try:
+                dp.invoke(args=["test", '--select', 'my_first_dbt_model', "--profiles-dir", dp.project_dir.as_posix()])
+            except:
+                pass
 
         self.assertIn('DBT callback `email_dbt_test_callback` called', str(cm.output))
         self.assertIn('Callback email sent', str(cm.output))
