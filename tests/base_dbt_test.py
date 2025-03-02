@@ -23,3 +23,8 @@ class BaseDbtTest(TestCase):
         dpc = OpenDbtCli(project_dir=BaseDbtTest.DBTCORE_DIR, profiles_dir=BaseDbtTest.DBTCORE_DIR)
         dpf.invoke(args=["clean"])
         dpc.invoke(args=["clean"])
+
+    def setUp(self):
+        # Setup actions to be performed before each test
+        BaseDbtTest.PROJECT_ROOT.joinpath("dev.duckdb").unlink(missing_ok=True)
+        BaseDbtTest.RESOURCES_DIR.joinpath("dev.duckdb").unlink(missing_ok=True)
