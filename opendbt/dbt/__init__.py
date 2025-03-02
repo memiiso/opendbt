@@ -35,3 +35,5 @@ try:
     from dbt.contracts.results import RunResult
     from dbt.exceptions import DbtRuntimeError
     from dbt.task.base import get_nearest_project_dir
+except:
+    raise
