@@ -26,6 +26,7 @@ try:
     from opendbt.dbt.shared.cli.main import sqlfluff
     from opendbt.dbt.shared.cli.main import sqlfluff_lint
     from opendbt.dbt.shared.cli.main import sqlfluff_fix
+    from opendbt.dbt.shared.adapters.impl import OpenDbtBaseAdapter
 
     # dbt imports
     from dbt.cli.main import dbtRunner as DbtCliRunner
