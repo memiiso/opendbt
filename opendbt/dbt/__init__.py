@@ -25,3 +25,12 @@ RuntimePatcher(module_name="dbt.adapters.factory").patch_attribute(attribute_nam
 from opendbt.dbt.shared.cli.main import sqlfluff
 from opendbt.dbt.shared.cli.main import sqlfluff_lint
 from opendbt.dbt.shared.cli.main import sqlfluff_fix
+
+# dbt imports
+from dbt.cli.main import dbtRunner as DbtCliRunner
+from dbt.cli.main import dbtRunnerResult
+from dbt.config import PartialProject
+from dbt.contracts.graph.manifest import Manifest
+from dbt.contracts.results import RunResult
+from dbt.exceptions import DbtRuntimeError
+from dbt.task.base import get_nearest_project_dir
