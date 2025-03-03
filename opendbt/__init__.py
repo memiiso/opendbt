@@ -1,21 +1,20 @@
 import os
 import sys
 from pathlib import Path
+from typing import List, Callable, Optional
 
 # IMPORTANT! this will import the overrides, and activates the patches
-# IMPORTANT! `opendbt.dbt` import needs to happen before any `dbt` import
 from opendbt.dbt import *
 from opendbt.logger import OpenDbtLogger
 from opendbt.utils import Utils
 
 class OpenDbtCli:
-
-    def __init__(self, project_dir: Path, profiles_dir: Path = None, callbacks: list = None):
+    def __init__(self, project_dir: Path, profiles_dir: Path = None, callbacks: List[Callable] = None):
         self.project_dir: Path = Path(get_nearest_project_dir(project_dir.as_posix()))
         self.profiles_dir: Path = profiles_dir
-        self._project: PartialProject = None
-        self._user_callbacks = callbacks if callbacks else []
-        self._project_callbacks = None
+        self._project: Optional[PartialProject] = None
+        self._user_callbacks: List[Callable] = callbacks if callbacks else []
+        self._project_callbacks: List[Callable] = []
 
     @property
     def project(self) -> PartialProject:
@@ -37,19 +36,18 @@ class OpenDbtCli:
                     This method only retrieves global project variables specified within the `dbt_project.yml` file.
                     Variables passed via command-line arguments are not included in the returned dictionary.
         """
-        if 'vars' in self.project_dict:
-            return self.project_dict['vars']
+        return self.project_dict.get('vars', {})
 
-        return {}
 
     @property
-    def project_callbacks(self):
+    def project_callbacks(self) -> List[Callable]:
         if not self._project_callbacks:
-            self._project_callbacks = self._user_callbacks
-            if 'dbt_callbacks' in self.project_vars:
-                for _callback_module in str(self.project_vars['dbt_callbacks']).split(','):
-                    _project_callback = Utils.import_module_attribute_by_name(_callback_module)
-                    self._project_callbacks.append(_project_callback)
+            self._project_callbacks = self._user_callbacks[:]
+            dbt_callbacks_str = self.project_vars.get('dbt_callbacks', "")
+            dbt_callbacks_list = [c for c in dbt_callbacks_str.split(',') if c.strip()]
+            for callback_module_name in dbt_callbacks_list:
+                callback_func = Utils.import_module_attribute_by_name(callback_module_name.strip())
+                self._project_callbacks.append(callback_func)
 
         return self._project_callbacks
 
@@ -61,8 +59,8 @@ class OpenDbtCli:
         :param callbacks:
         :return: The result of the dbt run.
         """
-        run_callbacks = self.project_callbacks + callbacks if callbacks else self.project_callbacks
-        run_args = args if args else []
+        run_callbacks = self.project_callbacks + (callbacks if callbacks else self.project_callbacks)
+        run_args = args or []
         if "--project-dir" not in run_args:
             run_args += ["--project-dir", self.project_dir.as_posix()]
         if "--profiles-dir" not in run_args and self.profiles_dir:
@@ -80,8 +78,9 @@ class OpenDbtCli:
         """
         callbacks = callbacks if callbacks else []
         # https://docs.getdbt.com/reference/programmatic-invocations
-        dbtcr = DbtCliRunner(callbacks=callbacks)
-        result: dbtRunnerResult = dbtcr.invoke(args)
+        runner = DbtCliRunner(callbacks=callbacks)
+        result: dbtRunnerResult = runner.invoke(args)
+
         if result.success:
             return result
 
@@ -89,13 +88,13 @@ class OpenDbtCli:
             raise result.exception
 
         # take error message and raise it as exception
-        for _result in result.result:
-            _result: RunResult
-            _result_messages = ""
-            if _result.status == 'error':
-                _result_messages += f"{_result_messages}\n"
-            if _result_messages:
-                raise DbtRuntimeError(msg=_result.message)
+        err_messages = []
+        for res in result.result:
+            if isinstance(res, RunResult) and res.status == 'error':
+                err_messages.append(res.message)
+
+        if err_messages:
+            raise DbtRuntimeError(msg="\n".join(err_messages))
 
         raise DbtRuntimeError(msg=f"DBT execution failed!")
 
@@ -112,8 +111,8 @@ class OpenDbtCli:
 
         raise Exception(f"DBT execution did not return Manifest object. returned:{type(result.result)}")
 
-    def generate_docs(self, args: list = None):
-        _args = ["docs", "generate"] + args if args else []
+    def generate_docs(self, args: List[str] = None):
+        _args = ["docs", "generate"] + (args if args else [])
         self.invoke(args=_args)
 
 
@@ -124,13 +123,13 @@ class OpenDbtProject(OpenDbtLogger):
 
     DEFAULT_TARGET = 'dev'  # development
 
-    def __init__(self, project_dir: Path, target: str = None, profiles_dir: Path = None, args: list = None):
+    def __init__(self, project_dir: Path, target: str = None, profiles_dir: Path = None, args: List[str] = None, callbacks: List[Callable] = None):
         super().__init__()
         self.project_dir: Path = project_dir
         self.profiles_dir: Path = profiles_dir
         self.target: str = target if target else self.DEFAULT_TARGET
-        self.args = args if args else []
-        self.cli: OpenDbtCli = OpenDbtCli(project_dir=self.project_dir, profiles_dir=self.profiles_dir)
+        self.args: List[str] = args if args else []
+        self.cli: OpenDbtCli = OpenDbtCli(project_dir=self.project_dir, profiles_dir=self.profiles_dir, callbacks=callbacks)
 
     @property
     def project(self) -> PartialProject:
@@ -144,9 +143,8 @@ class OpenDbtProject(OpenDbtLogger):
     def project_vars(self) -> dict:
         return self.cli.project_vars
 
-    def run(self, command: str = "build", target: str = None, args: list = None, use_subprocess: bool = False,
-            write_json: bool = False) -> dbtRunnerResult:
-
+    def run(self, command: str = "build", target: str = None, args: List[str] = None, use_subprocess: bool = False,
+            write_json: bool = False) -> Optional[dbtRunnerResult]:
         run_args = args if args else []
         run_args += ["--target", target if target else self.target]
         run_args += ["--project-dir", self.project_dir.as_posix()]
@@ -172,5 +170,5 @@ class OpenDbtProject(OpenDbtLogger):
     def manifest(self, partial_parse=True, no_write_manifest=True) -> Manifest:
         return self.cli.manifest(partial_parse=partial_parse, no_write_manifest=no_write_manifest)
 
-    def generate_docs(self, args: list = None):
+    def generate_docs(self, args: List[str] = None):
         return self.cli.generate_docs(args=args)
