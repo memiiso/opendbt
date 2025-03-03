@@ -12,22 +12,30 @@ from opendbt.runtime_patcher import PatchClass
 class OpenDbtBaseAdapter(BaseAdapter):
 
     def _execute_python_model(self, model_name: str, compiled_code: str, **kwargs):
-        with tempfile.NamedTemporaryFile(suffix=f'.py', delete=True) as model_file:
-            model_file.write(compiled_code.lstrip().encode('utf-8'))
-            model_file.flush()
-            print(f"Created temp py file {model_file.name}")
-            # Load the module spec
-            spec = importlib.util.spec_from_file_location(model_name, model_file.name)
-            # Create a module object
-            module = importlib.util.module_from_spec(spec)
-            # Load the module
-            sys.modules[model_name] = module
-            spec.loader.exec_module(module)
-            dbt_obj = module.dbtObj(None)
-            # Access and call `model` function of the model!
-            # IMPORTANT: here we are passing down duckdb session from the adapter to the model
-            module.model(dbt=dbt_obj, **kwargs)
-            model_file.close()
+        try:
+            with tempfile.NamedTemporaryFile(suffix=f'.py', delete=True) as model_file:
+                try:
+                    model_file.write(compiled_code.lstrip().encode('utf-8'))
+                    model_file.flush()
+                    print(f"Created temp py file {model_file.name}")
+                    # Load the module spec
+                    spec = importlib.util.spec_from_file_location(model_name, model_file.name)
+                    # Create a module object
+                    module = importlib.util.module_from_spec(spec)
+                    # Load the module
+                    sys.modules[model_name] = module
+                    spec.loader.exec_module(module)
+                    dbt_obj = module.dbtObj(None)
+                    # Access and call `model` function of the model!
+                    # IMPORTANT: here we are passing down duckdb session from the adapter to the model
+                    module.model(dbt=dbt_obj, **kwargs)
+                except Exception as e:
+                    raise Exception(
+                        f"Failed to load or execute python model:{model_name} from file {model_file.as_posix()}") from e
+                finally:
+                    model_file.close()
+        except Exception as e:
+            raise Exception(f"Failed to create temp py file for model:{model_name}") from e
 
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):

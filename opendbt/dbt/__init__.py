@@ -5,6 +5,7 @@ import opendbt.dbt.shared.cli.main
 from opendbt.runtime_patcher import RuntimePatcher
 
 try:
+    # IMPORTANT! `opendbt.dbt` import needs to happen before any `dbt` import
     dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
     if Version("1.6.0") <= dbt_version < Version("1.8.0"):
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
