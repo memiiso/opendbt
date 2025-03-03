@@ -104,6 +104,8 @@ class OpenDbtCli:
             args.append("--no-write-json")
 
         result = self.invoke(args=args)
+        if not result.success:
+            raise Exception(f"DBT execution failed. result:{result}")
         if isinstance(result.result, Manifest):
             return result.result
 
