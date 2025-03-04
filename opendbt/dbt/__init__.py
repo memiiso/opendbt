@@ -31,7 +31,7 @@ try:
     # dbt imports
     from dbt.cli.main import dbtRunner as DbtCliRunner
     from dbt.cli.main import dbtRunnerResult
-    from dbt.cli.resolvers import default_profiles_dir
+    from dbt.cli.resolvers import default_profiles_dir, default_project_dir
     from dbt.config import PartialProject
     from dbt.contracts.graph.manifest import Manifest
     from dbt.contracts.results import RunResult

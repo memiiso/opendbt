@@ -1,9 +1,7 @@
 import argparse
 from pathlib import Path
 
-from dbt.cli.resolvers import default_project_dir, default_profiles_dir
-
-from opendbt import OpenDbtCli
+from opendbt import OpenDbtCli, default_project_dir, default_profiles_dir
 
 
 def main():
