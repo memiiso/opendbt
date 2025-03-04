@@ -12,7 +12,7 @@ from opendbt.utils import Utils
 class OpenDbtCli:
     def __init__(self, project_dir: Path, profiles_dir: Optional[Path] = None, callbacks: Optional[List[Callable]] = None):
         self.project_dir: Path = Path(get_nearest_project_dir(project_dir.as_posix()))
-        self.profiles_dir: Optional[Path] = profiles_dir
+        self.profiles_dir: Optional[Path] = profiles_dir if profiles_dir else default_profiles_dir()
         self._project: Optional[PartialProject] = None
         self._user_callbacks: List[Callable] = callbacks if callbacks else []
         self._project_callbacks: List[Callable] = []
