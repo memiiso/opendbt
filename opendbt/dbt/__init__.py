@@ -1,7 +1,6 @@
 from dbt import version
 from packaging.version import Version
 
-import opendbt.dbt.shared.cli.main
 from opendbt.runtime_patcher import RuntimePatcher
 
 try:
@@ -32,6 +31,7 @@ try:
     # dbt imports
     from dbt.cli.main import dbtRunner as DbtCliRunner
     from dbt.cli.main import dbtRunnerResult
+    from dbt.cli.resolvers import default_profiles_dir
     from dbt.config import PartialProject
     from dbt.contracts.graph.manifest import Manifest
     from dbt.contracts.results import RunResult

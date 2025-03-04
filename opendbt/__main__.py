@@ -1,6 +1,7 @@
 import argparse
-import os
 from pathlib import Path
+
+from dbt.cli.resolvers import default_project_dir, default_profiles_dir
 
 from opendbt import OpenDbtCli
 
@@ -9,17 +10,17 @@ def main():
     parser = argparse.ArgumentParser(description="OpenDBT CLI")
     parser.add_argument(
         "--project-dir",
-        default=os.environ.get("DBT_PROJECT_DIR"),
+        default=None,
         help="Path to the dbt project directory. Defaults to the DBT_PROJECT_DIR environment variable or the current working directory.",
     )
     parser.add_argument(
         "--profiles-dir",
-        default=os.environ.get("DBT_PROFILES_DIR"),
+        default=None,
         help="Path to the dbt profiles directory. Defaults to the DBT_PROFILES_DIR environment variable.",
     )
     ns, args = parser.parse_known_args()
-    project_dir = Path(ns.project_dir) if ns.project_dir else Path.cwd()
-    profiles_dir = Path(ns.profiles_dir) if ns.profiles_dir else None
+    project_dir = Path(ns.project_dir) if ns.project_dir else default_project_dir()
+    profiles_dir = Path(ns.profiles_dir) if ns.profiles_dir else default_profiles_dir()
 
     OpenDbtCli(project_dir=project_dir, profiles_dir=profiles_dir).invoke(args=args)
 
