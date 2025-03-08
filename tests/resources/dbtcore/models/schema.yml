@@ -1,0 +1,6 @@
+version: 2
+models:
+  - name: my_core_table1
+    columns:
+      - name: id
+      - name: row_data

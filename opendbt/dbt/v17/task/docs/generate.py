@@ -2,8 +2,9 @@ import shutil
 from pathlib import Path
 
 import click
-from dbt.task.generate import GenerateTask
+from dbt.task.generate import GenerateTask, CATALOG_FILENAME, MANIFEST_FILE_NAME
 
+from opendbt.catalog import OpenDbtCatalog
 from opendbt.runtime_patcher import PatchClass
 
 
@@ -21,8 +22,15 @@ class OpenDbtGenerateTask(GenerateTask):
                 click.echo(f"Using user provided documentation page: {index_html.as_posix()}")
                 return
 
+    def generate_opendbt_catalogl_json(self):
+        catalog_path = Path(self.config.project_target_path).joinpath(CATALOG_FILENAME)
+        manifest_path = Path(self.config.project_target_path).joinpath(MANIFEST_FILE_NAME)
+        catalog = OpenDbtCatalog(manifest_path=manifest_path, catalog_path=catalog_path)
+        catalog.export()
+
     def run(self):
         # Call the original dbt run method
         result = super().run()
         self.deploy_user_index_html()
+        self.generate_opendbt_catalogl_json()
         return result

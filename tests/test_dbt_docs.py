@@ -10,6 +10,8 @@ class TestDbtDocs(BaseDbtTest):
         dp = OpenDbtProject(project_dir=self.DBTCORE_DIR, profiles_dir=self.DBTCORE_DIR)
         # dp.run(command="run")
         dp.run(command="docs", args=['generate'])
+        self.assertTrue(self.DBTCORE_DIR.joinpath('target/catalogl.json').exists())
+
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
         # dp.run(command="run")
         dp.run(command="docs", args=['generate'])
@@ -17,6 +19,7 @@ class TestDbtDocs(BaseDbtTest):
         # new html docs page
         self.assertTrue("tailwindcss" in str(index_html))
         self.assertTrue("vue.global.min.js" in str(index_html))
+        self.assertTrue(self.DBTFINANCE_DIR.joinpath('target/catalogl.json').exists())
 
     @unittest.skip("reason for skipping")
     def test_run_docs_serve(self):

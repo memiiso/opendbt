@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/sql.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css"/>
@@ -280,9 +280,6 @@
             background-color: white;
         }
 
-        /* START Viz.js SVG styles (optional adjustments) */
-
-        /* END Viz.js SVG styles (optional adjustments) */
     </style>
 </head>
 <body class="bg-gray-50">
@@ -302,7 +299,7 @@
                 <div class="flex items-center">
                     <i class="fas fa-database text-blue-500 text-2xl mr-2"></i>
                     <h1 class="text-xl font-bold text-gray-900">
-                        {{ dbtMetadata ? dbtMetadata.project_name : 'DBT' }} Doc
+                        {{ ODBTM.metadata?.project_name ?? 'DBT' }} Doc
                     </h1>
                 </div>
             </div>
@@ -329,14 +326,14 @@
     </header>
 
     <!-- Main Content -->
-    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div class="flex flex-col md:flex-row">
             <!-- Sidebar -->
-            <div class="w-full md:w-96 flex-shrink-0 pr-0 md:pr-6 mb-6 md:mb-0">
+            <div class="w-full md:w-96 flex-shrink-0 pr-0 md:pr-4 mb-6 md:mb-0">
                 <div class="bg-white rounded-lg shadow overflow-hidden">
                     <div class="px-4 py-3 border-b border-gray-200">
                         <h2 class="text-lg font-medium text-gray-900">
-                            {{ dbtMetadata ? dbtMetadata.project_name : 'Project Navigation' }}
+                            {{ ODBTM.metadata?.project_name ?? 'Project Navigation' }}
                         </h2>
                     </div>
                     <div class="p-2 overflow-y-auto overflow-x-auto max-h-[calc(100vh-10rem)]">
@@ -375,7 +372,7 @@
                                             <div :class="expandedNodes.includes(`${database.name}.${schema.name}.models`) ? 'expanded' : 'collapsed'"
                                                  class="tree-content">
                                                 <a :class="{
-                                               'sidebar-link active': selectedItem && selectedItem.unique_id === model.unique_id,
+                                               'sidebar-link active': selectedItem?.unique_id === model.unique_id,
                                                'sidebar-link': true
                                            }"
                                                    :key="model.unique_id"
@@ -399,7 +396,7 @@
                                             <div :class="expandedNodes.includes(`${database.name}.${schema.name}.sources`) ? 'expanded' : 'collapsed'"
                                                  class="tree-content">
                                                 <a :class="{
-                                               'sidebar-link active': selectedItem && selectedItem.unique_id === source.unique_id,
+                                               'sidebar-link active': selectedItem?.unique_id === source.unique_id,
                                                'sidebar-link': true
                                            }"
                                                    :key="source.unique_id"
@@ -438,7 +435,8 @@
                                         <div>
                                             <h3 class="text-sm font-medium" v-html="highlightMatches(result.name)"></h3>
                                             <p class="text-xs text-gray-500 mt-1"
-                                               v-html="highlightMatches(result.description || 'No description available')"></p>
+                                               v-html="highlightMatches(result.description ?? 'No description available')"></p>
+                                            <!-- Use ?? -->
                                         </div>
                                         <span :class="{
                                                 'bg-blue-100 text-blue-800': result.resource_type === 'model',
@@ -475,7 +473,7 @@
                                     <span class="text-xs text-gray-500" v-if="selectedItem.package_name">
                                         Project: {{ selectedItem.package_name }}
                                     </span>
-                                    <span class="text-xs text-gray-500" v-if="selectedItem.config.materialized">
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.config?.materialized"> <!-- Use ?. -->
                                         Materialized as: {{ selectedItem.config.materialized }}
                                     </span>
                                     <span class="text-xs text-gray-500" v-if="selectedItem.language">
@@ -535,7 +533,8 @@
                         <div v-if="activeTab === 'overview'">
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
                             <p class="text-gray-700"
-                               v-html="highlightMatches(selectedItem.description || 'No description available')"></p>
+                               v-html="highlightMatches(selectedItem.description ?? 'No description available')"></p>
+                            <!-- Use ?? -->
                         </div>
 
                         <!-- Columns Tab -->
@@ -563,6 +562,14 @@
                                         </th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                             scope="col">
+                                            Transformation
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            Depends On
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
                                             Tests
                                         </th>
                                     </tr>
@@ -577,22 +584,46 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <!-- Display data_type from computed property -->
-                                            {{ column.data_type || 'N/A' }}
+                                            {{ column.data_type ?? 'N/A' }} <!-- Use ?? -->
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-md">
                                             <!-- Added max-w-md for readability -->
                                             <!-- Display description from computed property -->
                                             <!-- Use v-html carefully -->
-                                            <span v-html="highlightMatches(column.description || '')"></span>
+                                            <span v-html="highlightMatches(column.description ?? '')"></span>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-md">
                                             <!-- Display DB Comment -->
-                                            <span v-html="highlightMatches(column.db_comment || '')"></span>
+                                            <span v-html="highlightMatches(column.db_comment ?? '')"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
+                                            <!-- Display Columns Transformation -->
+                                            <span class="text-gray-400"
+                                                  v-if="!(Array.isArray(column.transformations) && column.transformations.length > 0)">N/A</span>
+                                            <span v-else
+                                                  v-html="highlightMatches(column.transformations.join('<br>'))"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
+                                            <!-- Display Columns Depends On -->
+                                            <span class="text-gray-400"
+                                                  v-if="!(Array.isArray(column.depends_on) && column.depends_on.length > 0)">N/A</span>
+                                            <a
+                                                    :key="`ref-${cdep.column_fqn}`"
+                                                    @click.prevent="navigateToDependencyId(cdep.model_id)"
+                                                    class="dependency-link"
+                                                    href="#"
+                                                    v-for="cdep in column.depends_on"
+                                            >
+                                                <div class="flex items-center">
+                                                    <span>{{ cdep.table_fqn }}.<b>{{ cdep.name }}</b></span>
+                                                </div>
+                                            </a>
+
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <!-- Display tests from computed property -->
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800"
-                                                  v-if="column.data_tests && column.data_tests.length > 0">
+                                                  v-if="column.data_tests?.length > 0"> <!-- Use ?. -->
                                                 {{ column.data_tests }}
                                             </span>
                                             <span class="text-gray-400" v-else>No tests</span>
@@ -799,145 +830,108 @@
     </div>
 </div>
 <script>
-    async function loadDbtFiles(isLoading, dbtMetadata, dbtCatalog, allDbtNodes) {
+    async function loadDbtFiles(isLoading, ODBTM) {
         isLoading.value = true;
         try {
             // Use Promise.all to fetch both files concurrently
-            const [manifestResponse, catalogResponse] = await Promise.all([
+            const [manifestResponse, catalogResponse, cataloglResponse] = await Promise.all([
                 fetch('manifest.json'),
-                fetch('catalog.json')
+                fetch('catalog.json'),
+                fetch('catalogl.json')
             ]);
 
             if (!manifestResponse.ok) {
                 throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
             }
-            const dbtData = await manifestResponse.json();
-            dbtMetadata.value = dbtData.metadata;
+            ODBTM.value = await manifestResponse.json();
 
-            if (!catalogResponse.ok) {
-                console.warn(`Failed to load catalog.json: ${catalogResponse.statusText}. Catalog features might be unavailable.`);
-                dbtCatalog.value = {
-                    metadata: {},
-                    nodes: {},
-                    sources: {},
-                    errors: `Failed to load: ${catalogResponse.statusText}`
-                };
+            let dbtCatalogJson = null;
+            if (cataloglResponse.ok) {
+                dbtCatalogJson = await cataloglResponse.json();
+                console.log("Loading opendbt catalog, including lineage data `catalogl.json`.")
+            } else if (catalogResponse.ok) {
+                dbtCatalogJson = await catalogResponse.json();
             } else {
-                dbtCatalog.value = await catalogResponse.json();
+                console.warn(`Failed to load catalog.json: ${catalogResponse.statusText}. Catalog features might be unavailable.`);
             }
-
-            allDbtNodes.value = getAllDbtNodes(dbtData, dbtCatalog.value);
+            ODBTM.value.allnodes = getAllDbtNodes(ODBTM.value, dbtCatalogJson);
         } catch (error) {
             console.error('Error loading DBT files:', error);
-            // Set default empty structures if loading fails
-            if (!dbtCatalog.value) {
-                dbtCatalog.value = {metadata: {}, nodes: {}, sources: {}, errors: error.message};
-            }
         } finally {
             isLoading.value = false;
         }
     }
 
-     function mergeManifestAndCatalogNodes(manifestNode, catalogNode) {
+    function mergeManifestAndCatalogNodes(manifestNode, catalogNode) {
         if (!manifestNode) {
             return manifestNode;
         }
 
-        catalogNode = catalogNode || {};
-        // Start with the manifest node data
-        const mergedNode = {...manifestNode};
-        mergedNode.columns = mergeManifestAndCatalogColumns(manifestNode.columns || {}, catalogNode.columns || {});
-        if (catalogNode.metadata) {
-            mergedNode.metadata = {...(mergedNode.metadata || {}), ...catalogNode.metadata};
-        }
+        // Ensure catalogNode is at least an empty object if it's null or undefined
+        const safeCatalogNode = catalogNode ?? {};
 
-        if (catalogNode.stats) {
-            mergedNode.stats = {...(mergedNode.stats || {}), ...catalogNode.stats};
-        }
+        // Merge properties from catalogNode into manifestNode.
+        // Properties in safeCatalogNode will overwrite properties in manifestNode if keys clash.
+        const mergedNode = {...manifestNode, ...safeCatalogNode};
+
+        // Special handling for columns needs to be preserved if you still
+        // want the detailed column merging logic from mergeManifestAndCatalogColumns.
+        mergedNode.columns = mergeManifestAndCatalogColumns(manifestNode?.columns, catalogNode?.columns);
 
         return mergedNode;
     }
 
-     function mergeManifestAndCatalogColumns(manifestColumns, catalogColumns) {
-        // ... (Implementation from previous response) ...
-        const merged = {};
-        const mCols = manifestColumns || {};
-        const cCols = catalogColumns || {};
 
-        for (const name in mCols) {
-            const manifestData = mCols[name] || {};
-            const catalogData = cCols[name] || {};
-            merged[name] = {
-                name: name,
-                description: manifestData.description || '',
-                data_tests: manifestData.data_tests || [],
-                data_type: catalogData.type || 'N/A',
-                db_comment: catalogData.comment || '',
-                index: (catalogData.index !== undefined && catalogData.index !== null) ? catalogData.index : Infinity
-            };
-        }
-        for (const name in cCols) {
-            if (!merged[name]) {
-                const catalogData = cCols[name] || {};
-                merged[name] = {
-                    name: name,
-                    description: '',
-                    data_tests: [],
-                    data_type: catalogData.type || 'N/A',
-                    db_comment: catalogData.comment || '',
-                    index: (catalogData.index !== undefined && catalogData.index !== null) ? catalogData.index : Infinity
-                };
+    /**
+     * Merges two objects, starting with manifestData and overriding its properties
+     * with values from catalogData, but only if the catalogData value is not
+     * null, undefined, or an empty string.
+     */
+    function mergeManifestAndCatalogColumns(manifestData, catalogData) {
+        const mData = manifestData ?? {};
+        const cData = catalogData ?? {};
+        const mergedData = {...mData};
+
+        for (const key in cData) {
+            // Ensure the key is an own property of catalogData
+            if (Object.prototype.hasOwnProperty.call(cData, key)) {
+                const catalogValue = cData[key];
+                // Check if the catalogValue is considered "valid" (not null, undefined, or empty string)
+                const isValidValue = catalogValue !== null && catalogValue !== undefined && catalogValue !== '';
+                if (isValidValue) {
+                    // If the value is valid, assign it to the merged object, overriding any existing value
+                    // If 'key' was NOT in mData, this line ADDS it to mergedData.
+                    mergedData[key] = catalogValue;
+                }
             }
         }
-        const mergedArray = Object.values(merged);
+
+        // Convert the merged object (keyed by column name) into an array of column objects
+        const mergedArray = Object.values(mergedData);
         mergedArray.sort((a, b) => {
             if (a.index !== b.index) return a.index - b.index;
             return a.name.localeCompare(b.name);
         });
+
         return mergedArray;
     }
 
-     function getAllDbtNodes(dbtManifestData, dbtCatalogData) {
+    function getAllDbtNodes(dbtManifestData, dbtCatalogData) {
         const allNodes = {};
         if (!dbtManifestData) {
             console.warn("getAllDbtNodes called with no manifest data.");
             return allNodes;
         }
-        const catalogData = dbtCatalogData || {};
-        const parentMap = dbtManifestData.parent_map || {};
-        const childMap = dbtManifestData.child_map || {};
-
-        const getMapKeyofArray = (map, nodeId) => map[nodeId] || [];
-
+        const catalogData = dbtCatalogData ?? {}; 
         for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
-            const catalogNode = catalogData.nodes?.[nodeId] || catalogData.sources?.[nodeId] || {};
-
-            let enrichedNode = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
-
-            // Add dependencies (if the merge function doesn't handle them)
-            enrichedNode = {
-                ...enrichedNode,
-                parent_dependencies: getMapKeyofArray(parentMap, nodeId),
-                child_dependencies: getMapKeyofArray(childMap, nodeId)
-            };
-
-            allNodes[nodeId] = enrichedNode;
+            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {}; 
+            allNodes[nodeId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
         // Process sources
         for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
-            const catalogNode = catalogData.sources?.[sourceId] || {};
-
-            let enrichedNode = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
-
-            // Add dependencies
-            enrichedNode = {
-                ...enrichedNode,
-                parent_dependencies: getMapKeyofArray(parentMap, sourceId),
-                child_dependencies: getMapKeyofArray(childMap, sourceId)
-            };
-
-            allNodes[sourceId] = enrichedNode;
+            const catalogNode = catalogData.sources?.[sourceId] ?? {}; 
+            allNodes[sourceId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
         return allNodes;
@@ -951,9 +945,7 @@
     createApp({
         setup() {
             const isLoading = ref(true);
-            const dbtMetadata = ref({});
-            const dbtCatalog = ref({});
-            const allDbtNodes = ref({});
+            const ODBTM = ref({});
             const activeTab = ref('overview');
             const expandedNodes = ref([]);
             const selectedItem = ref(null);
@@ -967,21 +959,21 @@
             let currentVisNetwork = null; // Store the vis-network instance
 
             onMounted(() => {
-                loadDbtFiles(isLoading, dbtMetadata, dbtCatalog, allDbtNodes);
+                loadDbtFiles(isLoading, ODBTM);
             });
 
             // Create database tree structure
             const databaseTree = computed(() => {
-                if (!allDbtNodes.value) return [];
+                if (!ODBTM.value.allnodes) return [];
                 const databases = {};
-                Object.entries(allDbtNodes.value).forEach(([itemId, item]) => {
+                Object.entries(ODBTM.value.allnodes).forEach(([itemId, item]) => {
                     // If the resource type is not 'model' or 'source', skip this item
                     if (!['model', 'source', 'seed', 'snapshot', 'test'].includes(item.resource_type)) {
                         return; // Go to the next item in the loop
                     }
 
-                    const dbName = item.database || '$database';
-                    const schemaName = item.schema || '$schema';
+                    const dbName = item?.database ?? '$database';
+                    const schemaName = item?.schema ?? '$schema';
 
                     if (!databases[dbName]) {
                         databases[dbName] = {name: dbName, schemas: {}};
@@ -1047,18 +1039,9 @@
 
             const displayColumns = computed(() => {
                 const manifestColumns = selectedItem.value?.columns ?? {};
-                const columnsArray = Object.entries(manifestColumns).map(([name, data]) => {
-                    return {
-                        name: data.name,
-                        description: data.description || '', // Description from schema.yml
-                        data_tests: data.data_tests || [],           // Tests defined in schema.yml
-                        data_type: data.data_type || 'N/A', // data_type might exist if explicitly defined, otherwise 'N/A'
-                        db_comment: '', // DB comment is typically from catalog, so leave empty
-                        // 'index' for sorting is also from catalog, so we'll sort by name
-                    };
+                return Object.entries(manifestColumns).map(([name, data]) => {
+                    return data;
                 });
-
-                return columnsArray;
             });
 
             const selectedItemStats = computed(() => {
@@ -1076,7 +1059,7 @@
             // Generate SQL/Python code for a model
             const getModelCode = (model) => {
                 if (!model) return '';
-                return model.compiled_code || model.raw_code || '';
+                return model?.compiled_code ?? model?.raw_code ?? '';
             };
 
             // Highlight search matches
@@ -1103,36 +1086,21 @@
                 const query = searchQuery.value.toLowerCase();
                 searchResults.value = allItems.value.filter(item => {
                     const nameMatch = item.name.toLowerCase().includes(query);
-                    const descriptionMatch = item.description && item.description.toLowerCase().includes(query);
-
-                    // Check catalog columns as well
-                    let catalogEntry = null;
-                    if (item.resource_type === 'model' && dbtCatalog.value?.nodes?.[item.unique_id]) {
-                        catalogEntry = dbtCatalog.value.nodes[item.unique_id];
-                    } else if (item.resource_type === 'source' && dbtCatalog.value?.sources?.[item.unique_id]) {
-                        catalogEntry = dbtCatalog.value.sources[item.unique_id];
-                    }
-
-                    const catalogColumnMatch = catalogEntry?.columns && Object.entries(catalogEntry.columns).some(([colName, col]) =>
-                        colName.toLowerCase().includes(query) ||
-                        (col.comment && col.comment.toLowerCase().includes(query)) ||
-                        (col.type && col.type.toLowerCase().includes(query))
-                    );
-
+                    const descriptionMatch = item.description?.toLowerCase().includes(query); 
                     // Check manifest columns (already partially done)
                     const manifestColumnMatch = item.columns && Object.entries(item.columns).some(([colName, col]) =>
                         colName.toLowerCase().includes(query) ||
-                        (col.description && col.description.toLowerCase().includes(query))
+                        (col.description?.toLowerCase().includes(query)) 
                     );
 
                     let codeMatch = false;
                     if (item.resource_type === 'model') {
-                        const rawCodeMatch = item.raw_code && item.raw_code.toLowerCase().includes(query);
-                        const compiledCodeMatch = item.compiled_code && item.compiled_code.toLowerCase().includes(query);
+                        const rawCodeMatch = item.raw_code?.toLowerCase().includes(query);
+                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query); 
                         codeMatch = rawCodeMatch || compiledCodeMatch;
                     }
 
-                    return nameMatch || descriptionMatch || manifestColumnMatch || catalogColumnMatch || codeMatch;
+                    return nameMatch || descriptionMatch || manifestColumnMatch || codeMatch;
                 }).map(item => ({ // Add type for styling search results
                     ...item,
                     type: item.resource_type // Ensure type is set for styling
@@ -1152,8 +1120,8 @@
                 searchResults.value = [];
 
                 // Expand the tree to show the selected item
-                const dbName = item.database || '$database';
-                const schemaName = item.schema || '$schema';
+                const dbName = item?.database ?? '$database';
+                const schemaName = item?.schema ?? '$schema';
                 if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
                 if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
                 if (item.resource_type === 'model' && !expandedNodes.value.includes(`${dbName}.${schemaName}.models`)) expandedNodes.value.push(`${dbName}.${schemaName}.models`);
@@ -1174,29 +1142,36 @@
             };
 
             const getDependencies = (item) => {
-                return item.parent_dependencies.map(depId => {
-                    const node = allDbtNodes.value[depId];
+                let parent_dependencies = ODBTM.value.parent_map?.[item.unique_id] ?? [];
+                return parent_dependencies.map(depId => {
+                    const node = ODBTM.value.allnodes?.[depId]; 
                     return node || null;
                 }).filter(Boolean);
             };
 
             // Get all dependents for an item
             const getDependents = (item) => {
-                return item.child_dependencies.map(depId => {
-                    const node = allDbtNodes.value[depId];
+                let child_dependencies = ODBTM.value.child_map?.[item.unique_id] ?? [];
+                return child_dependencies.map(depId => {
+                    const node = ODBTM.value.allnodes?.[depId]; 
                     return node || null;
                 }).filter(Boolean);
             };
 
-            // Navigate to a dependency
-            const navigateToDependency = (dep) => {
-                const item = allItems.value.find(i => i.unique_id === dep.unique_id);
+            // Navigate to a dependency Id
+            const navigateToDependencyId = (depId) => {
+                const item = allItems.value.find(i => i.unique_id === depId);
                 if (item) {
                     selectItem(item);
                     window.scrollTo({top: 0, behavior: 'smooth'});
                 } else {
                     console.warn("Could not find item to navigate to:", dep);
                 }
+            }
+
+            // Navigate to a dependency
+            const navigateToDependency = (dep) => {
+                navigateToDependencyId(dep.unique_id);
             };
 
             const setLineageDepth = (depth) => {
@@ -1221,7 +1196,7 @@
                     if (!visNodes.has(itemId)) {
                         visNodes.set(itemId, {
                             id: itemId,
-                            label: `${node.schema || '?'}.${node.name}`,
+                            label: `${node?.schema ?? '?'}.${node.name}`,
                             title: `Type: ${node.resource_type}\nID: ${itemId}`, // Tooltip
                             group: node.resource_type, // For styling
                             shape: 'box',
@@ -1379,7 +1354,7 @@
                                 // Prevent navigation if double-clicking the center node again
                                 return
                             }
-                            const nodeToNavigate = allDbtNodes.value[clickedNodeId];
+                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId]; 
                             if (nodeToNavigate) {
                                 navigateToDependency(nodeToNavigate);
                             } else {
@@ -1403,6 +1378,20 @@
                     lineageRendering.value = false;
                 }
             };
+
+            const formatDependsOn = (dependsOnArray) => {
+                if (!Array.isArray(dependsOnArray) || dependsOnArray.length === 0) {
+                    return 'N/A'; // Return empty string if no valid dependencies
+
+                }
+                // Map each dependency object to a formatted string
+                return dependsOnArray.map(dep => {
+                    // Use table_fqn and name, provide fallbacks if needed
+                    const tableName = dep.table_fqn ?? 'unknown_table';
+                    const colName = dep.name ?? 'unknown_column';
+                    return `${tableName}.${colName}`; // Format as table.column
+                }).join('<br>');
+            }
 
             // Watchers
             watch([activeTab, selectedItem, lineageMaxDepth], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
@@ -1431,8 +1420,7 @@
 
             return {
                 isLoading,
-                dbtMetadata,
-                dbtCatalog,
+                ODBTM,
                 databaseTree,
                 expandedNodes,
                 selectedItem,
@@ -1453,11 +1441,13 @@
                 selectItem,
                 selectSearchResult,
                 navigateToDependency,
+                navigateToDependencyId,
                 renderTableLineageGraph, // Expose the main render function
                 getDependencies,
                 getDependents,
                 toggleNode,
-                setLineageDepth // Expose depth setter
+                setLineageDepth, // Expose depth setter
+                formatDependsOn
             };
         },
         mounted() {

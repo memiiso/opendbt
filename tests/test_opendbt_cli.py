@@ -28,7 +28,8 @@ class TestOpenDbtCli(BaseDbtTest):
 
         with self.assertLogs('dbtcallbacks', level='INFO') as cm:
             try:
-                dp.invoke(args=["test", '--select', 'my_first_dbt_model', "--profiles-dir", dp.project_dir.as_posix()])
+                dp.invoke(args=["test", '--select', 'my_core_table1 my_first_dbt_model', "--profiles-dir",
+                                dp.project_dir.as_posix()])
             except:
                 pass
 
@@ -38,7 +39,8 @@ class TestOpenDbtCli(BaseDbtTest):
 
     def test_cli_run_models(self):
         dp = OpenDbtCli(project_dir=self.DBTCORE_DIR)
-        dp.invoke(args=['run', '--select', 'my_first_dbt_model+', "--exclude", "my_failing_dbt_model", "--profiles-dir",
+        dp.invoke(args=['run', '--select', 'my_core_table1 my_first_dbt_model+', "--exclude", "my_failing_dbt_model",
+                        "--profiles-dir",
                         dp.project_dir.as_posix()])
 
     def test_cli_run_cross_project_ref_models(self):
