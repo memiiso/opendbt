@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>DBT Documentation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/sql.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css"/>
+    <style>
+        /* Base styles */
+        .model-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-block {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f8f8f8;
+            border-radius: 4px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+        }
+
+        /* Transitions */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .sql-toggle {
+            transition: all 0.3s ease;
+        }
+
+        .sql-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .sql-toggle.expanded .sql-content {
+            max-height: 1000px;
+        }
+
+        /* Search highlight */
+        .search-highlight {
+            background-color: #FEF08A;
+            font-weight: bold;
+        }
+
+        /* Tree navigation */
+        .tree-item {
+            position: relative;
+            padding-left: 1.25rem;
+        }
+
+        .tree-item:before {
+            content: "";
+            position: absolute;
+            left: 0.5rem;
+            top: 1.25rem;
+            height: calc(100% - 1.25rem);
+            border-left: 1px solid #d1d5db;
+        }
+
+        .tree-item:last-child:before {
+            display: none;
+        }
+
+        .tree-toggle {
+            position: absolute;
+            left: 0;
+            top: 0.25rem;
+            width: 1rem;
+            height: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .tree-toggle:after {
+            content: "+";
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .tree-toggle.expanded:after {
+            content: "-";
+        }
+
+        .tree-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .tree-content.collapsed {
+            max-height: 0;
+        }
+
+        /* Sidebar links */
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 4px;
+            color: #4B5563;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .sidebar-link:hover {
+            background-color: #E5E7EB;
+        }
+
+        .sidebar-link.active {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        /* Materialized tags */
+        .materialized-tag {
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .materialized-view {
+            background-color: #E0F2FE;
+            color: #0369A1;
+        }
+
+        .materialized-table {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+
+        .materialized-source {
+            background-color: #F3E8FF;
+            color: #7E22CE;
+        }
+
+        .materialized-executesql {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+
+        /* Dependency links */
+        .dependency-link {
+            display: block;
+            padding: 8px 12px;
+            margin: 2px 0;
+            border-radius: 4px;
+            color: #4B5563;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .dependency-link:hover {
+            background-color: #E5E7EB;
+        }
+
+        .dependency-link.model {
+            border-left: 3px solid #3B82F6;
+        }
+
+        .dependency-link.source {
+            border-left: 3px solid #10B981;
+        }
+
+        .dependency-link.macro {
+            border-left: 3px solid #8B5CF6;
+        }
+
+        /* Lineage styles */
+        .lineage-container {
+            position: relative;
+            overflow: scroll;
+            width: 100%;
+            min-height: 600px;
+            border: 1px solid #E5E7EB;
+            border-radius: 6px;
+            background-color: #f9fafb;
+            display: flex; /* Added for centering SVG */
+            justify-content: center; /* Added for centering SVG */
+            align-items: center; /* Added for centering SVG */
+        }
+
+        .lineage-tabs {
+            display: flex;
+            border-bottom: 1px solid #E5E7EB;
+            margin-bottom: 16px;
+        }
+
+        .lineage-tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-right: 8px;
+        }
+
+        .lineage-tab.active {
+            border-bottom-color: #3B82F6;
+            color: #3B82F6;
+            font-weight: 500;
+        }
+
+        /* Lineage Depth Controls */
+        .lineage-depth-control {
+            padding: 4px 10px;
+            margin-left: 8px;
+            border-radius: 9999px; /* pill shape */
+            font-size: 12px;
+            cursor: pointer;
+            background-color: #e5e7eb; /* gray-200 */
+            color: #4b5563; /* gray-600 */
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .lineage-depth-control:hover {
+            background-color: #d1d5db; /* gray-300 */
+        }
+
+        .lineage-depth-control.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            font-weight: 500;
+        }
+
+        /* Tab styles */
+        .tab-button {
+            padding: 0.5rem 1rem;
+            margin-right: 0.25rem;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 0.375rem 0.375rem 0 0;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6B7280;
+            transition: all 0.2s ease;
+        }
+
+        .tab-button:hover {
+            background-color: #F3F4F6;
+            color: #1F2937;
+        }
+
+        .tab-button.active {
+            background-color: white;
+            border-color: #E5E7EB;
+            color: #3B82F6;
+        }
+
+        .tab-content {
+            padding: 1.5rem;
+            border: 1px solid #E5E7EB;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            background-color: white;
+        }
+
+        /* START Viz.js SVG styles (optional adjustments) */
+
+        /* END Viz.js SVG styles (optional adjustments) */
+    </style>
+</head>
+<body class="bg-gray-50">
+<div id="app">
+    <!-- Loading overlay -->
+    <div class="fixed inset-0 bg-white bg-opacity-75 flex items-center justify-center z-50" v-if="isLoading">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-700">Loading DBT documentation...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm">
+        <div class="max-w-full mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div class="flex items-center space-x-4 mr-4">
+                <div class="flex items-center">
+                    <i class="fas fa-database text-blue-500 text-2xl mr-2"></i>
+                    <h1 class="text-xl font-bold text-gray-900">
+                        {{ dbtMetadata ? dbtMetadata.project_name : 'DBT' }} Doc
+                    </h1>
+                </div>
+            </div>
+            <!-- Search Input Container -->
+            <div class="relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                </div>
+                <input
+                        :disabled="isLoading"
+                        @input="performSearch"
+                        class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Search models, columns..."
+                        type="text"
+                        v-model="searchQuery"
+                >
+                <!-- Clear Search Icon -->
+                <div @click="clearSearch" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                     v-if="searchQuery">
+                    <i class="fas fa-times-circle text-gray-400 hover:text-gray-600"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col md:flex-row">
+            <!-- Sidebar -->
+            <div class="w-full md:w-96 flex-shrink-0 pr-0 md:pr-6 mb-6 md:mb-0">
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">
+                            {{ dbtMetadata ? dbtMetadata.project_name : 'Project Navigation' }}
+                        </h2>
+                    </div>
+                    <div class="p-2 overflow-y-auto overflow-x-auto max-h-[calc(100vh-10rem)]">
+                        <!-- Database Tree -->
+                        <div :key="database.name" class="tree-item" v-for="database in databaseTree">
+                            <div :class="{ 'expanded': expandedNodes.includes(database.name) }"
+                                 @click="toggleNode(database.name)"
+                                 class="flex items-center">
+                                <div class="tree-toggle"></div>
+                                <i class="fas fa-database text-blue-500 mr-2"></i>
+                                <span class="font-medium">{{ database.name }}</span>
+                            </div>
+                            <div :class="expandedNodes.includes(database.name) ? 'expanded' : 'collapsed'"
+                                 class="tree-content">
+                                <!-- Schemas -->
+                                <div :key="schema.name" class="tree-item" v-for="schema in database.schemas">
+                                    <div :class="{ 'expanded': expandedNodes.includes(`${database.name}.${schema.name}`) }"
+                                         @click="toggleNode(`${database.name}.${schema.name}`)"
+                                         class="flex items-center">
+                                        <div class="tree-toggle"></div>
+                                        <i class="fas fa-folder text-yellow-500 mr-2"></i>
+                                        <span class="font-medium">{{ schema.name }}</span>
+                                    </div>
+                                    <div :class="expandedNodes.includes(`${database.name}.${schema.name}`) ? 'expanded' : 'collapsed'"
+                                         class="tree-content">
+                                        <!-- Models -->
+                                        <div class="tree-item" v-if="schema.models.length > 0">
+                                            <div :class="{ 'expanded': expandedNodes.includes(`${database.name}.${schema.name}.models`) }"
+                                                 @click="toggleNode(`${database.name}.${schema.name}.models`)"
+                                                 class="flex items-center">
+                                                <div
+                                                        class="tree-toggle"></div>
+                                                <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                <span class="font-medium">Models</span>
+                                            </div>
+                                            <div :class="expandedNodes.includes(`${database.name}.${schema.name}.models`) ? 'expanded' : 'collapsed'"
+                                                 class="tree-content">
+                                                <a :class="{
+                                               'sidebar-link active': selectedItem && selectedItem.unique_id === model.unique_id,
+                                               'sidebar-link': true
+                                           }"
+                                                   :key="model.unique_id"
+                                                   @click.prevent="selectItem(model)"
+                                                   href="#"
+                                                   v-for="model in schema.models">
+                                                    <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                    <span class="min-w-0 truncate mr-2">{{ model.name }}</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <!-- Sources -->
+                                        <div class="tree-item" v-if="schema.sources.length > 0">
+                                            <div :class="{ 'expanded': expandedNodes.includes(`${database.name}.${schema.name}.sources`) }"
+                                                 @click="toggleNode(`${database.name}.${schema.name}.sources`)"
+                                                 class="flex items-center">
+                                                <div class="tree-toggle"></div>
+                                                <i class="fas fa-database text-green-500 mr-2"></i>
+                                                <span class="font-medium">Sources</span>
+                                            </div>
+                                            <div :class="expandedNodes.includes(`${database.name}.${schema.name}.sources`) ? 'expanded' : 'collapsed'"
+                                                 class="tree-content">
+                                                <a :class="{
+                                               'sidebar-link active': selectedItem && selectedItem.unique_id === source.unique_id,
+                                               'sidebar-link': true
+                                           }"
+                                                   :key="source.unique_id"
+                                                   @click.prevent="selectItem(source)"
+                                                   href="#"
+                                                   v-for="source in schema.sources">
+                                                    <i class="fas fa-database text-green-500 mr-2"></i>
+                                                    <span class="min-w-0 truncate mr-2">{{ source.name }}</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Panel -->
+            <div class="flex-1">
+                <transition name="fade">
+                    <div class="mb-6" v-if="searchResults.length > 0 && searchQuery">
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <div class="px-4 py-3 border-b border-gray-200">
+                                <h2 class="text-lg font-medium text-gray-900">Search Results</h2>
+                            </div>
+                            <div class="divide-y divide-gray-200">
+                                <div
+                                        :key="result.path"
+                                        @click="selectSearchResult(result)"
+                                        class="px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                                        v-for="result in searchResults"
+                                >
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h3 class="text-sm font-medium" v-html="highlightMatches(result.name)"></h3>
+                                            <p class="text-xs text-gray-500 mt-1"
+                                               v-html="highlightMatches(result.description || 'No description available')"></p>
+                                        </div>
+                                        <span :class="{
+                                                'bg-blue-100 text-blue-800': result.resource_type === 'model',
+                                                'bg-green-100 text-green-800': result.resource_type === 'source',
+                                                'bg-purple-100 text-purple-800': result.resource_type === 'macro'
+                                            }"
+                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                        {{ result.resource_type }}
+                                    </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+
+                <div v-if="selectedItem">
+                    <!-- Item Header -->
+                    <div class="bg-white rounded-t-lg shadow px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900">
+                                    <span v-html="selectedItem.database +'.'+ selectedItem.schema+'.'+highlightMatches(selectedItem.name)"></span>
+                                </h2>
+                                <div class="mt-1 flex items-center space-x-2">
+                                    <span :class="{
+                                            'bg-blue-100 text-blue-800': selectedItem.resource_type === 'model',
+                                            'bg-green-100 text-green-800': selectedItem.resource_type === 'source',
+                                            'bg-purple-100 text-purple-800': selectedItem.resource_type === 'macro'
+                                        }"
+                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                        {{ selectedItem.resource_type }}
+                                    </span>
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.package_name">
+                                        Project: {{ selectedItem.package_name }}
+                                    </span>
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.config.materialized">
+                                        Materialized as: {{ selectedItem.config.materialized }}
+                                    </span>
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.language">
+                                        Language: {{ selectedItem.language }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="flex border-b border-gray-200 bg-gray-50 rounded-b-lg shadow mb-4">
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'overview' }]"
+                                @click="activeTab = 'overview'"
+                        >
+                            Overview
+                        </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'columns' }]"
+                                @click="activeTab = 'columns'"
+                                v-if="displayColumns.length > 0"
+                        >
+                            Columns
+                        </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'code' }]"
+                                @click="activeTab = 'code'"
+                                v-if="getModelCode(selectedItem)"
+                        >
+                            {{ selectedItem.language === 'python' ? 'Python' : 'SQL' }}
+                        </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'dependencies' }]"
+                                @click="activeTab = 'dependencies'"
+                                v-if="selectedItem.depends_on || getDependents(selectedItem).length > 0"
+                        >
+                            Dependencies
+                        </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'metadata' }]"
+                                @click="activeTab = 'metadata'"
+                        >
+                            Metadata
+                        </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'lineage' }]"
+                                @click="activeTab = 'lineage'; renderTableLineageGraph()"
+                        >
+                            Lineage
+                        </button>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden p-6">
+                        <!-- Overview Tab -->
+                        <div v-if="activeTab === 'overview'">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
+                            <p class="text-gray-700"
+                               v-html="highlightMatches(selectedItem.description || 'No description available')"></p>
+                        </div>
+
+                        <!-- Columns Tab -->
+                        <div v-if="activeTab === 'columns' && displayColumns.length > 0">
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Columns</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            Name
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            Type
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            Description
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            DB Comment
+                                        </th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            scope="col">
+                                            Tests
+                                        </th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                    <!-- Iterate over the new computed property -->
+                                    <tr :key="column.name" class="hover:bg-gray-50"
+                                        v-for="column in displayColumns">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                            <!-- Use v-html carefully -->
+                                            <span v-html="highlightMatches(column.name)"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <!-- Display data_type from computed property -->
+                                            {{ column.data_type || 'N/A' }}
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md">
+                                            <!-- Added max-w-md for readability -->
+                                            <!-- Display description from computed property -->
+                                            <!-- Use v-html carefully -->
+                                            <span v-html="highlightMatches(column.description || '')"></span>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md">
+                                            <!-- Display DB Comment -->
+                                            <span v-html="highlightMatches(column.db_comment || '')"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <!-- Display tests from computed property -->
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800"
+                                                  v-if="column.data_tests && column.data_tests.length > 0">
+                                                {{ column.data_tests }}
+                                            </span>
+                                            <span class="text-gray-400" v-else>No tests</span>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Code Tab -->
+                        <div v-if="activeTab === 'code' && getModelCode(selectedItem)">
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">
+                                {{ selectedItem.language === 'python' ? 'Python' : 'SQL' }} Definition
+                            </h3>
+                            <pre class="code-block mt-3"><code
+                                    :class="selectedItem.language === 'python' ? 'language-python' : 'language-sql'">{{ getModelCode(selectedItem).trim()
+                                }}</code></pre>
+                        </div>
+
+                        <!-- Dependencies Tab -->
+                        <div v-if="activeTab === 'dependencies' && (selectedItem.depends_on || getDependents(selectedItem).length > 0)">
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Dependencies</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Depends On -->
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-700 mb-2">Depends On</h4>
+                                    <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                        <div v-if="getDependencies(selectedItem).length > 0">
+                                            <a
+                                                    :class="`dependency-link.${dep.resource_type}`"
+                                                    :key="`dep-${dep.resource_type}-${dep.name}`"
+                                                    @click.prevent="navigateToDependency(dep)"
+                                                    class="dependency-link"
+                                                    href="#"
+                                                    v-for="dep in getDependencies(selectedItem)"
+                                            >
+                                                <div class="flex items-center">
+                                                    <i
+                                                            :class="{
+                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
+                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
+                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
+                                                        }"
+                                                            class="mr-2"
+                                                    ></i>
+                                                    <span>{{ dep.name }}</span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="px-4 py-3 text-sm text-gray-500" v-else>
+                                            No dependencies
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Referenced By -->
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-700 mb-2">Referenced By</h4>
+                                    <div class="bg-gray-50 rounded-lg overflow-hidden">
+                                        <div v-if="getDependents(selectedItem).length > 0">
+                                            <a
+                                                    :class="`dependency-link.${dep.resource_type}`"
+                                                    :key="`ref-${dep.resource_type}-${dep.name}`"
+                                                    @click.prevent="navigateToDependency(dep)"
+                                                    class="dependency-link"
+                                                    href="#"
+                                                    v-for="dep in getDependents(selectedItem)"
+                                            >
+                                                <div class="flex items-center">
+                                                    <i
+                                                            :class="{
+                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
+                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
+                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
+                                                        }"
+                                                            class="mr-2"
+                                                    ></i>
+                                                    <span>{{ dep.name }}</span>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="px-4 py-3 text-sm text-gray-500" v-else>
+                                            Not referenced by any objects
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metadata Tab -->
+                        <div v-if="activeTab === 'metadata'">
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Metadata</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.database">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Database</h4>
+                                    <p class="mt-1 text-sm text-gray-900">{{ selectedItem.database }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.schema">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Schema</h4>
+                                    <p class="mt-1 text-sm text-gray-900">{{ selectedItem.schema }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.package_name">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Package</h4>
+                                    <p class="mt-1 text-sm text-gray-900">{{ selectedItem.package_name }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.original_file_path">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">File
+                                        Path</h4>
+                                    <p class="mt-1 text-sm text-gray-900 break-words">{{ selectedItem.original_file_path
+                                        }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.unique_id">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Unique
+                                        ID</h4>
+                                    <p class="mt-1 text-sm text-gray-900 break-words">{{ selectedItem.unique_id }}</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded" v-if="selectedItem.created_at">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created
+                                        At</h4>
+                                    <p class="mt-1 text-sm text-gray-900">
+                                        {{ new Date(selectedItem.created_at * 1000).toLocaleString() }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Section -->
+                            <div class="mt-6" v-if="selectedItemStats && Object.keys(selectedItemStats).length > 0">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">Statistics</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div :key="stat.id" class="bg-gray-50 p-3 rounded"
+                                         v-for="stat in selectedItemStats">
+                                        <h4 :title="stat.description"
+                                            class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            {{ stat.label }}</h4>
+                                        <p class="mt-1 text-sm text-gray-900">{{ stat.value }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6 text-sm text-gray-500" v-else>
+                                No statistics available for this item.
+                            </div>
+                        </div>
+
+                        <!-- Lineage Tab -->
+                        <div v-if="activeTab === 'lineage'">
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center float-right mb-3">
+                                    <div class="flex items-center">
+                                        <span class="text-sm text-gray-600 mr-2">Depth:</span>
+                                        <button
+                                                :class="['lineage-depth-control', { 'active': lineageMaxDepth === 1 }]"
+                                                @click="setLineageDepth(1)">
+                                            1
+                                        </button>
+                                        <button
+                                                :class="['lineage-depth-control', { 'active': lineageMaxDepth === 2 }]"
+                                                @click="setLineageDepth(2)">
+                                            2
+                                        </button>
+                                        <button
+                                                :class="['lineage-depth-control', { 'active': lineageMaxDepth === 3 }]"
+                                                @click="setLineageDepth(3)">
+                                            3
+                                        </button>
+                                        <button
+                                                :class="['lineage-depth-control', { 'active': lineageMaxDepth === Infinity }]"
+                                                @click="setLineageDepth(Infinity)">
+                                            All
+                                        </button>
+                                    </div>
+                                    <!-- END: Lineage Depth Controls -->
+                                </div>
+                            </div>
+
+                            <div class="lineage-container relative" ref="lineageContainer">
+                                <div class="absolute top-0 left-0 w-full h-full" id="lineageGraphContainer"
+                                     ref="lineageGraphContainer"></div>
+                                <!-- SVG will be rendered here by Viz.js -->
+                                <div class="text-center" v-if="lineageRendering">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                                    <p class="text-gray-600 text-sm">Rendering lineage graph...</p>
+                                </div>
+                                <div class="text-center text-red-600" v-if="!lineageRendering && lineageError">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i> Error rendering lineage graph.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg shadow overflow-hidden" v-else-if="!isLoading">
+                    <div class="px-6 py-12 text-center">
+                        <i class="fas fa-book-open text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Welcome to DBT Docs</h3>
+                        <p class="text-gray-500 max-w-md mx-auto">
+                            Select an item from the sidebar to view its documentation, or use the search bar to find
+                            specific models, sources, or macros.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    async function loadDbtFiles(isLoading, dbtMetadata, dbtCatalog, allDbtNodes) {
+        isLoading.value = true;
+        try {
+            // Use Promise.all to fetch both files concurrently
+            const [manifestResponse, catalogResponse] = await Promise.all([
+                fetch('manifest.json'),
+                fetch('catalog.json')
+            ]);
+
+            if (!manifestResponse.ok) {
+                throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
+            }
+            const dbtData = await manifestResponse.json();
+            dbtMetadata.value = dbtData.metadata;
+
+            if (!catalogResponse.ok) {
+                console.warn(`Failed to load catalog.json: ${catalogResponse.statusText}. Catalog features might be unavailable.`);
+                dbtCatalog.value = {
+                    metadata: {},
+                    nodes: {},
+                    sources: {},
+                    errors: `Failed to load: ${catalogResponse.statusText}`
+                };
+            } else {
+                dbtCatalog.value = await catalogResponse.json();
+            }
+
+            allDbtNodes.value = getAllDbtNodes(dbtData, dbtCatalog.value);
+        } catch (error) {
+            console.error('Error loading DBT files:', error);
+            // Set default empty structures if loading fails
+            if (!dbtCatalog.value) {
+                dbtCatalog.value = {metadata: {}, nodes: {}, sources: {}, errors: error.message};
+            }
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
+     function mergeManifestAndCatalogNodes(manifestNode, catalogNode) {
+        if (!manifestNode) {
+            return manifestNode;
+        }
+
+        catalogNode = catalogNode || {};
+        // Start with the manifest node data
+        const mergedNode = {...manifestNode};
+        mergedNode.columns = mergeManifestAndCatalogColumns(manifestNode.columns || {}, catalogNode.columns || {});
+        if (catalogNode.metadata) {
+            mergedNode.metadata = {...(mergedNode.metadata || {}), ...catalogNode.metadata};
+        }
+
+        if (catalogNode.stats) {
+            mergedNode.stats = {...(mergedNode.stats || {}), ...catalogNode.stats};
+        }
+
+        return mergedNode;
+    }
+
+     function mergeManifestAndCatalogColumns(manifestColumns, catalogColumns) {
+        // ... (Implementation from previous response) ...
+        const merged = {};
+        const mCols = manifestColumns || {};
+        const cCols = catalogColumns || {};
+
+        for (const name in mCols) {
+            const manifestData = mCols[name] || {};
+            const catalogData = cCols[name] || {};
+            merged[name] = {
+                name: name,
+                description: manifestData.description || '',
+                data_tests: manifestData.data_tests || [],
+                data_type: catalogData.type || 'N/A',
+                db_comment: catalogData.comment || '',
+                index: (catalogData.index !== undefined && catalogData.index !== null) ? catalogData.index : Infinity
+            };
+        }
+        for (const name in cCols) {
+            if (!merged[name]) {
+                const catalogData = cCols[name] || {};
+                merged[name] = {
+                    name: name,
+                    description: '',
+                    data_tests: [],
+                    data_type: catalogData.type || 'N/A',
+                    db_comment: catalogData.comment || '',
+                    index: (catalogData.index !== undefined && catalogData.index !== null) ? catalogData.index : Infinity
+                };
+            }
+        }
+        const mergedArray = Object.values(merged);
+        mergedArray.sort((a, b) => {
+            if (a.index !== b.index) return a.index - b.index;
+            return a.name.localeCompare(b.name);
+        });
+        return mergedArray;
+    }
+
+     function getAllDbtNodes(dbtManifestData, dbtCatalogData) {
+        const allNodes = {};
+        if (!dbtManifestData) {
+            console.warn("getAllDbtNodes called with no manifest data.");
+            return allNodes;
+        }
+        const catalogData = dbtCatalogData || {};
+        const parentMap = dbtManifestData.parent_map || {};
+        const childMap = dbtManifestData.child_map || {};
+
+        const getMapKeyofArray = (map, nodeId) => map[nodeId] || [];
+
+        for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
+            const catalogNode = catalogData.nodes?.[nodeId] || catalogData.sources?.[nodeId] || {};
+
+            let enrichedNode = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
+
+            // Add dependencies (if the merge function doesn't handle them)
+            enrichedNode = {
+                ...enrichedNode,
+                parent_dependencies: getMapKeyofArray(parentMap, nodeId),
+                child_dependencies: getMapKeyofArray(childMap, nodeId)
+            };
+
+            allNodes[nodeId] = enrichedNode;
+        }
+
+        // Process sources
+        for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
+            const catalogNode = catalogData.sources?.[sourceId] || {};
+
+            let enrichedNode = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
+
+            // Add dependencies
+            enrichedNode = {
+                ...enrichedNode,
+                parent_dependencies: getMapKeyofArray(parentMap, sourceId),
+                child_dependencies: getMapKeyofArray(childMap, sourceId)
+            };
+
+            allNodes[sourceId] = enrichedNode;
+        }
+
+        return allNodes;
+    }
+</script>
+
+<script type="module">
+    const {createApp, ref, computed, onMounted, nextTick, watch} = Vue;
+    // import {loadDbtFiles} from './dbtLoader.js';
+
+    createApp({
+        setup() {
+            const isLoading = ref(true);
+            const dbtMetadata = ref({});
+            const dbtCatalog = ref({});
+            const allDbtNodes = ref({});
+            const activeTab = ref('overview');
+            const expandedNodes = ref([]);
+            const selectedItem = ref(null);
+            const searchQuery = ref('');
+            const searchResults = ref([]);
+            const lineageGraphContainer = ref(null);
+            const lineageContainer = ref(null);
+            const lineageMaxDepth = ref(1);
+            const lineageRendering = ref(false);
+            const lineageError = ref(false);
+            let currentVisNetwork = null; // Store the vis-network instance
+
+            onMounted(() => {
+                loadDbtFiles(isLoading, dbtMetadata, dbtCatalog, allDbtNodes);
+            });
+
+            // Create database tree structure
+            const databaseTree = computed(() => {
+                if (!allDbtNodes.value) return [];
+                const databases = {};
+                Object.entries(allDbtNodes.value).forEach(([itemId, item]) => {
+                    const dbName = item.database || '$database';
+                    const schemaName = item.schema || '$schema';
+
+                    if (!databases[dbName]) {
+                        databases[dbName] = {name: dbName, schemas: {}};
+                    }
+
+                    if (!databases[dbName].schemas[schemaName]) {
+                        databases[dbName].schemas[schemaName] = {
+                            name: schemaName,
+                            models: [],
+                            sources: []
+                        };
+                    }
+
+                    // 7. Add the item to the correct list based on its resource_type
+                    switch (item.resource_type) {
+                        case 'model':
+                            databases[dbName].schemas[schemaName].models.push(item);
+                            break;
+                        case 'source':
+                            databases[dbName].schemas[schemaName].sources.push(item);
+                            break;
+                        // Add cases for 'seed', 'snapshot', 'test', etc., if you want them in the tree
+                        // default:
+                        //     console.log(`Item type ${item.resource_type} not explicitly placed in tree:`, item.name);
+                    }
+                });
+
+                // 8. Convert the intermediate object structure to the final array format
+                //    Includes sorting for better UI presentation
+                return Object.values(databases).map(db => ({
+                    name: db.name,
+                    schemas: Object.values(db.schemas).map(schema => ({
+                        name: schema.name,
+                        // Sort items within each schema alphabetically
+                        models: schema.models.sort((a, b) => a.name.localeCompare(b.name)),
+                        sources: schema.sources.sort((a, b) => a.name.localeCompare(b.name))
+                        // Add other sorted arrays if needed (e.g., seeds, snapshots)
+                    })).sort((a, b) => a.name.localeCompare(b.name)) // Sort schemas alphabetically
+                })).sort((a, b) => a.name.localeCompare(b.name)); // Sort databases alphabetically
+            });
+
+            // Flatten all items for search
+            const allItems = computed(() => {
+                return databaseTree.value.flatMap(db =>
+                    db.schemas.flatMap(schema =>
+                        [...schema.models, ...schema.sources].map(item => ({
+                            ...item,
+                            section: `${db.name}.${schema.name}`,
+                            path: `${db.name}/${schema.name}/${item.name}`
+                        }))
+                    )
+                );
+            });
+
+            const displayColumns = computed(() => {
+                const manifestColumns = selectedItem.value?.columns ?? {};
+                const columnsArray = Object.entries(manifestColumns).map(([name, data]) => {
+                    return {
+                        name: data.name,
+                        description: data.description || '', // Description from schema.yml
+                        data_tests: data.data_tests || [],           // Tests defined in schema.yml
+                        data_type: data.data_type || 'N/A', // data_type might exist if explicitly defined, otherwise 'N/A'
+                        db_comment: '', // DB comment is typically from catalog, so leave empty
+                        // 'index' for sorting is also from catalog, so we'll sort by name
+                    };
+                });
+
+                return columnsArray;
+            });
+
+            const selectedItemStats = computed(() => {
+                const stats = selectedItem.value?.stats ?? {};
+                return Object.values(stats).filter(stat => stat.value)
+            });
+
+            // Toggle node expansion
+            const toggleNode = (nodePath) => {
+                const index = expandedNodes.value.indexOf(nodePath);
+                if (index === -1) expandedNodes.value.push(nodePath);
+                else expandedNodes.value.splice(index, 1);
+            };
+
+            // Generate SQL/Python code for a model
+            const getModelCode = (model) => {
+                if (!model) return '';
+                return model.compiled_code || model.raw_code || '';
+            };
+
+            // Highlight search matches
+            const highlightMatches = (text) => {
+                if (!searchQuery.value || !text) return text;
+                const query = searchQuery.value.toLowerCase();
+                const str = String(text);
+                const index = str.toLowerCase().indexOf(query);
+                if (index >= 0) {
+                    const before = str.substring(0, index);
+                    const match = str.substring(index, index + query.length);
+                    const after = str.substring(index + query.length);
+                    return `${before}<span class="search-highlight">${match}</span>${after}`;
+                }
+                return text;
+            };
+
+            // Perform search
+            const performSearch = () => {
+                if (!searchQuery.value) {
+                    searchResults.value = [];
+                    return;
+                }
+                const query = searchQuery.value.toLowerCase();
+                searchResults.value = allItems.value.filter(item => {
+                    const nameMatch = item.name.toLowerCase().includes(query);
+                    const descriptionMatch = item.description && item.description.toLowerCase().includes(query);
+
+                    // Check catalog columns as well
+                    let catalogEntry = null;
+                    if (item.resource_type === 'model' && dbtCatalog.value?.nodes?.[item.unique_id]) {
+                        catalogEntry = dbtCatalog.value.nodes[item.unique_id];
+                    } else if (item.resource_type === 'source' && dbtCatalog.value?.sources?.[item.unique_id]) {
+                        catalogEntry = dbtCatalog.value.sources[item.unique_id];
+                    }
+
+                    const catalogColumnMatch = catalogEntry?.columns && Object.entries(catalogEntry.columns).some(([colName, col]) =>
+                        colName.toLowerCase().includes(query) ||
+                        (col.comment && col.comment.toLowerCase().includes(query)) ||
+                        (col.type && col.type.toLowerCase().includes(query))
+                    );
+
+                    // Check manifest columns (already partially done)
+                    const manifestColumnMatch = item.columns && Object.entries(item.columns).some(([colName, col]) =>
+                        colName.toLowerCase().includes(query) ||
+                        (col.description && col.description.toLowerCase().includes(query))
+                    );
+
+                    let codeMatch = false;
+                    if (item.resource_type === 'model') {
+                        const rawCodeMatch = item.raw_code && item.raw_code.toLowerCase().includes(query);
+                        const compiledCodeMatch = item.compiled_code && item.compiled_code.toLowerCase().includes(query);
+                        codeMatch = rawCodeMatch || compiledCodeMatch;
+                    }
+
+                    return nameMatch || descriptionMatch || manifestColumnMatch || catalogColumnMatch || codeMatch;
+                }).map(item => ({ // Add type for styling search results
+                    ...item,
+                    type: item.resource_type // Ensure type is set for styling
+                }));
+            };
+
+            // Clear search input and results
+            const clearSearch = () => {
+                searchQuery.value = '';
+                searchResults.value = [];
+            };
+
+            // Select an item from navigation or search
+            const selectItem = (item) => {
+                selectedItem.value = item;
+                searchQuery.value = '';
+                searchResults.value = [];
+
+                // Expand the tree to show the selected item
+                const dbName = item.database || '$database';
+                const schemaName = item.schema || '$schema';
+                if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
+                if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
+                if (item.resource_type === 'model' && !expandedNodes.value.includes(`${dbName}.${schemaName}.models`)) expandedNodes.value.push(`${dbName}.${schemaName}.models`);
+                if (item.resource_type === 'source' && !expandedNodes.value.includes(`${dbName}.${schemaName}.sources`)) expandedNodes.value.push(`${dbName}.${schemaName}.sources`);
+
+                // If lineage tab was active, trigger render
+                if (activeTab.value === 'lineage') {
+                    renderTableLineageGraph();
+                } else if (activeTab.value === 'code') {
+                    nextTick(() => {
+                        hljs.highlightAll();
+                    });
+                }
+            };
+
+            const selectSearchResult = (result) => {
+                selectItem(result); // Use the same logic as selecting from the tree
+            };
+
+            const getDependencies = (item) => {
+                return item.parent_dependencies.map(depId => {
+                    const node = allDbtNodes.value[depId];
+                    return node || null;
+                }).filter(Boolean);
+            };
+
+            // Get all dependents for an item
+            const getDependents = (item) => {
+                return item.child_dependencies.map(depId => {
+                    const node = allDbtNodes.value[depId];
+                    return node || null;
+                }).filter(Boolean);
+            };
+
+            // Navigate to a dependency
+            const navigateToDependency = (dep) => {
+                const item = allItems.value.find(i => i.unique_id === dep.unique_id);
+                if (item) {
+                    selectItem(item);
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                } else {
+                    console.warn("Could not find item to navigate to:", dep);
+                }
+            };
+
+            const setLineageDepth = (depth) => {
+                lineageMaxDepth.value = depth;
+                renderTableLineageGraph();
+            };
+
+            // --- Build data structure for vis-network ---
+            const buildVisNetworkData = () => {
+                const visNodes = new Map();
+                const visEdges = new Set();
+                const centerNodeId = selectedItem.value.unique_id;
+
+                const traverse = (node, currentDepth, isUpstream) => {
+                    if (!node || currentDepth > lineageMaxDepth.value) { // Depth check (>= becomes >)
+                        return;
+                    }
+
+                    const itemId = node.unique_id;
+
+                    // Add node if not already present
+                    if (!visNodes.has(itemId)) {
+                        visNodes.set(itemId, {
+                            id: itemId,
+                            label: `${node.schema || '?'}.${node.name}`,
+                            title: `Type: ${node.resource_type}\nID: ${itemId}`, // Tooltip
+                            group: node.resource_type, // For styling
+                            shape: 'box',
+                            margin: 10,
+                            font: {multi: false}, // Ensure single line label if needed
+                            // Highlight center node later
+                        });
+                    }
+
+                    // Stop traversal if max depth is reached for *this* path
+                    if (currentDepth === lineageMaxDepth.value) {
+                        return;
+                    }
+
+                    const relatedNodes = isUpstream ? getDependencies(node) : getDependents(node);
+
+                    relatedNodes.forEach(relatedNode => {
+                        const relatedNodeId = relatedNode.unique_id;
+                        const edgeId = isUpstream ? `${relatedNodeId}->${itemId}` : `${itemId}->${relatedNodeId}`;
+
+                        // Add edge if not already present
+                        if (!visEdges.has(edgeId)) {
+                            visEdges.add(edgeId);
+                            // Recursively traverse
+                            traverse(relatedNode, currentDepth + 1, isUpstream);
+                        }
+                    });
+                };
+
+                // Start traversal from the center node
+                traverse(selectedItem.value, 0, true); // Upstream
+                traverse(selectedItem.value, 0, false); // Downstream
+
+                // Highlight the center node
+                if (visNodes.has(centerNodeId)) {
+                    const centerNode = visNodes.get(centerNodeId);
+                    centerNode.color = {
+                        border: '#e11d48',
+                        background: '#fecdd3',
+                        highlight: {border: '#be123c', background: '#fda4af'}
+                    }; // Example: Rose color
+                    centerNode.font = {color: '#881337', bold: true};
+                    centerNode.borderWidth = 2;
+                }
+
+                // Convert Set to array for vis.js
+                const edgesArray = Array.from(visEdges).map(edgeId => {
+                    const [from, to] = edgeId.split('->');
+                    return {from, to, arrows: 'to'};
+                });
+
+                return {
+                    nodes: Array.from(visNodes.values()),
+                    edges: edgesArray
+                };
+            };
+
+            const renderTableLineageGraph = async () => {
+                if (!selectedItem.value) {
+                    console.log("Lineage prerequisites not met! No item selected.");
+                    return;
+                }
+                lineageRendering.value = true;
+                lineageError.value = false;
+                await nextTick();
+                try {
+                    const {nodes, edges} = buildVisNetworkData();
+
+                    if (nodes.length === 0) {
+                        console.log("No nodes to render for lineage.");
+                        lineageRendering.value = false;
+                        return;
+                    }
+
+                    const options = {
+                        layout: {
+                            randomSeed: 42,
+                            hierarchical: {
+                                enabled: true,
+                                direction: 'LR', // Left to Right
+                                sortMethod: 'directed', // Follow edge direction
+                                levelSeparation: 400, // Increase spacing between levels
+                                nodeSpacing: 240, // Increase spacing between nodes in a level
+                            }
+                        },
+                        nodes: {
+                            shape: 'box',
+                            margin: 10,
+                            font: {
+                                size: 12,
+                                face: 'sans-serif'
+                            },
+                            borderWidth: 1,
+                        },
+                        edges: {
+                            arrows: 'to',
+                            smooth: {
+                                enabled: true,
+                                type: 'cubicBezier', // Or 'dynamic'
+                                forceDirection: 'horizontal',
+                                roundness: 0.5
+                            },
+                            color: {
+                                color: '#848484',
+                                highlight: '#3b82f6', // Blue-500
+                                hover: '#d1d5db' // Gray-300
+                            }
+                        },
+                        physics: {
+                            enabled: false // Disable physics for hierarchical layout
+                        },
+                        interaction: {
+                            hover: true,
+                            tooltipDelay: 200,
+                            navigationButtons: true, // Add zoom/fit buttons
+                            keyboard: true
+                        },
+                        groups: {
+                            model: {
+                                color: {
+                                    border: '#3B82F6',
+                                    background: '#DBEAFE',
+                                    highlight: {border: '#2563EB', background: '#BFDBFE'}
+                                }, // Blue
+                                font: {color: '#1E40AF'}
+                            },
+                            source: {
+                                color: {
+                                    border: '#10B981',
+                                    background: '#D1FAE5',
+                                    highlight: {border: '#059669', background: '#A7F3D0'}
+                                }, // Green
+                                font: {color: '#065F46'}
+                            },
+                            macro: { // Added just in case
+                                color: {
+                                    border: '#8B5CF6',
+                                    background: '#EDE9FE',
+                                    highlight: {border: '#7C3AED', background: '#DDD6FE'}
+                                }, // Purple
+                                font: {color: '#5B21B6'}
+                            }
+                            // Add other resource_types as needed
+                        }
+                    };
+
+                    // Create the network
+                    currentVisNetwork = new vis.Network(lineageGraphContainer.value, {nodes, edges}, options);
+
+                    // Add double-click listener
+                    currentVisNetwork.on('doubleClick', (params) => {
+                        if (params.nodes.length > 0) {
+                            const clickedNodeId = params.nodes[0];
+                            if (clickedNodeId === selectedItem.value.unique_id) {
+                                // Prevent navigation if double-clicking the center node again
+                                return
+                            }
+                            const nodeToNavigate = allDbtNodes.value[clickedNodeId];
+                            if (nodeToNavigate) {
+                                navigateToDependency(nodeToNavigate);
+                            } else {
+                                console.warn("Could not find node details for ID:", clickedNodeId);
+                            }
+                        }
+                    });
+
+                    // Optional: Fit the graph after rendering
+                    currentVisNetwork.once('stabilizationIterationsDone', () => {
+                        currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
+                    });
+                    // For hierarchical layout, fitting might be immediate
+                    currentVisNetwork.fit();
+
+
+                } catch (error) {
+                    console.error("Error rendering lineage graph with vis-network:", error);
+                    lineageError.value = true;
+                } finally {
+                    lineageRendering.value = false;
+                }
+            };
+
+            // Watchers
+            watch([activeTab, selectedItem, lineageMaxDepth], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
+                if (newActiveTab === 'code' && (newActiveTab !== oldActiveTab || newSelectedItem !== oldSelectedItem)) {
+                    nextTick(() => {
+                        hljs.highlightAll();
+                    });
+                }
+            }, {deep: true});
+
+            // Watch the databaseTree and set the initial value when it's ready
+            watch(databaseTree, (newTree) => {
+                // Only set initial value if the tree is populated and expandedNodes hasn't been set yet
+                if (newTree.length > 0 && newTree[0].schemas.length > 0 && expandedNodes.value.length === 0) {
+                    const firstDatabase = newTree[0].name;
+                    const firstSchema = newTree[0].schemas[0].name;
+                    expandedNodes.value = [ // Assign the array to the .value property
+                        firstDatabase,
+                        `${firstDatabase}.${firstSchema}`,
+                        // Optional: Add these back if you want models/sources expanded initially too
+                        // `${firstDatabase}.${firstSchema}.models`,
+                        // `${firstDatabase}.${firstSchema}.sources`
+                    ];
+                }
+            });
+
+            return {
+                isLoading,
+                dbtMetadata,
+                dbtCatalog,
+                databaseTree,
+                expandedNodes,
+                selectedItem,
+                searchQuery,
+                searchResults,
+                lineageContainer,
+                lineageGraphContainer,
+                lineageMaxDepth,
+                lineageRendering, // expose loading state
+                lineageError, // expose error state
+                activeTab,
+                displayColumns, // Make sure this is returned
+                selectedItemStats, // Make sure this is returned
+                getModelCode,
+                highlightMatches,
+                performSearch,
+                clearSearch,
+                selectItem,
+                selectSearchResult,
+                navigateToDependency,
+                renderTableLineageGraph, // Expose the main render function
+                getDependencies,
+                getDependents,
+                toggleNode,
+                setLineageDepth // Expose depth setter
+            };
+        },
+        mounted() {
+            // Optional: Add resize listener if needed for Viz.js graphs (might not be necessary)
+            // window.addEventListener('resize', () => {
+            //     if (this.activeTab === 'lineage' && this.selectedItem && this.lineageContainer) {
+            //         // Debounce this if you add it back
+            //         this.renderTableLineageGraph();
+            //     }
+            // });
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
