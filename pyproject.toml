@@ -24,7 +24,7 @@ dependencies = [
 ]
 [project.optional-dependencies]
 airflow = ["apache-airflow"]
-test = ["testcontainers>=3.7,<4.11", "apache-airflow", "pylint", "dlt[duckdb]"]
+test = ["testcontainers>=4.10", "apache-airflow", "pylint", "dlt[duckdb]"]
 
 [tool.setuptools]
 include-package-data = true
