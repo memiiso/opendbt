@@ -975,6 +975,11 @@
                 if (!allDbtNodes.value) return [];
                 const databases = {};
                 Object.entries(allDbtNodes.value).forEach(([itemId, item]) => {
+                    // If the resource type is not 'model' or 'source', skip this item
+                    if (!['model', 'source'].includes(item.resource_type)) {
+                        return; // Go to the next item in the loop
+                    }
+
                     const dbName = item.database || '$database';
                     const schemaName = item.schema || '$schema';
 
