@@ -976,7 +976,7 @@
                 const databases = {};
                 Object.entries(allDbtNodes.value).forEach(([itemId, item]) => {
                     // If the resource type is not 'model' or 'source', skip this item
-                    if (!['model', 'source'].includes(item.resource_type)) {
+                    if (!['model', 'source', 'seed', 'snapshot', 'test'].includes(item.resource_type)) {
                         return; // Go to the next item in the loop
                     }
 
@@ -1001,6 +1001,15 @@
                             databases[dbName].schemas[schemaName].models.push(item);
                             break;
                         case 'source':
+                            databases[dbName].schemas[schemaName].sources.push(item);
+                            break;
+                        case 'seed':
+                            databases[dbName].schemas[schemaName].sources.push(item);
+                            break;
+                        case 'snapshot':
+                            databases[dbName].schemas[schemaName].sources.push(item);
+                            break;
+                        case 'test':
                             databases[dbName].schemas[schemaName].sources.push(item);
                             break;
                         // Add cases for 'seed', 'snapshot', 'test', etc., if you want them in the tree
