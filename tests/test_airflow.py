@@ -1,10 +1,9 @@
-import subprocess
+import os
 import unittest
 from pathlib import Path
 from time import sleep
 
 from testcontainers.compose import DockerCompose
-from testcontainers.core.waiting_utils import wait_for_logs
 
 
 @unittest.skip("Manual test")
@@ -19,15 +18,17 @@ class TestAirflowBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        os.chdir(cls.resources_dir.joinpath('airflow').as_posix())
         cls._compose = DockerCompose(cls.resources_dir.joinpath('airflow').as_posix(),
                                      compose_file_name="docker-compose.yaml",
-                                     build=True
+                                     # build=True,
+                                     docker_command_path='podman'
                                      )
         cls._compose.stop()
         cls._compose.start()
-        # cls._compose.wait_for(url="http://localhost:8080/health")
-        wait_for_logs(cls._compose, 'Added Permission menu access on Configurations')
-        wait_for_logs(cls._compose, 'Added user admin')
+        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/home")
+        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/dbtdocs")
+        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/dbtdocs/perf_info.json")
 
     @classmethod
     def tearDownClass(cls):
@@ -39,14 +40,6 @@ class TestAirflowBase(unittest.TestCase):
         if self._compose:
             self._compose.stop()
 
-    def _get_service_port(self, service, port):
-        port_cmd = self._compose.docker_compose_command() + ["port", service, str(port)]
-        output = subprocess.check_output(port_cmd, cwd=self._compose.filepath).decode("utf-8")
-        result = str(output).rstrip().split(":")
-        if len(result) != 2:
-            raise Exception(f"Unexpected service info {output}. expecting `host:1234`")
-        return result[-1]
-
     def test_start_airflow_local_and_wait(self):
         """
         used to deploy the code inside docker airflow locally. UI login is disabled and made public!
@@ -54,7 +47,4 @@ class TestAirflowBase(unittest.TestCase):
         while its running all the code changes are reflected in airflow after short time.
         :return:
         """
-        print(f"http://localhost:{self._get_service_port('airflow', 8080)}/home")
-        print(f"http://localhost:{self._get_service_port('airflow', 8080)}/dbtdocsview")
-
         sleep(99999999)

@@ -19,7 +19,7 @@ class OpenDbtGenerateTask(GenerateTask):
                 # override default dbt provided index.html with user index.html file
                 shutil.copyfile(index_html, target)
                 click.echo(f"Using user provided documentation page: {index_html.as_posix()}")
-                break
+                return
 
     def run(self):
         # Call the original dbt run method

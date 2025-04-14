@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: main
+    schema: main
+    tables:
+      - name: my_executepython_model
+      - name: my_executepython_dlt_model
