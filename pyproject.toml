@@ -20,7 +20,9 @@ classifiers = [
 dependencies = [
     "dbt-duckdb>=1.6",
     "sqlfluff",
-    "sqlfluff-templater-dbt"
+    "sqlfluff-templater-dbt",
+    "sqlglot",
+    "tqdm"
 ]
 [project.optional-dependencies]
 airflow = ["apache-airflow"]

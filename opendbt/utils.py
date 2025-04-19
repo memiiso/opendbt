@@ -28,3 +28,43 @@ class Utils:
             return _adapter_attribute
         except ModuleNotFoundError as mnfe:
             raise Exception(f"Provided module not found, provided: {module_name}") from mnfe
+
+    @staticmethod
+    def merge_dicts(dict1: dict, dict2: dict) -> dict:
+        """
+        Recursively merges dict2 into dict1.
+        Returns:
+            A new dictionary representing the merged result.
+        """
+        merged = dict1.copy()
+
+        for key, value in dict2.items():
+            if key in merged:
+                # Check if both values are dictionary-like (mappings)
+                if isinstance(merged[key], dict) and isinstance(value, dict):
+                    # Both are dicts, recurse
+                    merged[key] = Utils.merge_dicts(merged[key], value)
+                else:
+                    # Not both dicts, value from dict2 overwrites
+                    merged[key] = value
+            else:
+                # Key not in dict1, simply add it
+                merged[key] = value
+
+        return merged
+
+    @staticmethod
+    def lowercase_dict_keys(input_dict: dict, recursive: bool = False):
+        if not isinstance(input_dict, dict):
+            return input_dict
+
+        new_dict = {}
+        for key, value in input_dict.items():
+            if isinstance(value, dict) and recursive:
+                value = Utils.lowercase_dict_keys(value)
+            if isinstance(key, str):
+                key = key.lower()
+
+            new_dict[key] = value
+
+        return new_dict

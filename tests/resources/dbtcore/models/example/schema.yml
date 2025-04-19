@@ -5,6 +5,8 @@ models:
   - name: my_first_dbt_model
     description: "A starter dbt model"
     columns:
+      - name: data_value
+      - name: column_3
       - name: id
         description: "The primary key for this table"
         tests:
@@ -22,7 +24,9 @@ models:
   - name: my_second_dbt_model
     description: "A starter dbt model"
     columns:
-      - name: id
+      - name: data_value1
+      - name: data_value2
+      - name: pk_id
         description: "The primary key for this table"
         data_tests:
           - unique
