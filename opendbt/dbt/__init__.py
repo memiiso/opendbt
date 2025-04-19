@@ -10,7 +10,7 @@ OPENDBT_INDEX_HTML_FILE = Path(__file__).parent.joinpath('docs/index.html')
 try:
     # IMPORTANT! `opendbt.dbt` import needs to happen before any `dbt` import
     dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
-    if Version("1.6.0") <= dbt_version < Version("1.8.0"):
+    if Version("1.7.0") <= dbt_version < Version("1.8.0"):
         RuntimePatcher(module_name="dbt.include.global_project").patch_attribute(attribute_name="DOCS_INDEX_FILE_PATH",
                                                                                  new_value=OPENDBT_INDEX_HTML_FILE)
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
