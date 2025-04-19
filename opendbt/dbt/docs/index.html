@@ -588,12 +588,15 @@
                                             <!-- Display DB Comment -->
                                             <span v-html="highlightMatches(column.db_comment ?? '')"></span>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
+                                        <td class="px-1 py-1 text-sm max-w-md">
                                             <!-- Display Columns Transformation -->
                                             <span class="text-gray-400"
-                                                  v-if="!(Array.isArray(column.transformations) && column.transformations.length > 0)">N/A</span>
-                                            <span v-else
-                                                  v-html="highlightMatches(column.transformations.join('<br>'))"></span>
+                                                  v-if="!(Array.isArray(column.transformations) && column.transformations.length > 0)">
+                                                N/A
+                                            </span>
+                                            <pre class="code-block w-full h-full !p-1 !text-xs !bg-gray-50 border overflow-x-auto"
+                                                 v-else><code
+                                                    v-html="highlightMatches(column.transformations.join('\n').trim())"></code></pre>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
                                             <!-- Display Columns Depends On -->
