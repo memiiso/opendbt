@@ -39,9 +39,7 @@ class TestOpenDbtCli(BaseDbtTest):
 
     def test_cli_run_models(self):
         dp = OpenDbtCli(project_dir=self.DBTCORE_DIR)
-        dp.invoke(args=['run', '--select', 'my_core_table1 my_first_dbt_model+', "--exclude", "my_failing_dbt_model",
-                        "--profiles-dir",
-                        dp.project_dir.as_posix()])
+        dp.invoke(args=['run', "--exclude", "my_failing_dbt_model", "--profiles-dir", dp.project_dir.as_posix()])
 
     def test_cli_run_cross_project_ref_models(self):
         dpf = OpenDbtCli(project_dir=self.DBTFINANCE_DIR)

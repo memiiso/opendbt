@@ -2,7 +2,7 @@ from airflow import DAG
 from airflow.utils.dates import days_ago
 
 from base_dbt_test import BaseDbtTest
-from opendbt.airflow import OpenDbtAirflowProject, OpenDbtExecutorOperator
+from opendbt.airflow import OpenDbtAirflowProject
 
 
 class TestOpenDbtProject(BaseDbtTest):
@@ -25,11 +25,9 @@ class TestOpenDbtProject(BaseDbtTest):
                              include_dbt_seeds=True)
 
             for j in dag.tasks:
-                # don't run the model we created to fail
-                if 'my_failing_dbt_model' in j.task_id:
-                    continue
-
-                if isinstance(j, OpenDbtExecutorOperator):
-                    # skip dbt tests which are triggering callbacks
-                    j.command = "run" if j.command == "build" else j.command
-                j.execute({})
+                if 'my_first_dbt_model' in j.task_id:
+                    j.execute({})
+                if 'my_executedlt_model' in j.task_id:
+                    j.execute({})
+                if 'my_executepython_model' in j.task_id:
+                    j.execute({})

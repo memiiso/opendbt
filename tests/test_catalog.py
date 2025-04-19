@@ -35,9 +35,7 @@ class TestOpenDbtCatalog(BaseDbtTest):
     def test_catalog_export(self):
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
         dp.run(command="compile")
-        dp.run(command="run", args=['--select', 'my_core_table1'])
-        dp.run(command="run", args=['--select', 'my_first_dbt_model'])
-        dp.run(command="run", args=['--select', 'my_second_dbt_model'])
+        dp.run(command="run", args=['--select', '+my_second_dbt_model'])
         dp.run(command="docs", args=['generate'])
         catalog = OpenDbtCatalog(
             manifest_path=self.DBTFINANCE_DIR.joinpath('target/manifest.json'),
@@ -47,7 +45,7 @@ class TestOpenDbtCatalog(BaseDbtTest):
     def test_catalog_export_one_node(self):
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
         dp.run(command="compile")
-        dp.run(command="run", args=['--select', 'my_core_table1 my_first_dbt_model my_second_dbt_model'])
+        dp.run(command="run", args=['--select', '+my_second_dbt_model'])
         dp.run(command="docs", args=['generate'])
         catalog = OpenDbtCatalog(
             manifest_path=self.DBTFINANCE_DIR.joinpath('target/manifest.json'),
