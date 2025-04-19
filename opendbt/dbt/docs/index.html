@@ -364,9 +364,8 @@
                                             <div :class="{ 'expanded': expandedNodes.includes(`${database.name}.${schema.name}.models`) }"
                                                  @click="toggleNode(`${database.name}.${schema.name}.models`)"
                                                  class="flex items-center">
-                                                <div
-                                                        class="tree-toggle"></div>
-                                                <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                <div class="tree-toggle"></div>
+                                                <i class="fas fa-database text-blue-400 mr-2"></i>
                                                 <span class="font-medium">Models</span>
                                             </div>
                                             <div :class="expandedNodes.includes(`${database.name}.${schema.name}.models`) ? 'expanded' : 'collapsed'"
@@ -379,7 +378,8 @@
                                                    @click.prevent="selectItem(model)"
                                                    href="#"
                                                    v-for="model in schema.models">
-                                                    <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                    <i :class="getIconClassForResourceType(model?.resource_type, model?.language)"
+                                                       class="mr-2"></i>
                                                     <span class="min-w-0 truncate mr-2">{{ model.name }}</span>
                                                 </a>
                                             </div>
@@ -615,7 +615,9 @@
                                                     v-for="cdep in column.depends_on"
                                             >
                                                 <div class="flex items-center">
-                                                    <span>{{ cdep.table_fqn }}.<b>{{ cdep.name }}</b></span>
+                                                    <i :class="getIconClassForResourceTypeById(cdep.model_id)"
+                                                       class="mr-2"></i>
+                                                    <span>{{ cdep.table_relative_fqn }}.<b>{{ cdep.name }}</b></span>
                                                 </div>
                                             </a>
 
@@ -662,13 +664,8 @@
                                                     v-for="dep in getDependencies(selectedItem)"
                                             >
                                                 <div class="flex items-center">
-                                                    <i
-                                                            :class="{
-                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
-                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
-                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
-                                                        }"
-                                                            class="mr-2"
+                                                    <i :class="getIconClassForResourceType(dep?.resource_type, dep?.language)"
+                                                       class="mr-2"
                                                     ></i>
                                                     <span>{{ dep.name }}</span>
                                                 </div>
@@ -695,11 +692,7 @@
                                             >
                                                 <div class="flex items-center">
                                                     <i
-                                                            :class="{
-                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
-                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
-                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
-                                                        }"
+                                                            :class="getIconClassForResourceType(dep?.resource_type, dep?.language)"
                                                             class="mr-2"
                                                     ></i>
                                                     <span>{{ dep.name }}</span>
@@ -1379,19 +1372,32 @@
                 }
             };
 
-            const formatDependsOn = (dependsOnArray) => {
-                if (!Array.isArray(dependsOnArray) || dependsOnArray.length === 0) {
-                    return 'N/A'; // Return empty string if no valid dependencies
-
+            const getIconClassForResourceTypeById = (resourceId) => {
+                const item = allItems.value.find(i => i.unique_id === resourceId);
+                if (item) {
+                    return getIconClassForResourceType(item.resource_type, item.language);
                 }
-                // Map each dependency object to a formatted string
-                return dependsOnArray.map(dep => {
-                    // Use table_fqn and name, provide fallbacks if needed
-                    const tableName = dep.table_fqn ?? 'unknown_table';
-                    const colName = dep.name ?? 'unknown_column';
-                    return `${tableName}.${colName}`; // Format as table.column
-                }).join('<br>');
+                return 'fas fa-table text-blue-500';
             }
+
+
+            const getIconClassForResourceType = (resourceType = "model", resourceLanguage = 'sql') => {
+                switch (resourceType) {
+                    case 'model':
+                        if (resourceLanguage === "python") {
+                            return 'fa-brands fa-python text-yellow-500';
+                        }
+                        return 'fas fa-table text-blue-500';
+                    case 'source':
+                        return 'fas fa-database text-green-500';
+                    case 'macro':
+                        return 'fa-solid fa-scroll text-purple-500';
+                    case 'test':
+                        return 'fa-solid fa-flask-vial text-purple-500';
+                    default:
+                        return 'fa-regular fa-circle text-gray-500'; // Default icon
+                }
+            };
 
             // Watchers
             watch([activeTab, selectedItem, lineageMaxDepth], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
@@ -1447,7 +1453,8 @@
                 getDependents,
                 toggleNode,
                 setLineageDepth, // Expose depth setter
-                formatDependsOn
+                getIconClassForResourceType,
+                getIconClassForResourceTypeById
             };
         },
         mounted() {
