@@ -343,7 +343,7 @@
                                  @click="toggleNode(database.name)"
                                  class="flex items-center">
                                 <div class="tree-toggle"></div>
-                                <i class="fas fa-database text-blue-500 mr-2"></i>
+                                <i class="fa-solid fa-database text-gray-500 mr-2"></i>
                                 <span class="font-medium">{{ database.name }}</span>
                             </div>
                             <div :class="expandedNodes.includes(database.name) ? 'expanded' : 'collapsed'"
@@ -438,12 +438,8 @@
                                                v-html="highlightMatches(result.description ?? 'No description available')"></p>
                                             <!-- Use ?? -->
                                         </div>
-                                        <span :class="{
-                                                'bg-blue-100 text-blue-800': result.resource_type === 'model',
-                                                'bg-green-100 text-green-800': result.resource_type === 'source',
-                                                'bg-purple-100 text-purple-800': result.resource_type === 'macro'
-                                            }"
-                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                        <span :class="getIconClassForResourceType(result.resource_type, result.language)"
+                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs">
                                         {{ result.resource_type }}
                                     </span>
                                     </div>
@@ -462,12 +458,8 @@
                                     <span v-html="selectedItem.database +'.'+ selectedItem.schema+'.'+highlightMatches(selectedItem.name)"></span>
                                 </h2>
                                 <div class="mt-1 flex items-center space-x-2">
-                                    <span :class="{
-                                            'bg-blue-100 text-blue-800': selectedItem.resource_type === 'model',
-                                            'bg-green-100 text-green-800': selectedItem.resource_type === 'source',
-                                            'bg-purple-100 text-purple-800': selectedItem.resource_type === 'macro'
-                                        }"
-                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    <span :class="getIconClassForResourceType(selectedItem.resource_type, selectedItem.language)"
+                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs">
                                         {{ selectedItem.resource_type }}
                                     </span>
                                     <span class="text-xs text-gray-500" v-if="selectedItem.package_name">
