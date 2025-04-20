@@ -3,7 +3,9 @@ version: '1.0.0'
 
 profile: 'dbtcore'
 
+# include opendbt macros
 macro-paths: [ "macros", "../../../opendbt/macros/" ]
+# use opendbt index.html for docs
 docs-paths: [ "../../../opendbt/docs/" ]
 
 clean-targets:
@@ -13,8 +15,7 @@ clean-targets:
 
 models:
   dbtcore:
-    example:
-      +materialized: table
+    +materialized: table
 
 vars:
   dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom

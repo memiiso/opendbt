@@ -6,10 +6,4 @@ dbtcore:
       path: ./../dev.duckdb
       threads: 1
 
-    prod:
-      type: duckdb
-      schema: core
-      path: prod.duckdb
-      threads: 4
-
   target: dev

@@ -6,10 +6,4 @@ dbtfinance:
       path: ./../dev.duckdb
       threads: 1
 
-    prod:
-      type: duckdb
-      schema: finance
-      path: prod.duckdb
-      threads: 4
-
   target: dev

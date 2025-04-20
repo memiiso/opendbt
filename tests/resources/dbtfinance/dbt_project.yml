@@ -8,3 +8,7 @@ clean-targets:
   - "target"
   - "dbt_packages"
   - "logs"
+
+models:
+  dbtcore:
+    +materialized: table
