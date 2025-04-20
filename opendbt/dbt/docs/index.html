@@ -343,7 +343,7 @@
                                  @click="toggleNode(database.name)"
                                  class="flex items-center">
                                 <div class="tree-toggle"></div>
-                                <i class="fa-solid fa-database text-gray-500 mr-2"></i>
+                                <i class="fa-sharp-duotone fa-solid fa-server mr-2"></i>
                                 <span class="font-medium">{{ database.name }}</span>
                             </div>
                             <div :class="expandedNodes.includes(database.name) ? 'expanded' : 'collapsed'"
@@ -403,7 +403,8 @@
                                                    @click.prevent="selectItem(source)"
                                                    href="#"
                                                    v-for="source in schema.sources">
-                                                    <i class="fas fa-database text-green-500 mr-2"></i>
+                                                    <i :class="getIconClassForResourceType(source?.resource_type, source?.language)"
+                                                       class="mr-2"></i>
                                                     <span class="min-w-0 truncate mr-2">{{ source.name }}</span>
                                                 </a>
                                             </div>
@@ -1384,7 +1385,7 @@
                         }
                         return 'fas fa-table text-blue-500';
                     case 'source':
-                        return 'fas fa-database text-green-500';
+                        return 'fas fa-table text-green-500';
                     case 'macro':
                         return 'fa-solid fa-scroll text-purple-500';
                     case 'test':
