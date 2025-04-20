@@ -280,6 +280,27 @@
             background-color: white;
         }
 
+        /* Lineage Fullscreen Styles */
+        .fullscreen-lineage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw; /* Use viewport width */
+            height: 100vh; /* Use viewport height */
+            z-index: 100; /* Ensure it's above other content */
+            background-color: #f9fafb; /* Match original background */
+            border: none; /* Remove border in fullscreen */
+            border-radius: 0; /* Remove border-radius in fullscreen */
+            min-height: 100vh; /* Ensure min-height covers viewport */
+            overflow: hidden; /* Prevent scrolling of the body */
+        }
+
+        /* Ensure the graph container inside also fills the space */
+        .fullscreen-lineage #lineageGraphContainer {
+            width: 100%;
+            height: 100%;
+        }
+
     </style>
 </head>
 <body class="bg-gray-50">
@@ -760,7 +781,8 @@
                         <div v-if="activeTab === 'lineage'">
                             <div class="mb-4">
                                 <div class="flex justify-between items-center float-right mb-3">
-                                    <div class="flex items-center">
+                                    <!-- START: Lineage Depth Controls -->
+                                    <div class="flex items-center mr-4"> <!-- Added mr-4 for spacing -->
                                         <span class="text-sm text-gray-600 mr-2">Depth:</span>
                                         <button
                                                 :class="['lineage-depth-control', { 'active': lineageMaxDepth === 1 }]"
@@ -784,10 +806,23 @@
                                         </button>
                                     </div>
                                     <!-- END: Lineage Depth Controls -->
+
+                                    <!-- START: Full Screen Button -->
+                                    <button
+                                            @click="toggleLineageFullScreen"
+                                            class="p-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                                            title="Toggle Fullscreen"
+                                    >
+                                        <i :class="isLineageFullScreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
+                                    </button>
+                                    <!-- END: Full Screen Button -->
                                 </div>
                             </div>
 
-                            <div class="lineage-container relative" ref="lineageContainer">
+                            <!-- Apply conditional class for fullscreen -->
+                            <div :class="{ 'fullscreen-lineage': isLineageFullScreen }"
+                                 class="lineage-container relative"
+                                 ref="lineageContainer">
                                 <div class="absolute top-0 left-0 w-full h-full" id="lineageGraphContainer"
                                      ref="lineageGraphContainer"></div>
                                 <!-- SVG will be rendered here by Viz.js -->
@@ -911,15 +946,15 @@
             console.warn("getAllDbtNodes called with no manifest data.");
             return allNodes;
         }
-        const catalogData = dbtCatalogData ?? {}; 
+        const catalogData = dbtCatalogData ?? {};
         for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
-            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {}; 
+            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {};
             allNodes[nodeId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
         // Process sources
         for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
-            const catalogNode = catalogData.sources?.[sourceId] ?? {}; 
+            const catalogNode = catalogData.sources?.[sourceId] ?? {};
             allNodes[sourceId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
@@ -945,11 +980,41 @@
             const lineageMaxDepth = ref(1);
             const lineageRendering = ref(false);
             const lineageError = ref(false);
+            const isLineageFullScreen = ref(false);
             let currentVisNetwork = null; // Store the vis-network instance
 
             onMounted(() => {
                 loadDbtFiles(isLoading, ODBTM);
+                document.addEventListener('fullscreenchange', handleFullScreenChange);
             });
+
+            // --- Add Fullscreen Toggle Function ---
+            const toggleLineageFullScreen = async () => {
+                if (!document.fullscreenElement) {
+                    try {
+                        // Use the container that holds the graph container
+                        await lineageContainer.value?.requestFullscreen();
+                        isLineageFullScreen.value = true;
+                    } catch (err) {
+                        console.error(`Error attempting full-screen: ${err.message}`);
+                        isLineageFullScreen.value = false; // Reset on error
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        await document.exitFullscreen();
+                        isLineageFullScreen.value = false;
+                    }
+                }
+            };
+
+            // --- Add Fullscreen Change Handler ---
+            const handleFullScreenChange = () => {
+                isLineageFullScreen.value = !!document.fullscreenElement;
+                // Re-fit the graph when state changes (e.g., ESC key)
+                nextTick(() => {
+                    currentVisNetwork?.fit();
+                });
+            };
 
             // Create database tree structure
             const databaseTree = computed(() => {
@@ -1075,17 +1140,17 @@
                 const query = searchQuery.value.toLowerCase();
                 searchResults.value = allItems.value.filter(item => {
                     const nameMatch = item.name.toLowerCase().includes(query);
-                    const descriptionMatch = item.description?.toLowerCase().includes(query); 
+                    const descriptionMatch = item.description?.toLowerCase().includes(query);
                     // Check manifest columns (already partially done)
                     const manifestColumnMatch = item.columns && Object.entries(item.columns).some(([colName, col]) =>
                         colName.toLowerCase().includes(query) ||
-                        (col.description?.toLowerCase().includes(query)) 
+                        (col.description?.toLowerCase().includes(query))
                     );
 
                     let codeMatch = false;
                     if (item.resource_type === 'model') {
                         const rawCodeMatch = item.raw_code?.toLowerCase().includes(query);
-                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query); 
+                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query);
                         codeMatch = rawCodeMatch || compiledCodeMatch;
                     }
 
@@ -1133,7 +1198,7 @@
             const getDependencies = (item) => {
                 let parent_dependencies = ODBTM.value.parent_map?.[item.unique_id] ?? [];
                 return parent_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId]; 
+                    const node = ODBTM.value.allnodes?.[depId];
                     return node || null;
                 }).filter(Boolean);
             };
@@ -1142,7 +1207,7 @@
             const getDependents = (item) => {
                 let child_dependencies = ODBTM.value.child_map?.[item.unique_id] ?? [];
                 return child_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId]; 
+                    const node = ODBTM.value.allnodes?.[depId];
                     return node || null;
                 }).filter(Boolean);
             };
@@ -1343,7 +1408,7 @@
                                 // Prevent navigation if double-clicking the center node again
                                 return
                             }
-                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId]; 
+                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId];
                             if (nodeToNavigate) {
                                 navigateToDependency(nodeToNavigate);
                             } else {
@@ -1438,6 +1503,8 @@
                 activeTab,
                 displayColumns, // Make sure this is returned
                 selectedItemStats, // Make sure this is returned
+                isLineageFullScreen,      // Expose fullscreen state
+                toggleLineageFullScreen,  // Expose toggle function
                 getModelCode,
                 highlightMatches,
                 performSearch,
