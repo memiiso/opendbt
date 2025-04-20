@@ -10,5 +10,6 @@ clean-targets:
   - "logs"
 
 models:
+  # ensure referenced models are used with correct schema
   dbtcore:
-    +materialized: table
+    schema: "core"
