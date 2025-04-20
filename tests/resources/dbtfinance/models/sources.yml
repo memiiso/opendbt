@@ -1,8 +1,9 @@
 version: 2
 
 sources:
-  - name: main
-    schema: main
+  # defining `dbtcore` project models as source!
+  - name: core
+    schema: core
     tables:
       - name: my_executepython_model
       - name: my_executepython_dlt_model
