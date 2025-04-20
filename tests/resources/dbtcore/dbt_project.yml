@@ -14,7 +14,7 @@ clean-targets:
 models:
   dbtcore:
     example:
-      +materialized: view
+      +materialized: table
 
 vars:
   dbt_custom_adapter: opendbt.examples.DuckDBAdapterV2Custom

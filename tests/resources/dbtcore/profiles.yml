@@ -2,13 +2,13 @@ dbtcore:
   outputs:
     dev:
       type: duckdb
-      adapter: my.dbt.custom.OpenAdapterXXX
+      schema: core
       path: ./../dev.duckdb
       threads: 1
 
     prod:
       type: duckdb
-      adapter: my.dbt.custom.OpenAdapterXXX
+      schema: core
       path: prod.duckdb
       threads: 4
 
