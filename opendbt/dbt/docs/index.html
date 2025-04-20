@@ -1360,13 +1360,35 @@
                             }
                         },
                         physics: {
-                            enabled: false // Disable physics for hierarchical layout
+                            enabled: true, // Enable physics engine
+                            // Optional: Choose a solver. barnesHut is generally good.
+                            // forceAtlas2Based might feel more 'floaty'.
+                            solver: 'barnesHut',
+                            barnesHut: {
+                                gravitationalConstant: -8000, // Adjust repulsion
+                                centralGravity: 0.1,         // Adjust attraction to center
+                                springLength: 150,           // Adjust preferred edge length (less relevant with hierarchical)
+                                springConstant: 0.02,        // Adjust spring stiffness
+                                damping: 0.09,               // Adjust stabilization speed
+                                avoidOverlap: 0.2            // Try to prevent nodes overlapping
+                            },
+                            // Disable stabilization if you want nodes to settle faster or if hierarchical layout is primary
+                            stabilization: {
+                                enabled: true,
+                                iterations: 1000, // Default is 1000
+                                fit: true
+                            }
+                            // If hierarchical layout causes issues with dragging, you might need
+                            // to disable hierarchical physics specifically within the layout section,
+                            // or disable the hierarchical layout altogether if free-form dragging is preferred.
                         },
                         interaction: {
                             hover: true,
                             tooltipDelay: 200,
                             navigationButtons: true, // Add zoom/fit buttons
-                            keyboard: true
+                            keyboard: true,
+                            dragNodes: true,
+                            dragView: true
                         },
                         groups: {
                             model: {
@@ -1417,12 +1439,17 @@
                         }
                     });
 
-                    // Optional: Fit the graph after rendering
+                    // Optional: Fit the graph after rendering/stabilization
                     currentVisNetwork.once('stabilizationIterationsDone', () => {
-                        currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
+                        // Only fit if not in fullscreen, otherwise let user control zoom/pan
+                        if (!isLineageFullScreen.value) {
+                            currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
+                        }
                     });
-                    // For hierarchical layout, fitting might be immediate
-                    currentVisNetwork.fit();
+                    // Fit immediately if stabilization is short or disabled, respect fullscreen
+                    if (!isLineageFullScreen.value) {
+                        currentVisNetwork.fit();
+                    }
 
 
                 } catch (error) {
