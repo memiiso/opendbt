@@ -280,6 +280,27 @@
             background-color: white;
         }
 
+        /* Lineage Fullscreen Styles */
+        .fullscreen-lineage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw; /* Use viewport width */
+            height: 100vh; /* Use viewport height */
+            z-index: 100; /* Ensure it's above other content */
+            background-color: #f9fafb; /* Match original background */
+            border: none; /* Remove border in fullscreen */
+            border-radius: 0; /* Remove border-radius in fullscreen */
+            min-height: 100vh; /* Ensure min-height covers viewport */
+            overflow: hidden; /* Prevent scrolling of the body */
+        }
+
+        /* Ensure the graph container inside also fills the space */
+        .fullscreen-lineage #lineageGraphContainer {
+            width: 100%;
+            height: 100%;
+        }
+
     </style>
 </head>
 <body class="bg-gray-50">
@@ -343,7 +364,7 @@
                                  @click="toggleNode(database.name)"
                                  class="flex items-center">
                                 <div class="tree-toggle"></div>
-                                <i class="fas fa-database text-blue-500 mr-2"></i>
+                                <i class="fa-sharp-duotone fa-solid fa-server mr-2"></i>
                                 <span class="font-medium">{{ database.name }}</span>
                             </div>
                             <div :class="expandedNodes.includes(database.name) ? 'expanded' : 'collapsed'"
@@ -364,9 +385,8 @@
                                             <div :class="{ 'expanded': expandedNodes.includes(`${database.name}.${schema.name}.models`) }"
                                                  @click="toggleNode(`${database.name}.${schema.name}.models`)"
                                                  class="flex items-center">
-                                                <div
-                                                        class="tree-toggle"></div>
-                                                <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                <div class="tree-toggle"></div>
+                                                <i class="fas fa-database text-blue-400 mr-2"></i>
                                                 <span class="font-medium">Models</span>
                                             </div>
                                             <div :class="expandedNodes.includes(`${database.name}.${schema.name}.models`) ? 'expanded' : 'collapsed'"
@@ -379,7 +399,8 @@
                                                    @click.prevent="selectItem(model)"
                                                    href="#"
                                                    v-for="model in schema.models">
-                                                    <i class="fas fa-table text-blue-400 mr-2"></i>
+                                                    <i :class="getIconClassForResourceType(model?.resource_type, model?.language)"
+                                                       class="mr-2"></i>
                                                     <span class="min-w-0 truncate mr-2">{{ model.name }}</span>
                                                 </a>
                                             </div>
@@ -403,7 +424,8 @@
                                                    @click.prevent="selectItem(source)"
                                                    href="#"
                                                    v-for="source in schema.sources">
-                                                    <i class="fas fa-database text-green-500 mr-2"></i>
+                                                    <i :class="getIconClassForResourceType(source?.resource_type, source?.language)"
+                                                       class="mr-2"></i>
                                                     <span class="min-w-0 truncate mr-2">{{ source.name }}</span>
                                                 </a>
                                             </div>
@@ -438,12 +460,8 @@
                                                v-html="highlightMatches(result.description ?? 'No description available')"></p>
                                             <!-- Use ?? -->
                                         </div>
-                                        <span :class="{
-                                                'bg-blue-100 text-blue-800': result.resource_type === 'model',
-                                                'bg-green-100 text-green-800': result.resource_type === 'source',
-                                                'bg-purple-100 text-purple-800': result.resource_type === 'macro'
-                                            }"
-                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                        <span :class="getIconClassForResourceType(result.resource_type, result.language)"
+                                              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs">
                                         {{ result.resource_type }}
                                     </span>
                                     </div>
@@ -462,12 +480,8 @@
                                     <span v-html="selectedItem.database +'.'+ selectedItem.schema+'.'+highlightMatches(selectedItem.name)"></span>
                                 </h2>
                                 <div class="mt-1 flex items-center space-x-2">
-                                    <span :class="{
-                                            'bg-blue-100 text-blue-800': selectedItem.resource_type === 'model',
-                                            'bg-green-100 text-green-800': selectedItem.resource_type === 'source',
-                                            'bg-purple-100 text-purple-800': selectedItem.resource_type === 'macro'
-                                        }"
-                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                                    <span :class="getIconClassForResourceType(selectedItem.resource_type, selectedItem.language)"
+                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs">
                                         {{ selectedItem.resource_type }}
                                     </span>
                                     <span class="text-xs text-gray-500" v-if="selectedItem.package_name">
@@ -528,7 +542,7 @@
                     </div>
 
                     <!-- Tab Content -->
-                    <div class="bg-white rounded-lg shadow overflow-hidden p-6">
+                    <div class="bg-white rounded-lg shadow overflow-hidden p-4">
                         <!-- Overview Tab -->
                         <div v-if="activeTab === 'overview'">
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
@@ -596,12 +610,15 @@
                                             <!-- Display DB Comment -->
                                             <span v-html="highlightMatches(column.db_comment ?? '')"></span>
                                         </td>
-                                        <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
+                                        <td class="px-1 py-1 text-sm max-w-md">
                                             <!-- Display Columns Transformation -->
                                             <span class="text-gray-400"
-                                                  v-if="!(Array.isArray(column.transformations) && column.transformations.length > 0)">N/A</span>
-                                            <span v-else
-                                                  v-html="highlightMatches(column.transformations.join('<br>'))"></span>
+                                                  v-if="!(Array.isArray(column.transformations) && column.transformations.length > 0)">
+                                                N/A
+                                            </span>
+                                            <pre class="code-block w-full h-full !p-1 !text-xs !bg-gray-50 border overflow-x-auto"
+                                                 v-else><code
+                                                    v-html="highlightMatches(column.transformations.join('\n').trim())"></code></pre>
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-md whitespace-pre-line">
                                             <!-- Display Columns Depends On -->
@@ -615,7 +632,9 @@
                                                     v-for="cdep in column.depends_on"
                                             >
                                                 <div class="flex items-center">
-                                                    <span>{{ cdep.table_fqn }}.<b>{{ cdep.name }}</b></span>
+                                                    <i :class="getIconClassForResourceTypeById(cdep.model_id)"
+                                                       class="mr-2"></i>
+                                                    <span>{{ cdep.table_relative_fqn }}.<b>{{ cdep.name }}</b></span>
                                                 </div>
                                             </a>
 
@@ -662,13 +681,8 @@
                                                     v-for="dep in getDependencies(selectedItem)"
                                             >
                                                 <div class="flex items-center">
-                                                    <i
-                                                            :class="{
-                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
-                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
-                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
-                                                        }"
-                                                            class="mr-2"
+                                                    <i :class="getIconClassForResourceType(dep?.resource_type, dep?.language)"
+                                                       class="mr-2"
                                                     ></i>
                                                     <span>{{ dep.name }}</span>
                                                 </div>
@@ -695,11 +709,7 @@
                                             >
                                                 <div class="flex items-center">
                                                     <i
-                                                            :class="{
-                                                            'fas fa-table text-blue-500': dep.resource_type === 'model',
-                                                            'fas fa-database text-green-500': dep.resource_type === 'source',
-                                                            'fas fa-code text-purple-500': dep.resource_type === 'macro'
-                                                        }"
+                                                            :class="getIconClassForResourceType(dep?.resource_type, dep?.language)"
                                                             class="mr-2"
                                                     ></i>
                                                     <span>{{ dep.name }}</span>
@@ -769,9 +779,10 @@
 
                         <!-- Lineage Tab -->
                         <div v-if="activeTab === 'lineage'">
-                            <div class="mb-4">
+                            <div>
                                 <div class="flex justify-between items-center float-right mb-3">
-                                    <div class="flex items-center">
+                                    <!-- START: Lineage Depth Controls -->
+                                    <div class="flex items-center mr-4"> <!-- Added mr-4 for spacing -->
                                         <span class="text-sm text-gray-600 mr-2">Depth:</span>
                                         <button
                                                 :class="['lineage-depth-control', { 'active': lineageMaxDepth === 1 }]"
@@ -795,10 +806,23 @@
                                         </button>
                                     </div>
                                     <!-- END: Lineage Depth Controls -->
+
+                                    <!-- START: Full Screen Button -->
+                                    <button
+                                            @click="toggleLineageFullScreen"
+                                            class="p-2 rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                                            title="Toggle Fullscreen"
+                                    >
+                                        <i :class="isLineageFullScreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
+                                    </button>
+                                    <!-- END: Full Screen Button -->
                                 </div>
                             </div>
 
-                            <div class="lineage-container relative" ref="lineageContainer">
+                            <!-- Apply conditional class for fullscreen -->
+                            <div :class="{ 'fullscreen-lineage': isLineageFullScreen }"
+                                 class="lineage-container relative"
+                                 ref="lineageContainer">
                                 <div class="absolute top-0 left-0 w-full h-full" id="lineageGraphContainer"
                                      ref="lineageGraphContainer"></div>
                                 <!-- SVG will be rendered here by Viz.js -->
@@ -922,15 +946,15 @@
             console.warn("getAllDbtNodes called with no manifest data.");
             return allNodes;
         }
-        const catalogData = dbtCatalogData ?? {}; 
+        const catalogData = dbtCatalogData ?? {};
         for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
-            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {}; 
+            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {};
             allNodes[nodeId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
         // Process sources
         for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
-            const catalogNode = catalogData.sources?.[sourceId] ?? {}; 
+            const catalogNode = catalogData.sources?.[sourceId] ?? {};
             allNodes[sourceId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
@@ -956,11 +980,41 @@
             const lineageMaxDepth = ref(1);
             const lineageRendering = ref(false);
             const lineageError = ref(false);
+            const isLineageFullScreen = ref(false);
             let currentVisNetwork = null; // Store the vis-network instance
 
             onMounted(() => {
                 loadDbtFiles(isLoading, ODBTM);
+                document.addEventListener('fullscreenchange', handleFullScreenChange);
             });
+
+            // --- Add Fullscreen Toggle Function ---
+            const toggleLineageFullScreen = async () => {
+                if (!document.fullscreenElement) {
+                    try {
+                        // Use the container that holds the graph container
+                        await lineageContainer.value?.requestFullscreen();
+                        isLineageFullScreen.value = true;
+                    } catch (err) {
+                        console.error(`Error attempting full-screen: ${err.message}`);
+                        isLineageFullScreen.value = false; // Reset on error
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        await document.exitFullscreen();
+                        isLineageFullScreen.value = false;
+                    }
+                }
+            };
+
+            // --- Add Fullscreen Change Handler ---
+            const handleFullScreenChange = () => {
+                isLineageFullScreen.value = !!document.fullscreenElement;
+                // Re-fit the graph when state changes (e.g., ESC key)
+                nextTick(() => {
+                    currentVisNetwork?.fit();
+                });
+            };
 
             // Create database tree structure
             const databaseTree = computed(() => {
@@ -1086,17 +1140,17 @@
                 const query = searchQuery.value.toLowerCase();
                 searchResults.value = allItems.value.filter(item => {
                     const nameMatch = item.name.toLowerCase().includes(query);
-                    const descriptionMatch = item.description?.toLowerCase().includes(query); 
+                    const descriptionMatch = item.description?.toLowerCase().includes(query);
                     // Check manifest columns (already partially done)
                     const manifestColumnMatch = item.columns && Object.entries(item.columns).some(([colName, col]) =>
                         colName.toLowerCase().includes(query) ||
-                        (col.description?.toLowerCase().includes(query)) 
+                        (col.description?.toLowerCase().includes(query))
                     );
 
                     let codeMatch = false;
                     if (item.resource_type === 'model') {
                         const rawCodeMatch = item.raw_code?.toLowerCase().includes(query);
-                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query); 
+                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query);
                         codeMatch = rawCodeMatch || compiledCodeMatch;
                     }
 
@@ -1144,7 +1198,7 @@
             const getDependencies = (item) => {
                 let parent_dependencies = ODBTM.value.parent_map?.[item.unique_id] ?? [];
                 return parent_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId]; 
+                    const node = ODBTM.value.allnodes?.[depId];
                     return node || null;
                 }).filter(Boolean);
             };
@@ -1153,7 +1207,7 @@
             const getDependents = (item) => {
                 let child_dependencies = ODBTM.value.child_map?.[item.unique_id] ?? [];
                 return child_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId]; 
+                    const node = ODBTM.value.allnodes?.[depId];
                     return node || null;
                 }).filter(Boolean);
             };
@@ -1306,13 +1360,35 @@
                             }
                         },
                         physics: {
-                            enabled: false // Disable physics for hierarchical layout
+                            enabled: true, // Enable physics engine
+                            // Optional: Choose a solver. barnesHut is generally good.
+                            // forceAtlas2Based might feel more 'floaty'.
+                            solver: 'barnesHut',
+                            barnesHut: {
+                                gravitationalConstant: -8000, // Adjust repulsion
+                                centralGravity: 0.1,         // Adjust attraction to center
+                                springLength: 150,           // Adjust preferred edge length (less relevant with hierarchical)
+                                springConstant: 0.02,        // Adjust spring stiffness
+                                damping: 0.09,               // Adjust stabilization speed
+                                avoidOverlap: 0.2            // Try to prevent nodes overlapping
+                            },
+                            // Disable stabilization if you want nodes to settle faster or if hierarchical layout is primary
+                            stabilization: {
+                                enabled: true,
+                                iterations: 1000, // Default is 1000
+                                fit: true
+                            }
+                            // If hierarchical layout causes issues with dragging, you might need
+                            // to disable hierarchical physics specifically within the layout section,
+                            // or disable the hierarchical layout altogether if free-form dragging is preferred.
                         },
                         interaction: {
                             hover: true,
                             tooltipDelay: 200,
                             navigationButtons: true, // Add zoom/fit buttons
-                            keyboard: true
+                            keyboard: true,
+                            dragNodes: true,
+                            dragView: true
                         },
                         groups: {
                             model: {
@@ -1354,7 +1430,7 @@
                                 // Prevent navigation if double-clicking the center node again
                                 return
                             }
-                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId]; 
+                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId];
                             if (nodeToNavigate) {
                                 navigateToDependency(nodeToNavigate);
                             } else {
@@ -1363,12 +1439,17 @@
                         }
                     });
 
-                    // Optional: Fit the graph after rendering
+                    // Optional: Fit the graph after rendering/stabilization
                     currentVisNetwork.once('stabilizationIterationsDone', () => {
-                        currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
+                        // Only fit if not in fullscreen, otherwise let user control zoom/pan
+                        if (!isLineageFullScreen.value) {
+                            currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
+                        }
                     });
-                    // For hierarchical layout, fitting might be immediate
-                    currentVisNetwork.fit();
+                    // Fit immediately if stabilization is short or disabled, respect fullscreen
+                    if (!isLineageFullScreen.value) {
+                        currentVisNetwork.fit();
+                    }
 
 
                 } catch (error) {
@@ -1379,19 +1460,34 @@
                 }
             };
 
-            const formatDependsOn = (dependsOnArray) => {
-                if (!Array.isArray(dependsOnArray) || dependsOnArray.length === 0) {
-                    return 'N/A'; // Return empty string if no valid dependencies
-
+            const getIconClassForResourceTypeById = (resourceId) => {
+                const item = allItems.value.find(i => i.unique_id === resourceId);
+                if (item) {
+                    return getIconClassForResourceType(item.resource_type, item.language);
                 }
-                // Map each dependency object to a formatted string
-                return dependsOnArray.map(dep => {
-                    // Use table_fqn and name, provide fallbacks if needed
-                    const tableName = dep.table_fqn ?? 'unknown_table';
-                    const colName = dep.name ?? 'unknown_column';
-                    return `${tableName}.${colName}`; // Format as table.column
-                }).join('<br>');
+                return 'fas fa-table text-blue-500';
             }
+
+
+            const getIconClassForResourceType = (resourceType = "model", resourceLanguage = 'sql') => {
+                switch (resourceType) {
+                    case 'model':
+                        if (resourceLanguage === "python") {
+                            return 'fa-brands fa-python text-yellow-500';
+                        }
+                        return 'fas fa-table text-blue-500';
+                    case 'source':
+                        return 'fas fa-table text-green-500';
+                    case 'macro':
+                        return 'fa-solid fa-scroll text-purple-500';
+                    case 'test':
+                        return 'fa-solid fa-flask-vial text-purple-500';
+                    case 'seed':
+                        return 'fa-solid fa-file-csv text-gray-500';
+                    default:
+                        return 'fa-regular fa-circle text-gray-500'; // Default icon
+                }
+            };
 
             // Watchers
             watch([activeTab, selectedItem, lineageMaxDepth], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
@@ -1434,6 +1530,8 @@
                 activeTab,
                 displayColumns, // Make sure this is returned
                 selectedItemStats, // Make sure this is returned
+                isLineageFullScreen,      // Expose fullscreen state
+                toggleLineageFullScreen,  // Expose toggle function
                 getModelCode,
                 highlightMatches,
                 performSearch,
@@ -1447,7 +1545,8 @@
                 getDependents,
                 toggleNode,
                 setLineageDepth, // Expose depth setter
-                formatDependsOn
+                getIconClassForResourceType,
+                getIconClassForResourceTypeById
             };
         },
         mounted() {

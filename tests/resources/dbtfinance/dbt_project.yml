@@ -8,3 +8,8 @@ clean-targets:
   - "target"
   - "dbt_packages"
   - "logs"
+
+models:
+  # ensure referenced models are used with correct schema
+  dbtcore:
+    schema: "core"

@@ -1,12 +1,11 @@
 import json
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, Optional
-
 import sqlglot
 import tqdm
+from dataclasses import dataclass
+from pathlib import Path
 from sqlglot import Expression
 from sqlglot.lineage import lineage, SqlglotError, exp
+from typing import Dict, Optional
 
 from opendbt.logger import OpenDbtLogger
 from opendbt.utils import Utils
@@ -35,6 +34,7 @@ class OpenDbtColumn:
         self.data["type"] = self.data["type"] if "type" in self.data else "unknown"
         self.data["column_fqn"] = f"{self.table_ref.table_fqn()}.{self.name}".lower()
         self.data["table_fqn"] = self.table_ref.table_fqn().lower()
+        self.data["table_relative_fqn"] = f"{self.table_ref.schema}.{self.table_ref.table}"
         self.data["transformations"] = []
         self.data["depends_on"] = []
 
