@@ -1,3 +1,5 @@
+import json
+
 from dbt.exceptions import DbtRuntimeError
 
 from base_dbt_test import BaseDbtTest
@@ -45,3 +47,20 @@ class TestOpenDbtCli(BaseDbtTest):
         dpf = OpenDbtCli(project_dir=self.DBTFINANCE_DIR)
         dpf.invoke(
             args=['run', '--select', '+my_cross_project_ref_model', "--profiles-dir", dpf.project_dir.as_posix()])
+
+    def test_cli_run_result(self):
+        run_info = self.DBTCORE_DIR.joinpath("target/run_info.json")
+        if run_info.exists():
+            run_info.write_text('')
+        dp = OpenDbtProject(project_dir=self.DBTCORE_DIR, profiles_dir=self.DBTCORE_DIR)
+        dp.run(command="build", args=['--select', 'my_core_table1'])
+        data = json.loads(run_info.read_text())
+        self.assertEqual(1, len(data['nodes']))
+        self.assertIn("model.dbtcore.my_core_table1", data['nodes'])
+        print(json.dumps(data, indent=4))
+
+        dp.run(command="build", args=['--select', 'my_executesql_dbt_model'])
+        data = json.loads(run_info.read_text())
+        self.assertEqual(2, len(data['nodes']))
+        self.assertIn("model.dbtcore.my_executesql_dbt_model", data['nodes'])
+        print(json.dumps(data, indent=4))

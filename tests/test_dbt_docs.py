@@ -8,10 +8,14 @@ class TestDbtDocs(BaseDbtTest):
 
     def test_run_docs_generate(self):
         dp = OpenDbtProject(project_dir=self.DBTCORE_DIR, profiles_dir=self.DBTCORE_DIR)
-        # run to generate run_results.json file
-        dp.run(command="run", args=["--exclude", "my_failing_dbt_model"])
+        # run to generate run_results.json and run_info.json file
+        try:
+            dp.run(command="build")
+        except:
+            pass
         dp.run(command="docs", args=['generate'])
         self.assertTrue(self.DBTCORE_DIR.joinpath('target/catalogl.json').exists())
+        self.assertTrue(self.DBTCORE_DIR.joinpath('target/run_info.json').exists())
 
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
         # dp.run(command="run")

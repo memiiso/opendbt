@@ -491,8 +491,8 @@
                                                        v-if="source?.run_status === 'fail'">
                                                     </i>
                                                     <i :class="getIconClassForResourceType(source?.resource_type, source?.language)"
-                                                       v-else
-                                                       class="mr-2"></i>
+                                                       class="mr-2"
+                                                       v-else></i>
                                                     <span class="min-w-0 truncate mr-2">{{ source.name }}</span>
                                                 </a>
                                             </div>
