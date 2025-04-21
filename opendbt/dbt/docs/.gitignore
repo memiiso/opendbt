@@ -1,4 +1,2 @@
-catalog.json
-catalogl.json
-manifest.json
+*.json
 catalog/

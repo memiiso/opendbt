@@ -301,6 +301,61 @@
             height: 100%;
         }
 
+        /* Container for the icon and tooltip */
+        .icon-tooltip {
+            position: relative; /* Needed for absolute positioning of the tooltip */
+            display: inline-block; /* Or block, depending on your layout */
+            cursor: default; /* Optional: Change cursor on hover */
+        }
+
+        /* Tooltip bubble */
+        .icon-tooltip::before {
+            content: attr(data-tooltip); /* Get text from data-tooltip attribute */
+            position: absolute;
+            bottom: 125%; /* Position above the icon */
+            left: 50%;
+            transform: translateX(-50%); /* Center the tooltip */
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #333; /* Tooltip background */
+            color: #fff; /* Tooltip text color */
+            font-size: 1.1em;
+            white-space: nowrap; /* Prevent text wrapping */
+            opacity: 0; /* Hidden by default */
+            visibility: hidden; /* Hidden by default */
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out; /* Smooth transition */
+            z-index: 10; /* Ensure tooltip is above other elements */
+        }
+
+        /* Optional: Tooltip arrow */
+        .icon-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: 125%; /* Position below the bubble */
+            left: 50%;
+            transform: translateX(-50%) translateY(100%); /* Position arrow correctly */
+            margin-bottom: -5px; /* Overlap slightly with the bubble */
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent; /* Arrow pointing down */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+            z-index: 10;
+        }
+
+        /* Show tooltip on hover */
+        .icon-tooltip:hover::before,
+        .icon-tooltip:hover::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Style the icon itself if needed */
+        .icon-tooltip i {
+            font-size: 1.2em;
+            color: #555;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -481,10 +536,10 @@
                                 </h2>
                                 <div class="mt-1 flex items-center space-x-2">
                                     <span :class="getIconClassForResourceType(selectedItem.resource_type, selectedItem.language)"
-                                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs">
+                                          class="inline-flex items-center py-0.5 rounded-full text-xs">
                                         {{ selectedItem.resource_type }}
                                     </span>
-                                    <span class="text-xs text-gray-500" v-if="selectedItem.package_name">
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.package_name && false">
                                         Project: {{ selectedItem.package_name }}
                                     </span>
                                     <span class="text-xs text-gray-500" v-if="selectedItem.config?.materialized"> <!-- Use ?. -->
@@ -493,6 +548,34 @@
                                     <span class="text-xs text-gray-500" v-if="selectedItem.language">
                                         Language: {{ selectedItem.language }}
                                     </span>
+                                    <!-- START: Run Result Fields -->
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.run_status">
+                                        Run:
+                                        <span :class="{
+                                            'text-green-600 font-medium': ['success','pass'].includes(selectedItem.run_status),
+                                            'text-red-600 font-medium': ['error','fail', 'runtime error'].includes(selectedItem.run_status),
+                                            'text-yellow-600 font-medium': ['warn', 'partial success'].includes(selectedItem.run_status),
+                                            'text-gray-600 font-medium': !['skipped'].includes(selectedItem.run_status)
+                                        }">
+                                            {{ selectedItem.run_status }}
+                                        </span>
+                                    </span>
+                                    <span class="text-xs text-gray-500" v-if="selectedItem.run_completed_at">
+                                        Completed At:{{ selectedItem.run_completed_at }}
+                                    </span>
+                                    <span :data-tooltip="selectedItem.run_message"
+                                          class="text-xs text-gray-500 icon-tooltip"
+                                          v-if="selectedItem.run_message">
+                                         <i class="fa-duotone fa-solid fa-circle-info"></i> Message
+                                    </span>
+                                    <span class="text-xs text-red-600 font-bold" v-if="selectedItem.run_failures"> <!-- Failures are important -->
+                                        Failures: {{ selectedItem.run_failures }}
+                                    </span>
+                                    <span :data-tooltip="JSON.stringify(selectedItem.run_adapter_response, null, 2)"
+                                          class="text-xs text-gray-500 icon-tooltip"
+                                          v-if="selectedItem.run_adapter_response && Object.keys(selectedItem.run_adapter_response).length > 0">
+                                         <i class="fa-duotone fa-solid fa-circle-info"></i> Db Response
+                                     </span>
                                 </div>
                             </div>
                         </div>
@@ -858,10 +941,11 @@
         isLoading.value = true;
         try {
             // Use Promise.all to fetch both files concurrently
-            const [manifestResponse, catalogResponse, cataloglResponse] = await Promise.all([
+            const [manifestResponse, catalogResponse, cataloglResponse, dbtRunResultResponse] = await Promise.all([
                 fetch('manifest.json'),
                 fetch('catalog.json'),
-                fetch('catalogl.json')
+                fetch('catalogl.json'),
+                fetch('run_results.json')
             ]);
 
             if (!manifestResponse.ok) {
@@ -869,7 +953,8 @@
             }
             ODBTM.value = await manifestResponse.json();
 
-            let dbtCatalogJson = null;
+            let dbtCatalogJson = {};
+            let dbtRunResultJson = {};
             if (cataloglResponse.ok) {
                 dbtCatalogJson = await cataloglResponse.json();
                 console.log("Loading opendbt catalog, including lineage data `catalogl.json`.")
@@ -878,7 +963,13 @@
             } else {
                 console.warn(`Failed to load catalog.json: ${catalogResponse.statusText}. Catalog features might be unavailable.`);
             }
-            ODBTM.value.allnodes = getAllDbtNodes(ODBTM.value, dbtCatalogJson);
+            if (dbtRunResultResponse.ok) {
+                dbtRunResultJson = await dbtRunResultResponse.json();
+            } else {
+                console.warn(`Failed to load run_results.json: ${dbtRunResultResponse.statusText}. Some of the run results information might be unavailable.`);
+            }
+
+            ODBTM.value.allnodes = getAllDbtNodes(ODBTM.value, dbtCatalogJson, dbtRunResultJson);
         } catch (error) {
             console.error('Error loading DBT files:', error);
         } finally {
@@ -940,7 +1031,7 @@
         return mergedArray;
     }
 
-    function getAllDbtNodes(dbtManifestData, dbtCatalogData) {
+    function getAllDbtNodes(dbtManifestData, dbtCatalogData, dbtRunResultJson) {
         const allNodes = {};
         if (!dbtManifestData) {
             console.warn("getAllDbtNodes called with no manifest data.");
@@ -958,13 +1049,55 @@
             allNodes[sourceId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
         }
 
+        const runResultData = dbtRunResultJson ?? {};
+        mergeRunResultData(allNodes, runResultData)
         return allNodes;
+    }
+
+    function getRunResultExecuteCompletedAt(timingArray) {
+        if (!Array.isArray(timingArray) || timingArray.length === 0) {
+            console.warn("getExecuteCompletedAt: Invalid or empty timing array provided.", timingArray);
+            return null;
+        }
+
+        const executeTiming = timingArray.find(timing => timing.name === "execute");
+
+        if (executeTiming && executeTiming.hasOwnProperty('completed_at')) {
+            return executeTiming.completed_at;
+        } else {
+            console.warn("getExecuteCompletedAt: 'execute' timing entry not found or missing 'completed_at'.");
+            return null;
+        }
+    }
+
+    function mergeRunResultData(allNodes, runResultData) {
+        if (!runResultData || !Array.isArray(runResultData.results)) {
+            console.warn("mergeRunResultData called with invalid or missing run result data.");
+            return; // Exit if there's nothing to process
+        }
+
+        // Iterate through each result in the run results
+        runResultData.results.forEach(result => {
+            const uniqueId = result.unique_id;
+
+            // Check if a node with this unique_id exists in allNodes
+            if (allNodes.hasOwnProperty(uniqueId)) {
+                allNodes[uniqueId].run_status = result.status;
+                allNodes[uniqueId].run_completed_at = getRunResultExecuteCompletedAt(result.timing);
+                allNodes[uniqueId].run_message = result.message;
+                allNodes[uniqueId].run_failures = result.failures;
+                allNodes[uniqueId].run_adapter_response = result.adapter_response;
+            } else {
+                console.warn(`Run result found for unique_id "${uniqueId}", but no corresponding node exists in allNodes.`);
+            }
+        });
+        // No need to return allNodes explicitly as the object is modified in place.
+        // return allNodes;
     }
 </script>
 
 <script type="module">
     const {createApp, ref, computed, onMounted, nextTick, watch} = Vue;
-    // import {loadDbtFiles} from './dbtLoader.js';
 
     createApp({
         setup() {
@@ -1041,26 +1174,12 @@
                         };
                     }
 
-                    // 7. Add the item to the correct list based on its resource_type
-                    switch (item.resource_type) {
-                        case 'model':
-                            databases[dbName].schemas[schemaName].models.push(item);
-                            break;
-                        case 'source':
-                            databases[dbName].schemas[schemaName].sources.push(item);
-                            break;
-                        case 'seed':
-                            databases[dbName].schemas[schemaName].sources.push(item);
-                            break;
-                        case 'snapshot':
-                            databases[dbName].schemas[schemaName].sources.push(item);
-                            break;
-                        case 'test':
-                            databases[dbName].schemas[schemaName].sources.push(item);
-                            break;
-                        // Add cases for 'seed', 'snapshot', 'test', etc., if you want them in the tree
-                        // default:
-                        //     console.log(`Item type ${item.resource_type} not explicitly placed in tree:`, item.name);
+                    if (['model', 'snapshot'].includes(item.resource_type)) {
+                        databases[dbName].schemas[schemaName].models.push(item);
+                    } else if (['source', 'seed', 'test'].includes(item.resource_type)) {
+                        databases[dbName].schemas[schemaName].sources.push(item);
+                    } else {
+                        console.log(`Item type ${item.resource_type} not explicitly placed in tree:`, item.name);
                     }
                 });
 
