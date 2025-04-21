@@ -11,32 +11,31 @@ sometimes limit the inclusion of community features in the open-source version. 
 opendbt offers a fully open-source package to address these concerns. **OpenDBT builds upon dbt-core, adding valuable
 features without changing dbt-core code.**
 
-`opendbt` unlocks many customization which are not in dbt-core, allowing end user to tailor dbt to his/her specific
-needs and data workflows.
-
 With `opendbt` you can go beyond the core functionalities of dbt. For example seamlessly integrating your customized
 adapter and providing jinja context with further adapter/python methods.
 
 # Features
 
-- Customize Existing Adapters: Leverage OOP to create custom adapters that extends existing ones. With this user
-  could provide more python features to jinja
-- Execute Local Python Code: Use dbt Python models
-  to [run local Python code](https://medium.com/@ismail-simsek/make-dbt-great-again-ec34f3b661f5). For example, you
-  could import data from web APIs directly within your dbt model.
-- Integrate [DLT](https://dlthub.com/) to dbt framework. Run end to end ETL pipeline with dbt
-  using [dlt extract and load](https://dlthub.com/) [integration](https://github.com/memiiso/opendbt/issues/40). Use DBT
-  to implement full ETL pipeline, including extract and loads
-- Use multi project dbt-mesh setup,
-  using [cross-project references](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies#how-to-write-cross-project-ref).
-  ex: `{{ ref('jaffle_finance', 'monthly_revenue') }}`
-  - This feature was only available in "dbt Cloud Enterprise" so far.
-- Granular Model-Level Orchestration with Airflow: Integrate Airflow for fine-grained control over model execution.
-- Serve dbt Docs in Airflow UI: Create a custom page on the Airflow server that displays dbt documentation as an Airflow
-  UI page.
-- Customized dbt Docs: Replace the default dbt documentation page with your own custom index.html file.
-- Register [dbt callbacks](https://docs.getdbt.com/reference/programmatic-invocations#registering-callbacks) within a
-  dbt project to trigger custom actions or alerts based on selected dbt events.
+- :white_check_mark: Includes superior dbt docs documentation UI, user-friendly data catalog, including row level
+  lineage
+- :white_check_mark: Integrates Python and DLT Jobs to dbt. Enables Extract&Load (EL) with dbt.
+- :white_check_mark: Supports DBT Mesh setups. Supports running multiple projects which are using cross project ref
+  models.
+- :white_check_mark: And many more features, customization options.
+  - Customize Existing Adapters: add your custom logic to current adapters
+  - By extending current adapter provide more functions to jinja
+  - Execute Local Python
+    Code: [run local Python code](https://medium.com/@ismail-simsek/make-dbt-great-again-ec34f3b661f5). For example, you
+    could import data from web APIs directly within your dbt model.
+  - [Integrate DLT](https://github.com/memiiso/opendbt/issues/40). Run end to end ETL pipeline with dbt and DLT.
+  - [Use multi project dbt-mesh setup cross-project references](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies#how-to-write-cross-project-ref).
+    - This feature was only available in "dbt Cloud Enterprise" so far.
+  - Granular Model-Level Orchestration with Airflow: Integrate Airflow for fine-grained control over model execution.
+  - Serve dbt Docs in Airflow UI: Create a custom page on the Airflow server that displays dbt documentation as an
+    Airflow
+    UI page.
+  - Register [dbt callbacks](https://docs.getdbt.com/reference/programmatic-invocations#registering-callbacks) within a
+    dbt project to trigger custom actions or alerting based on selected dbt events.
 
 For detailed examples, see: [examples](docs/EXAMPLES.md).
 
