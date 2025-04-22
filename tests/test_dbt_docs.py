@@ -1,5 +1,7 @@
 import unittest
 
+from dbt_common import semver
+
 from base_dbt_test import BaseDbtTest
 from opendbt import OpenDbtProject
 
@@ -15,7 +17,8 @@ class TestDbtDocs(BaseDbtTest):
             pass
         dp.run(command="docs", args=['generate'])
         self.assertTrue(self.DBTCORE_DIR.joinpath('target/catalogl.json').exists())
-        self.assertTrue(self.DBTCORE_DIR.joinpath('target/run_info.json').exists())
+        if self.DBT_VERSION > semver.VersionSpecifier.from_version_string("1.8.0"):
+            self.assertTrue(self.DBTCORE_DIR.joinpath('target/run_info.json').exists())
 
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
         # dp.run(command="run")
