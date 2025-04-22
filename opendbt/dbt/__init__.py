@@ -24,6 +24,7 @@ try:
         from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v18.config.runtime import OpenDbtRuntimeConfig
         from opendbt.dbt.v18.task.run import OpenDbtModelRunner
+        from opendbt.dbt.v18.artifacts.schemas.run import OpenDbtRunResultsArtifact
     else:
         raise Exception(
             f"Unsupported dbt version {dbt_version}, please make sure dbt version is supported/integrated by opendbt")

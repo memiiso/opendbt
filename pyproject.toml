@@ -22,7 +22,8 @@ dependencies = [
     "sqlfluff",
     "sqlfluff-templater-dbt",
     "sqlglot",
-    "tqdm"
+    "tqdm",
+    "filelock"
 ]
 [project.optional-dependencies]
 airflow = ["apache-airflow"]

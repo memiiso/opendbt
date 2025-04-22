@@ -1,0 +1,423 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/catalog/v1.json",
+    "dbt_version": "1.9.4",
+    "generated_at": "2025-04-22T09:16:44.346647Z",
+    "invocation_id": "742c6339-ca49-4d87-9aab-e8f90fb3ef7f",
+    "env": {}
+  },
+  "nodes": {
+    "model.dbtfinance.my_cross_project_ref_model": {
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "unknown",
+          "column_fqn": "dev.finance.my_cross_project_ref_model.id",
+          "table_fqn": "dev.finance.my_cross_project_ref_model",
+          "table_relative_fqn": "finance.my_cross_project_ref_model",
+          "transformations": [],
+          "depends_on": []
+        },
+        "row_data": {
+          "name": "row_data",
+          "type": "unknown",
+          "column_fqn": "dev.finance.my_cross_project_ref_model.row_data",
+          "table_fqn": "dev.finance.my_cross_project_ref_model",
+          "table_relative_fqn": "finance.my_cross_project_ref_model",
+          "transformations": [],
+          "depends_on": []
+        },
+        "num_rows": {
+          "name": "num_rows",
+          "type": "unknown",
+          "column_fqn": "dev.finance.my_cross_project_ref_model.num_rows",
+          "table_fqn": "dev.finance.my_cross_project_ref_model",
+          "table_relative_fqn": "finance.my_cross_project_ref_model",
+          "transformations": [],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_first_dbt_model": {
+      "columns": {
+        "data_value": {
+          "name": "data_value",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_first_dbt_model.data_value",
+          "table_fqn": "dev.core.my_first_dbt_model",
+          "table_relative_fqn": "core.my_first_dbt_model",
+          "transformations": [
+            "'test-value' AS data_value",
+            "'test-value' AS data_value",
+            "'test-value' AS data_value",
+            "'test-value' AS data_value",
+            "source_data.data_value AS data_value"
+          ],
+          "depends_on": []
+        },
+        "column_3": {
+          "name": "column_3",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_first_dbt_model.column_3",
+          "table_fqn": "dev.core.my_first_dbt_model",
+          "table_relative_fqn": "core.my_first_dbt_model",
+          "transformations": [
+            "'test-value' AS column_3",
+            "'test-value' AS column_3",
+            "'test-value' AS column_3",
+            "'test-value' AS column_3",
+            "source_data.column_3 AS column_3"
+          ],
+          "depends_on": []
+        },
+        "id": {
+          "name": "id",
+          "description": "The primary key for this table",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_first_dbt_model.id",
+          "table_fqn": "dev.core.my_first_dbt_model",
+          "table_relative_fqn": "core.my_first_dbt_model",
+          "transformations": [
+            "NULL AS id",
+            "2 AS id",
+            "1 AS id",
+            "1 AS id",
+            "source_data.id AS id"
+          ],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_executesql_dbt_model": {
+      "columns": {},
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_failing_dbt_model": {
+      "columns": {
+        "my_failing_column": {
+          "name": "my_failing_column",
+          "type": "unknown",
+          "column_fqn": "dev.core.my_failing_dbt_model.my_failing_column",
+          "table_fqn": "dev.core.my_failing_dbt_model",
+          "table_relative_fqn": "core.my_failing_dbt_model",
+          "transformations": [],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_core_table1": {
+      "columns": {
+        "id": {
+          "name": "id",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_core_table1.id",
+          "table_fqn": "dev.core.my_core_table1",
+          "table_relative_fqn": "core.my_core_table1",
+          "transformations": [
+            "2 AS id",
+            "1 AS id",
+            "source_data.id AS id"
+          ],
+          "depends_on": []
+        },
+        "row_data": {
+          "name": "row_data",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_core_table1.row_data",
+          "table_fqn": "dev.core.my_core_table1",
+          "table_relative_fqn": "core.my_core_table1",
+          "transformations": [
+            "'row1' AS row_data",
+            "'row1' AS row_data",
+            "source_data.row_data AS row_data"
+          ],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_second_dbt_model": {
+      "columns": {
+        "pk_id": {
+          "name": "pk_id",
+          "description": "The primary key for this table",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_second_dbt_model.pk_id",
+          "table_fqn": "dev.core.my_second_dbt_model",
+          "table_relative_fqn": "core.my_second_dbt_model",
+          "transformations": [
+            "dev.core.my_first_dbt_model AS t1",
+            "t1.id AS pk_id"
+          ],
+          "depends_on": [
+            {
+              "name": "id",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_first_dbt_model.id",
+              "table_fqn": "dev.core.my_first_dbt_model",
+              "table_relative_fqn": "core.my_first_dbt_model",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_first_dbt_model"
+            }
+          ]
+        },
+        "data_value1": {
+          "name": "data_value1",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_second_dbt_model.data_value1",
+          "table_fqn": "dev.core.my_second_dbt_model",
+          "table_relative_fqn": "core.my_second_dbt_model",
+          "transformations": [
+            "dev.core.my_first_dbt_model AS t1",
+            "t1.data_value AS data_value1"
+          ],
+          "depends_on": [
+            {
+              "name": "data_value",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_first_dbt_model.data_value",
+              "table_fqn": "dev.core.my_first_dbt_model",
+              "table_relative_fqn": "core.my_first_dbt_model",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_first_dbt_model"
+            }
+          ]
+        },
+        "data_value2": {
+          "name": "data_value2",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_second_dbt_model.data_value2",
+          "table_fqn": "dev.core.my_second_dbt_model",
+          "table_relative_fqn": "core.my_second_dbt_model",
+          "transformations": [
+            "dev.core.my_core_table1 AS t2",
+            "dev.core.my_first_dbt_model AS t1",
+            "dev.core.my_first_dbt_model AS t1",
+            "CONCAT(t1.column_3, '-concat-1', t1.data_value, t2.row_data) AS data_value2"
+          ],
+          "depends_on": [
+            {
+              "name": "column_3",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_first_dbt_model.column_3",
+              "table_fqn": "dev.core.my_first_dbt_model",
+              "table_relative_fqn": "core.my_first_dbt_model",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_first_dbt_model"
+            },
+            {
+              "name": "data_value",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_first_dbt_model.data_value",
+              "table_fqn": "dev.core.my_first_dbt_model",
+              "table_relative_fqn": "core.my_first_dbt_model",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_first_dbt_model"
+            },
+            {
+              "name": "row_data",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_core_table1.row_data",
+              "table_fqn": "dev.core.my_core_table1",
+              "table_relative_fqn": "core.my_core_table1",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_core_table1"
+            }
+          ]
+        },
+        "event_tstamp": {
+          "name": "event_tstamp",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_second_dbt_model.event_tstamp",
+          "table_fqn": "dev.core.my_second_dbt_model",
+          "table_relative_fqn": "core.my_second_dbt_model",
+          "transformations": [
+            "dev.core.my_executedlt_model AS t3",
+            "t3.event_tstamp AS event_tstamp"
+          ],
+          "depends_on": [
+            {
+              "name": "event_tstamp",
+              "type": "unknown",
+              "column_fqn": "dev.core.my_executedlt_model.event_tstamp",
+              "table_fqn": "dev.core.my_executedlt_model",
+              "table_relative_fqn": "core.my_executedlt_model",
+              "transformations": [],
+              "depends_on": [],
+              "model_id": "model.dbtcore.my_executedlt_model"
+            }
+          ]
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_executepython_dlt_model": {
+      "columns": {},
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_executedlt_model": {
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_executedlt_model.event_id",
+          "table_fqn": "dev.core.my_executedlt_model",
+          "table_relative_fqn": "core.my_executedlt_model",
+          "transformations": [],
+          "depends_on": []
+        },
+        "event_tstamp": {
+          "name": "event_tstamp",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_executedlt_model.event_tstamp",
+          "table_fqn": "dev.core.my_executedlt_model",
+          "table_relative_fqn": "core.my_executedlt_model",
+          "transformations": [],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "model.dbtcore.my_executepython_model": {
+      "columns": {
+        "event_id": {
+          "name": "event_id",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_executepython_model.event_id",
+          "table_fqn": "dev.core.my_executepython_model",
+          "table_relative_fqn": "core.my_executepython_model",
+          "transformations": [],
+          "depends_on": []
+        },
+        "event_tstamp": {
+          "name": "event_tstamp",
+          "description": "",
+          "meta": {},
+          "data_type": null,
+          "constraints": [],
+          "quote": null,
+          "tags": [],
+          "granularity": null,
+          "type": "unknown",
+          "column_fqn": "dev.core.my_executepython_model.event_tstamp",
+          "table_fqn": "dev.core.my_executepython_model",
+          "table_relative_fqn": "core.my_executepython_model",
+          "transformations": [],
+          "depends_on": []
+        }
+      },
+      "metadata": {},
+      "stats": {}
+    },
+    "source.dbtfinance.core.my_executepython_model": {
+      "columns": {},
+      "metadata": {},
+      "stats": {}
+    },
+    "source.dbtfinance.core.my_executepython_dlt_model": {
+      "columns": {},
+      "metadata": {},
+      "stats": {}
+    }
+  },
+  "sources": {},
+  "errors": null
+}

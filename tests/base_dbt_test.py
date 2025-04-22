@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from dbt.version import __version__ as dbt_version_str
 from dbt.version import get_installed_version as get_dbt_version
 
 from opendbt import OpenDbtCli
@@ -13,6 +14,7 @@ class BaseDbtTest(TestCase):
     DBTCORE_DIR = RESOURCES_DIR.joinpath("dbtcore")
     DBTFINANCE_DIR = RESOURCES_DIR.joinpath("dbtfinance")
     DBT_VERSION = get_dbt_version()
+    DBT_VERSION_STR = dbt_version_str
 
     @classmethod
     def setUpClass(cls):
