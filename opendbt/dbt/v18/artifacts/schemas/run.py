@@ -8,12 +8,13 @@ from opendbt.runtime_patcher import PatchClass
 from opendbt.utils import Utils
 
 
+# pylint: disable=too-many-ancestors
 @PatchClass(module_name="dbt.artifacts.schemas.run", target_name="RunResultsArtifact")
 @PatchClass(module_name="dbt.artifacts.schemas.run.v5.run", target_name="RunResultsArtifact")
 class OpenDbtRunResultsArtifact(run.RunResultsArtifact):
 
     def run_info(self) -> dict:
-        run_info = self.to_dict(omit_none=False)
+        run_info_data = self.to_dict(omit_none=False)
         nodes = {}
         for r in self.results:
             key = r.unique_id
@@ -26,9 +27,9 @@ class OpenDbtRunResultsArtifact(run.RunResultsArtifact):
             nodes[key]['run_failures'] = r.failures
             nodes[key]['run_adapter_response'] = r.adapter_response
 
-        run_info['nodes'] = nodes
-        run_info.pop('results', None)
-        return run_info
+        run_info_data['nodes'] = nodes
+        run_info_data.pop('results', None)
+        return run_info_data
 
     def write_run_info(self, path: str):
         run_info_file = Path(path).parent.joinpath("run_info.json")
