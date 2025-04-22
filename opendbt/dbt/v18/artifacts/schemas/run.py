@@ -14,7 +14,7 @@ from opendbt.utils import Utils
 class OpenDbtRunResultsArtifact(run.RunResultsArtifact):
 
     def run_info(self) -> dict:
-        run_info_data = self.to_dict(omit_none=False)
+        run_info_data: dict = self.to_dict(omit_none=False)
         nodes = {}
         for r in self.results:
             key = r.unique_id
@@ -27,6 +27,7 @@ class OpenDbtRunResultsArtifact(run.RunResultsArtifact):
             nodes[key]['run_failures'] = r.failures
             nodes[key]['run_adapter_response'] = r.adapter_response
 
+        # pylint: disable=unsupported-assignment-operation
         run_info_data['nodes'] = nodes
         run_info_data.pop('results', None)
         return run_info_data
