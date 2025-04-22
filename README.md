@@ -16,8 +16,9 @@ adapter and providing jinja context with further adapter/python methods.
 
 # Features
 
-- :white_check_mark: Includes superior dbt docs documentation UI, user-friendly data catalog, including row level
-  lineage
+- :white_check_mark: Includes superior [dbt catalog UI](https://memiiso.github.io/opendbt), user-friendly data catalog,
+  including row level
+  lineage, [see it here](https://memiiso.github.io/opendbt)
 - :white_check_mark: Integrates Python and DLT Jobs to dbt. Enables Extract&Load (EL) with dbt.
 - :white_check_mark: Supports DBT Mesh setups. Supports running multiple projects which are using cross project ref
   models.
