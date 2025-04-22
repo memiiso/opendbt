@@ -1,8 +1,8 @@
 import json
 import unittest
 
+import semver
 from dbt.exceptions import DbtRuntimeError
-from dbt_common import semver
 
 from base_dbt_test import BaseDbtTest
 from opendbt import OpenDbtProject, OpenDbtCli
@@ -50,7 +50,7 @@ class TestOpenDbtCli(BaseDbtTest):
         dpf.invoke(
             args=['run', '--select', '+my_cross_project_ref_model', "--profiles-dir", dpf.project_dir.as_posix()])
 
-    @unittest.skipIf(BaseDbtTest.DBT_VERSION < semver.VersionSpecifier.from_version_string("1.8.0"), 'skip')
+    @unittest.skipIf(semver.Version.parse(BaseDbtTest.DBT_VERSION_STR) < semver.Version.parse("1.8.0"), 'skip')
     def test_cli_run_result(self):
         run_info = self.DBTCORE_DIR.joinpath("target/run_info.json")
         if run_info.exists():
