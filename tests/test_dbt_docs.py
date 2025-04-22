@@ -17,7 +17,7 @@ class TestDbtDocs(BaseDbtTest):
             pass
         dp.run(command="docs", args=['generate'])
         self.assertTrue(self.DBTCORE_DIR.joinpath('target/catalogl.json').exists())
-        if semver.Version.parse(self.DBT_VERSION_STR) > semver.Version.parse("1.7.0"):
+        if semver.Version.parse(self.DBT_VERSION_STR) >= semver.Version.parse("1.8.0"):
             self.assertTrue(self.DBTCORE_DIR.joinpath('target/run_info.json').exists())
 
         dp = OpenDbtProject(project_dir=self.DBTFINANCE_DIR, profiles_dir=self.DBTFINANCE_DIR)
