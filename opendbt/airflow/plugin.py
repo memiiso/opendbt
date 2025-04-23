@@ -33,22 +33,22 @@ def init_plugins_dbtdocs_page(dbt_docs_dir: Path):
         @expose("/catalog.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def catalog(self):
-            self.return_json("catalog.json")
+            return self.return_json("catalog.json")
 
         @expose("/manifest.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def manifest(self):
-            self.return_json("manifest.json")
+            return self.return_json("manifest.json")
 
         @expose("/run_info.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def run_info(self):
-            self.return_json("run_info.json")
+            return self.return_json("run_info.json")
 
         @expose("/catalogl.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def catalogl(self):
-            self.return_json("catalogl.json")
+            return self.return_json("catalogl.json")
 
 
     # Creating a flask blueprint to integrate the templates and static folder
