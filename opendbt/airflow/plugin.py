@@ -23,25 +23,33 @@ def init_plugins_dbtdocs_page(dbt_docs_dir: Path):
                 return dbt_docs_dir.joinpath("index.html").read_text()
             # return self.render_template("index.html", content="")
 
+        def return_json(self, json_file: str):
+            if not dbt_docs_dir.joinpath(json_file).is_file():
+                abort(404)
+            else:
+                data = dbt_docs_dir.joinpath(json_file).read_text()
+                return data, 200, {"Content-Type": "application/json"}
+
         @expose("/catalog.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def catalog(self):
-            if not dbt_docs_dir.joinpath("catalog.json").is_file():
-                abort(404)
-            else:
-                data = dbt_docs_dir.joinpath("catalog.json").read_text()
-                return data, 200, {"Content-Type": "application/json"}
-            # return self.render_template("index.html", content="")
+            return self.return_json("catalog.json")
 
         @expose("/manifest.json")  # type: ignore[misc]
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def manifest(self):
-            if not dbt_docs_dir.joinpath("manifest.json").is_file():
-                abort(404)
-            else:
-                data = dbt_docs_dir.joinpath("manifest.json").read_text()
-                return data, 200, {"Content-Type": "application/json"}
-            # return self.render_template("index.html", content="")
+            return self.return_json("manifest.json")
+
+        @expose("/run_info.json")  # type: ignore[misc]
+        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+        def run_info(self):
+            return self.return_json("run_info.json")
+
+        @expose("/catalogl.json")  # type: ignore[misc]
+        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+        def catalogl(self):
+            return self.return_json("catalogl.json")
+
 
     # Creating a flask blueprint to integrate the templates and static folder
     bp = Blueprint(
