@@ -1,7 +1,5 @@
-import datetime
-from datetime import timedelta
-
 from airflow import DAG
+from airflow.utils.dates import days_ago
 
 from base_dbt_test import BaseDbtTest
 from opendbt.airflow import OpenDbtAirflowProject
@@ -13,7 +11,7 @@ class TestOpenDbtProject(BaseDbtTest):
         return DAG(
             dag_id='dbt_test_workflow',
             schedule_interval=None,
-            start_date=(datetime.datetime.today() - timedelta(days=10)),
+            start_date=days_ago(3),
             catchup=False,
             max_active_runs=1
         )
