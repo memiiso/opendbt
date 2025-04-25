@@ -1,6 +1,6 @@
 # Opendbt Catalog
 
-[See it in action](https://memiiso.github.io/opendbt)
+[See it in action](https://memiiso.github.io/opendbt/opendbtdocs/)
 
 Summary of the catalog files:
 

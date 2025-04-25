@@ -28,6 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 airflow = ["apache-airflow"]
 test = ["testcontainers>=4.10", "apache-airflow", "pylint", "dlt[duckdb]"]
+dev = ["mkdocs-material"]
 
 [tool.setuptools]
 include-package-data = true
