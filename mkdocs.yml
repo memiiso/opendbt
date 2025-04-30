@@ -15,7 +15,7 @@ nav:
   - Home: index.md
   - Examples: examples.md
   - Catalog: catalog.md
-  - Catalog UI: opendbtdocs/index.html
+  - Catalog (Demo): opendbtdocs/index.html
 
 markdown_extensions:
   - pymdownx.highlight:
