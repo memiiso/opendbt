@@ -5,6 +5,7 @@
 # opendbt
 
 This project adds new capabilities to dbt-core by dynamically extending dbt's source code.
+
 dbt is a popular solution for batch data processing in data analytics. While it operates on
 an [open-core model](https://opencoreventures.com/blog/2023-07-open-core-is-misunderstood-business-model/), which can
 sometimes limit the inclusion of community features in the open-source version. no worries opendbt is here to solve it.
@@ -14,11 +15,12 @@ features without changing dbt-core code.**
 With `opendbt` you can go beyond the core functionalities of dbt. For example seamlessly integrating your customized
 adapter and providing jinja context with further adapter/python methods.
 
-# Features
+## Features
 
-- :white_check_mark: Includes superior [dbt catalog UI](https://memiiso.github.io/opendbt), user-friendly data catalog,
+- :white_check_mark: Includes superior [dbt catalog UI](https://memiiso.github.io/opendbt/opendbtdocs/), user-friendly
+  data catalog,
   including row level
-  lineage, [see it here](https://memiiso.github.io/opendbt)
+  lineage, [see it here](https://memiiso.github.io/opendbt/opendbtdocs/)
 - :white_check_mark: Integrates Python and DLT Jobs to dbt. Enables Extract&Load (EL) with dbt.
 - :white_check_mark: Supports DBT Mesh setups. Supports running multiple projects which are using cross project ref
   models.
@@ -38,15 +40,17 @@ adapter and providing jinja context with further adapter/python methods.
   - Register [dbt callbacks](https://docs.getdbt.com/reference/programmatic-invocations#registering-callbacks) within a
     dbt project to trigger custom actions or alerting based on selected dbt events.
 
-For detailed examples, see: [examples](docs/EXAMPLES.md).
+[See documentation for further details and detailed examples](https://memiiso.github.io/opendbt/).
 
-![opendbt-airflow-ui.png](docs/assets/opendbt-airflow-ui.png)
+![opendbt-airflow-ui.png](https://raw.githubusercontent.com/memiiso/opendbt/main/docs/assets/opendbt-airflow-ui.png)
 
 ## Installation
 
-install version from github:
+install from github or pypi:
 
 ```shell
+pip install opendbt==0.13.0
+# Or
 pip install https://github.com/memiiso/opendbt/archive/refs/tags/0.4.0.zip --upgrade --user
 ```
 
