@@ -10,9 +10,11 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <link href="https://unpkg.com/vis-network/styles/vis-network.min.css" rel="stylesheet" type="text/css"/>
+    <link href="https://unpkg.com/@tailwindcss/typography@0.4.x/dist/typography.min.css" rel="stylesheet"/>
     <style>
         /* Base styles */
         .model-card:hover {
@@ -357,6 +359,10 @@
             font-size: 1.2em;
             color: #555;
         }
+
+        .prose {
+            max-width: inherit;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -543,7 +549,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h2 class="text-2xl font-bold text-gray-900">
-                                    <span v-html="selectedItem.database +'.'+ selectedItem.schema+'.'+highlightMatches(selectedItem.name)"></span>
+                                    <span v-html="highlightMatches(selectedItem.database +'.'+ selectedItem.schema+'.'+selectedItem.name)"></span>
                                 </h2>
                                 <div class="mt-1 flex items-center space-x-2">
                                     <span :class="getIconClassForResourceType(selectedItem.resource_type, selectedItem.language)"
@@ -640,8 +646,8 @@
                         <!-- Overview Tab -->
                         <div v-if="activeTab === 'overview'">
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
-                            <p class="text-gray-700"
-                               v-html="highlightMatches(selectedItem.description ?? 'No description available')"></p>
+                            <div class="text-gray-700 prose lg:prose-sm"
+                                 v-html="highlightMatches(selectedItem.description ?? 'No description available')"></div>
                             <!-- Use ?? -->
                         </div>
 
@@ -692,7 +698,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <!-- Display data_type from computed property -->
-                                            {{ column.data_type ?? 'N/A' }} <!-- Use ?? -->
+                                            {{ column.type ?? 'N/A' }} <!-- Use ?? -->
                                         </td>
                                         <td class="px-6 py-4 text-sm text-gray-500 max-w-md">
                                             <!-- Added max-w-md for readability -->
@@ -988,58 +994,53 @@
         }
     }
 
-    function mergeManifestAndCatalogNodes(manifestNode, catalogNode) {
-        if (!manifestNode) {
-            return manifestNode;
+    // Priority given to obj1, it's enriched with obj2 values
+    function deepMerge(obj1, obj2) {
+        if (obj1 === null) return obj2;
+        if (obj2 === null) return obj1;
+        if (typeof obj1 !== 'object') {
+            console.error("deepMerge: obj1 must be an object.");
+            return obj1;
+        }
+        if (typeof obj2 !== 'object') {
+            console.error("deepMerge: obj2 must be an object.");
+            return obj1;
         }
 
-        // Ensure catalogNode is at least an empty object if it's null or undefined
-        const safeCatalogNode = catalogNode ?? {};
+        for (const key in obj2) {
+            if (obj2.hasOwnProperty(key)) {
+                const valueFromObj2 = obj2[key];
+                const valueFromObj1 = obj1[key];
+                const keyExistsInObj1 = obj1.hasOwnProperty(key);
 
-        // Merge properties from catalogNode into manifestNode.
-        // Properties in safeCatalogNode will overwrite properties in manifestNode if keys clash.
-        const mergedNode = {...manifestNode, ...safeCatalogNode};
-
-        // Special handling for columns needs to be preserved if you still
-        // want the detailed column merging logic from mergeManifestAndCatalogColumns.
-        mergedNode.columns = mergeManifestAndCatalogColumns(manifestNode?.columns, catalogNode?.columns);
-
-        return mergedNode;
-    }
-
-
-    /**
-     * Merges two objects, starting with manifestData and overriding its properties
-     * with values from catalogData, but only if the catalogData value is not
-     * null, undefined, or an empty string.
-     */
-    function mergeManifestAndCatalogColumns(manifestData, catalogData) {
-        const mData = manifestData ?? {};
-        const cData = catalogData ?? {};
-        const mergedData = {...mData};
-
-        for (const key in cData) {
-            // Ensure the key is an own property of catalogData
-            if (Object.prototype.hasOwnProperty.call(cData, key)) {
-                const catalogValue = cData[key];
-                // Check if the catalogValue is considered "valid" (not null, undefined, or empty string)
-                const isValidValue = catalogValue !== null && catalogValue !== undefined && catalogValue !== '';
-                if (isValidValue) {
-                    // If the value is valid, assign it to the merged object, overriding any existing value
-                    // If 'key' was NOT in mData, this line ADDS it to mergedData.
-                    mergedData[key] = catalogValue;
+                if (typeof valueFromObj1 === 'object' && typeof valueFromObj2 === 'object' && !Array.isArray(valueFromObj2)) {
+                    if (valueFromObj1 !== null && valueFromObj2 !== null) {
+                        // both are object. We need to recursively merge properties.
+                        deepMerge(obj1[key], valueFromObj2);
+                    }
                 }
+                // It's updated if the key is not in obj1, or if obj1[key] is null or an empty string.
+                const shouldUpdateObj1Key = !keyExistsInObj1 || valueFromObj1 === null || valueFromObj1 === '';
+
+                if (shouldUpdateObj1Key) {
+                    // Check if the value from obj2 is a "plain" object (not an array or null)
+                    if (typeof valueFromObj2 === 'object' && valueFromObj2 !== null && !Array.isArray(valueFromObj2)) {
+                        // obj2[key] is an object. We need to recursively merge its properties.
+                        // Ensure obj1[key] is an object to merge into.
+                        // If obj1[key] was null, an empty string, or didn't exist, it needs to be initialized.
+                        if (typeof valueFromObj1 !== 'object' || valueFromObj1 === null || Array.isArray(valueFromObj1)) {
+                            obj1[key] = {};
+                        }
+                        deepMerge(obj1[key], valueFromObj2); // Recursive call
+                    } else {
+                        // obj2[key] is a primitive or an array. Assign it directly.
+                        obj1[key] = valueFromObj2;
+                    }
+                }
+                // If shouldUpdateObj1Key is false, obj1[key] (which exists and is not null/empty) is NOT changed.
             }
         }
-
-        // Convert the merged object (keyed by column name) into an array of column objects
-        const mergedArray = Object.values(mergedData);
-        mergedArray.sort((a, b) => {
-            if (a.index !== b.index) return a.index - b.index;
-            return a.name.localeCompare(b.name);
-        });
-
-        return mergedArray;
+        return obj1;
     }
 
     function getAllDbtNodes(dbtManifestData, dbtCatalogData, dbtRunInfoJson) {
@@ -1051,62 +1052,40 @@
         const catalogData = dbtCatalogData ?? {};
         for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
             const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {};
-            allNodes[nodeId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
+            allNodes[nodeId] = deepMerge(manifestNode, catalogNode ?? {});
         }
 
         // Process sources
         for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
             const catalogNode = catalogData.sources?.[sourceId] ?? {};
-            allNodes[sourceId] = mergeManifestAndCatalogNodes(manifestNode, catalogNode);
+            allNodes[sourceId] = deepMerge(manifestNode, catalogNode ?? {});
         }
 
         const runInfoData = dbtRunInfoJson ?? {};
-        mergeRunInfoData(allNodes, runInfoData)
-        return allNodes;
-    }
-
-    function getRunResultExecuteCompletedAt(timingArray) {
-        if (!Array.isArray(timingArray) || timingArray.length === 0) {
-            console.warn("getExecuteCompletedAt: Invalid or empty timing array provided.", timingArray);
-            return null;
-        }
-
-        const executeTiming = timingArray.find(timing => timing.name === "execute");
-
-        if (executeTiming && executeTiming.hasOwnProperty('completed_at')) {
-            return executeTiming.completed_at;
-        } else {
-            console.warn("getExecuteCompletedAt: 'execute' timing entry not found or missing 'completed_at'.");
-            return null;
-        }
-    }
-
-    function mergeRunInfoData(allNodes, runInfoData) {
-        if (runInfoData?.nodes == null || typeof runInfoData.nodes !== 'object') {
-            console.warn("mergeRunResultData called with invalid or missing run result data.");
-            return; // Exit if there's nothing to process
-        }
-
-        // Iterate through each result in the run results
         for (const [uniqueId, result] of Object.entries(runInfoData.nodes)) {
-            // Check if a node with this unique_id exists in allNodes
             if (allNodes.hasOwnProperty(uniqueId)) {
-                allNodes[uniqueId].run_status = result.run_status;
-                allNodes[uniqueId].run_completed_at = result.run_completed_at;
-                allNodes[uniqueId].run_message = result.run_message;
-                allNodes[uniqueId].run_failures = result.run_failures;
-                allNodes[uniqueId].run_adapter_response = result.run_adapter_response;
-            } else {
-                console.warn(`Run result found for unique_id "${uniqueId}", but no corresponding node exists in allNodes.`);
+                allNodes.nodes = deepMerge(allNodes[uniqueId], result)
             }
         }
-        // No need to return allNodes explicitly as the object is modified in place.
-        // return allNodes;
+        return allNodes;
     }
 </script>
 
 <script type="module">
-    const {createApp, ref, computed, onMounted, nextTick, watch} = Vue;
+    const {createApp, ref, computed, onMounted, onUnmounted, nextTick, watch} = Vue;
+
+    // Configuration for Marked  This should be done before marked is used by the component.
+    if (window.marked) {
+        window.marked.setOptions({
+            gfm: true,        // Enable GitHub Flavored Markdown (tables, strikethrough, etc.)
+            breaks: true,     // Convert single line breaks in Markdown into <br> tags
+            pedantic: false,  // Don't be too strict about Markdown syntax
+            sanitize: false   // IMPORTANT: Set to false if you are handling sanitization elsewhere or trust the source.
+                              // If true, marked will try to sanitize HTML, but it's generally better to use a dedicated HTML sanitizer.
+        });
+    } else {
+        console.warn("Marked.js library not found. Markdown rendering will not work as expected.");
+    }
 
     createApp({
         setup() {
@@ -1123,23 +1102,101 @@
             const lineageRendering = ref(false);
             const lineageError = ref(false);
             const isLineageFullScreen = ref(false);
-            let currentVisNetwork = null; // Store the vis-network instance
+            let currentVisNetwork = null;
 
-            onMounted(() => {
-                loadDbtFiles(isLoading, ODBTM);
+            // --- URL HASH LOGIC ---
+            const handleUrlHash = () => {
+                const hash = window.location.hash.substring(1); // Remove #
+                if (hash) {
+                    // Avoid re-selecting if the current selected item already matches the hash
+                    if (selectedItem.value && selectedItem.value.unique_id === hash) {
+                        return;
+                    }
+
+                    // Find item (allItems should be populated by the time this is called after loadDbtFiles)
+                    const itemFromHash = allItems.value.find(i => i.unique_id === hash);
+                    if (itemFromHash) {
+                        // Select the item but don't update the hash again (it's already in the URL)
+                        selectItem(itemFromHash, false);
+                    } else {
+                        console.warn(`Item with ID "${hash}" from URL hash not found.`);
+                        // Optionally, clear the hash if the item is invalid to avoid confusion
+                        // window.location.hash = '';
+                    }
+                } else {
+                    // No hash, or hash is empty.
+                    // If you want to clear the selected item when the hash is removed:
+                    // if (selectedItem.value) {
+                    //     selectedItem.value = null; // Or set to a default welcome state
+                    //     activeTab.value = 'overview'; // Reset tab
+                    // }
+                }
+            };
+
+            onMounted(async () => {
+                await loadDbtFiles(isLoading, ODBTM); // Wait for data to be loaded
+                handleUrlHash(); // Process initial URL hash
+                window.addEventListener('hashchange', handleUrlHash); // Listen for subsequent hash changes
                 document.addEventListener('fullscreenchange', handleFullScreenChange);
             });
 
-            // --- Add Fullscreen Toggle Function ---
+            onUnmounted(() => {
+                window.removeEventListener('hashchange', handleUrlHash);
+                document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            });
+
+            // --- MODIFIED selectItem function ---
+            const selectItem = (item, updateUrlHash = true) => {
+                selectedItem.value = item;
+
+                if (updateUrlHash) {
+                    const newHash = `#${item.unique_id}`;
+                    if (window.location.hash !== newHash) {
+                        window.location.hash = newHash;
+                    }
+                }
+
+                // Clear search
+                searchQuery.value = '';
+                searchResults.value = [];
+
+                // Expand the tree to show the selected item
+                const dbName = item?.database ?? '$database';
+                const schemaName = item?.schema ?? '$schema';
+                if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
+                if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
+
+                const itemTypeGroup = item.resource_type === 'model' || item.resource_type === 'snapshot' ? 'models' : 'sources';
+                if (!expandedNodes.value.includes(`${dbName}.${schemaName}.${itemTypeGroup}`)) {
+                    expandedNodes.value.push(`${dbName}.${schemaName}.${itemTypeGroup}`);
+                }
+
+
+                // If lineage tab was active, trigger render
+                if (activeTab.value === 'lineage') {
+                    renderTableLineageGraph();
+                } else if (activeTab.value === 'code') {
+                    nextTick(() => {
+                        hljs.highlightAll();
+                    });
+                }
+                // Scroll to top of main panel might be useful
+                // document.querySelector('.flex-1')?.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+
+            // ... (rest of your existing setup() code: toggleLineageFullScreen, handleFullScreenChange, databaseTree, allItems, etc.) ...
+            // Make sure allItems computed property is available before handleUrlHash is called effectively.
+            // The `await loadDbtFiles` in onMounted ensures ODBTM.value is populated, which allItems depends on.
+
             const toggleLineageFullScreen = async () => {
                 if (!document.fullscreenElement) {
                     try {
-                        // Use the container that holds the graph container
                         await lineageContainer.value?.requestFullscreen();
                         isLineageFullScreen.value = true;
                     } catch (err) {
                         console.error(`Error attempting full-screen: ${err.message}`);
-                        isLineageFullScreen.value = false; // Reset on error
+                        isLineageFullScreen.value = false;
                     }
                 } else {
                     if (document.exitFullscreen) {
@@ -1149,7 +1206,6 @@
                 }
             };
 
-            // --- Add Fullscreen Change Handler ---
             const handleFullScreenChange = () => {
                 isLineageFullScreen.value = !!document.fullscreenElement;
                 // Re-fit the graph when state changes (e.g., ESC key)
@@ -1165,16 +1221,13 @@
                 Object.entries(ODBTM.value.allnodes).forEach(([itemId, item]) => {
                     // If the resource type is not 'model' or 'source', skip this item
                     if (!['model', 'source', 'seed', 'snapshot', 'test'].includes(item.resource_type)) {
-                        return; // Go to the next item in the loop
+                        return;
                     }
-
                     const dbName = item?.database ?? '$database';
                     const schemaName = item?.schema ?? '$schema';
-
                     if (!databases[dbName]) {
                         databases[dbName] = {name: dbName, schemas: {}};
                     }
-
                     if (!databases[dbName].schemas[schemaName]) {
                         databases[dbName].schemas[schemaName] = {
                             name: schemaName,
@@ -1182,13 +1235,10 @@
                             sources: []
                         };
                     }
-
                     if (['model', 'snapshot'].includes(item.resource_type)) {
                         databases[dbName].schemas[schemaName].models.push(item);
                     } else if (['source', 'seed', 'test'].includes(item.resource_type)) {
                         databases[dbName].schemas[schemaName].sources.push(item);
-                    } else {
-                        console.log(`Item type ${item.resource_type} not explicitly placed in tree:`, item.name);
                     }
                 });
 
@@ -1198,16 +1248,15 @@
                     name: db.name,
                     schemas: Object.values(db.schemas).map(schema => ({
                         name: schema.name,
-                        // Sort items within each schema alphabetically
                         models: schema.models.sort((a, b) => a.name.localeCompare(b.name)),
                         sources: schema.sources.sort((a, b) => a.name.localeCompare(b.name))
-                        // Add other sorted arrays if needed (e.g., seeds, snapshots)
-                    })).sort((a, b) => a.name.localeCompare(b.name)) // Sort schemas alphabetically
-                })).sort((a, b) => a.name.localeCompare(b.name)); // Sort databases alphabetically
+                    })).sort((a, b) => a.name.localeCompare(b.name))
+                })).sort((a, b) => a.name.localeCompare(b.name));
             });
 
             // Flatten all items for search
             const allItems = computed(() => {
+                if (!databaseTree.value) return []; // Guard against undefined databaseTree
                 return databaseTree.value.flatMap(db =>
                     db.schemas.flatMap(schema =>
                         [...schema.models, ...schema.sources].map(item => ({
@@ -1221,9 +1270,7 @@
 
             const displayColumns = computed(() => {
                 const manifestColumns = selectedItem.value?.columns ?? {};
-                return Object.entries(manifestColumns).map(([name, data]) => {
-                    return data;
-                });
+                return Object.values(manifestColumns); // Simplified from Object.entries().map()
             });
 
             const selectedItemStats = computed(() => {
@@ -1246,20 +1293,56 @@
 
             // Highlight search matches
             const highlightMatches = (text) => {
-                if (!searchQuery.value || !text) return text;
-                const query = searchQuery.value.toLowerCase();
-                const str = String(text);
-                const index = str.toLowerCase().indexOf(query);
-                if (index >= 0) {
-                    const before = str.substring(0, index);
-                    const match = str.substring(index, index + query.length);
-                    const after = str.substring(index + query.length);
-                    return `${before}<span class="search-highlight">${match}</span>${after}`;
-                }
-                return text;
+                if (!searchQuery.value || !text) return displayDescriptionText(text);
+                const str = String(displayDescriptionText(text)); // Ensure text is a string
+                const regex = new RegExp(searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                return str.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
             };
 
-            // Perform search
+            const escapeHtmlAndPreserveNewlines = (text) => {
+                if (typeof text !== 'string') return ''; // Basic type check
+                const escapedText = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+                return escapedText.replace(/\n/g, '<br />');
+            };
+
+            const displayDescriptionText = (text, format = 'markdown') => {
+                if (typeof text !== 'string' || !text.trim()) {
+                    return ''; // Return empty string for invalid or empty input
+                }
+
+                switch (format) {
+                    case 'html':
+                        // For HTML, return the text directly.
+                        // CAUTION: Ensure this HTML is trusted or sanitized to prevent XSS.
+                        return text;
+
+                    case 'markdown':
+                        // Convert Markdown to HTML using the 'marked' library.
+                        if (window.marked) {
+                            try {
+                                return window.marked.parse(text); // Use marked.parse in newer versions
+                            } catch (error) {
+                                console.error('Error parsing Markdown:', error);
+                                // Fallback: display as plain text with escaped HTML and line breaks
+                                return escapeHtmlAndPreserveNewlines(text);
+                            }
+                        } else {
+                            console.warn("Marked.js not available, cannot render Markdown. Displaying as plain text.");
+                            return escapeHtmlAndPreserveNewlines(text);
+                        }
+
+                    case 'plain':
+                    default:
+                        // For plain text, escape any potential HTML characters and then convert newlines to <br>.
+                        return escapeHtmlAndPreserveNewlines(text);
+                }
+            };
+
             const performSearch = () => {
                 if (!searchQuery.value) {
                     searchResults.value = [];
@@ -1269,91 +1352,61 @@
                 searchResults.value = allItems.value.filter(item => {
                     const nameMatch = item.name.toLowerCase().includes(query);
                     const descriptionMatch = item.description?.toLowerCase().includes(query);
-                    // Check manifest columns (already partially done)
-                    const manifestColumnMatch = item.columns && Object.entries(item.columns).some(([colName, col]) =>
-                        colName.toLowerCase().includes(query) ||
+                    const manifestColumnMatch = item.columns && Object.values(item.columns).some(col => // Use Object.values
+                        col.name.toLowerCase().includes(query) ||
                         (col.description?.toLowerCase().includes(query))
                     );
-
                     let codeMatch = false;
                     if (item.resource_type === 'model') {
                         const rawCodeMatch = item.raw_code?.toLowerCase().includes(query);
                         const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query);
                         codeMatch = rawCodeMatch || compiledCodeMatch;
                     }
-
                     return nameMatch || descriptionMatch || manifestColumnMatch || codeMatch;
-                }).map(item => ({ // Add type for styling search results
+                }).map(item => ({
                     ...item,
-                    type: item.resource_type // Ensure type is set for styling
+                    type: item.resource_type
                 }));
             };
 
-            // Clear search input and results
             const clearSearch = () => {
                 searchQuery.value = '';
                 searchResults.value = [];
             };
 
-            // Select an item from navigation or search
-            const selectItem = (item) => {
-                selectedItem.value = item;
-                searchQuery.value = '';
-                searchResults.value = [];
-
-                // Expand the tree to show the selected item
-                const dbName = item?.database ?? '$database';
-                const schemaName = item?.schema ?? '$schema';
-                if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
-                if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
-                if (item.resource_type === 'model' && !expandedNodes.value.includes(`${dbName}.${schemaName}.models`)) expandedNodes.value.push(`${dbName}.${schemaName}.models`);
-                if (item.resource_type === 'source' && !expandedNodes.value.includes(`${dbName}.${schemaName}.sources`)) expandedNodes.value.push(`${dbName}.${schemaName}.sources`);
-
-                // If lineage tab was active, trigger render
-                if (activeTab.value === 'lineage') {
-                    renderTableLineageGraph();
-                } else if (activeTab.value === 'code') {
-                    nextTick(() => {
-                        hljs.highlightAll();
-                    });
-                }
-            };
-
             const selectSearchResult = (result) => {
-                selectItem(result); // Use the same logic as selecting from the tree
+                selectItem(result); // This will now update the hash by default
             };
 
             const getDependencies = (item) => {
+                if (!item || !item.unique_id) return [];
                 let parent_dependencies = ODBTM.value.parent_map?.[item.unique_id] ?? [];
-                return parent_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId];
-                    return node || null;
-                }).filter(Boolean);
+                return parent_dependencies.map(depId => ODBTM.value.allnodes?.[depId]).filter(Boolean);
             };
 
-            // Get all dependents for an item
             const getDependents = (item) => {
+                if (!item || !item.unique_id) return [];
                 let child_dependencies = ODBTM.value.child_map?.[item.unique_id] ?? [];
-                return child_dependencies.map(depId => {
-                    const node = ODBTM.value.allnodes?.[depId];
-                    return node || null;
-                }).filter(Boolean);
+                return child_dependencies.map(depId => ODBTM.value.allnodes?.[depId]).filter(Boolean);
             };
 
-            // Navigate to a dependency Id
             const navigateToDependencyId = (depId) => {
                 const item = allItems.value.find(i => i.unique_id === depId);
                 if (item) {
                     selectItem(item);
-                    window.scrollTo({top: 0, behavior: 'smooth'});
+                    // Consider scrolling to the top of the main content panel
+                    // document.querySelector('.flex-1')?.scrollTo({ top: 0, behavior: 'smooth' });
                 } else {
-                    console.warn("Could not find item to navigate to:", dep);
+                    console.warn("Could not find item to navigate to by ID:", depId);
                 }
             }
 
-            // Navigate to a dependency
             const navigateToDependency = (dep) => {
-                navigateToDependencyId(dep.unique_id);
+                if (dep && dep.unique_id) {
+                    navigateToDependencyId(dep.unique_id);
+                } else {
+                    console.warn("Could not navigate to invalid dependency:", dep);
+                }
             };
 
             const setLineageDepth = (depth) => {
@@ -1361,17 +1414,16 @@
                 renderTableLineageGraph();
             };
 
-            // --- Build data structure for vis-network ---
             const buildVisNetworkData = () => {
                 const visNodes = new Map();
                 const visEdges = new Set();
+                if (!selectedItem.value) return {nodes: [], edges: []}; // Guard
                 const centerNodeId = selectedItem.value.unique_id;
 
                 const traverse = (node, currentDepth, isUpstream) => {
-                    if (!node || currentDepth > lineageMaxDepth.value) { // Depth check (>= becomes >)
+                    if (!node || currentDepth > lineageMaxDepth.value) {
                         return;
                     }
-
                     const itemId = node.unique_id;
 
                     // Add node if not already present
@@ -1379,12 +1431,11 @@
                         visNodes.set(itemId, {
                             id: itemId,
                             label: `${node?.schema ?? '?'}.${node.name}`,
-                            title: `Type: ${node.resource_type}\nID: ${itemId}`, // Tooltip
-                            group: node.resource_type, // For styling
+                            title: `Type: ${node.resource_type}\nID: ${itemId}`,
+                            group: node.resource_type,
                             shape: 'box',
                             margin: 10,
-                            font: {multi: false}, // Ensure single line label if needed
-                            // Highlight center node later
+                            font: {multi: false},
                         });
                     }
 
@@ -1392,44 +1443,32 @@
                     if (currentDepth === lineageMaxDepth.value) {
                         return;
                     }
-
                     const relatedNodes = isUpstream ? getDependencies(node) : getDependents(node);
-
                     relatedNodes.forEach(relatedNode => {
+                        if (!relatedNode) return; // Guard against undefined relatedNode
                         const relatedNodeId = relatedNode.unique_id;
                         const edgeId = isUpstream ? `${relatedNodeId}->${itemId}` : `${itemId}->${relatedNodeId}`;
-
-                        // Add edge if not already present
                         if (!visEdges.has(edgeId)) {
                             visEdges.add(edgeId);
-                            // Recursively traverse
                             traverse(relatedNode, currentDepth + 1, isUpstream);
                         }
                     });
                 };
-
-                // Start traversal from the center node
                 traverse(selectedItem.value, 0, true); // Upstream
                 traverse(selectedItem.value, 0, false); // Downstream
-
-                // Highlight the center node
                 if (visNodes.has(centerNodeId)) {
-                    const centerNode = visNodes.get(centerNodeId);
-                    centerNode.color = {
-                        border: '#e11d48',
-                        background: '#fecdd3',
+                    const centerNodeData = visNodes.get(centerNodeId);
+                    centerNodeData.color = {
+                        border: '#e11d48', background: '#fecdd3',
                         highlight: {border: '#be123c', background: '#fda4af'}
-                    }; // Example: Rose color
-                    centerNode.font = {color: '#881337', bold: true};
-                    centerNode.borderWidth = 2;
+                    };
+                    centerNodeData.font = {color: '#881337', bold: true};
+                    centerNodeData.borderWidth = 2;
                 }
-
-                // Convert Set to array for vis.js
                 const edgesArray = Array.from(visEdges).map(edgeId => {
                     const [from, to] = edgeId.split('->');
                     return {from, to, arrows: 'to'};
                 });
-
                 return {
                     nodes: Array.from(visNodes.values()),
                     edges: edgesArray
@@ -1437,8 +1476,9 @@
             };
 
             const renderTableLineageGraph = async () => {
-                if (!selectedItem.value) {
-                    console.log("Lineage prerequisites not met! No item selected.");
+                if (!selectedItem.value) { // Added check for lineageGraphContainer
+                    console.log("Lineage prerequisites not met!");
+                    lineageRendering.value = false; // Ensure loading state is reset
                     return;
                 }
                 lineageRendering.value = true;
@@ -1446,140 +1486,93 @@
                 await nextTick();
                 try {
                     const {nodes, edges} = buildVisNetworkData();
-
                     if (nodes.length === 0) {
                         console.log("No nodes to render for lineage.");
+                        if (currentVisNetwork) { // Destroy old network if it exists
+                            currentVisNetwork.destroy();
+                            currentVisNetwork = null;
+                        }
+                        lineageGraphContainer.value.innerHTML = '<p class="text-center text-gray-500 p-4">No lineage data to display for this selection or depth.</p>'; // Clear previous graph
                         lineageRendering.value = false;
                         return;
                     }
-
-                    const options = {
+                    const options = { /* ... your existing vis options ... */
                         layout: {
                             randomSeed: 42,
                             hierarchical: {
-                                enabled: true,
-                                direction: 'LR', // Left to Right
-                                sortMethod: 'directed', // Follow edge direction
-                                levelSeparation: 400, // Increase spacing between levels
-                                nodeSpacing: 240, // Increase spacing between nodes in a level
+                                enabled: true, direction: 'LR', sortMethod: 'directed',
+                                levelSeparation: 300, nodeSpacing: 180, // Adjusted for potentially more nodes
                             }
                         },
                         nodes: {
-                            shape: 'box',
-                            margin: 10,
-                            font: {
-                                size: 12,
-                                face: 'sans-serif'
-                            },
+                            shape: 'box', margin: 10,
+                            font: {size: 12, face: 'sans-serif'},
                             borderWidth: 1,
                         },
                         edges: {
                             arrows: 'to',
-                            smooth: {
-                                enabled: true,
-                                type: 'cubicBezier', // Or 'dynamic'
-                                forceDirection: 'horizontal',
-                                roundness: 0.5
-                            },
-                            color: {
-                                color: '#848484',
-                                highlight: '#3b82f6', // Blue-500
-                                hover: '#d1d5db' // Gray-300
-                            }
+                            smooth: {enabled: true, type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.5},
+                            color: {color: '#848484', highlight: '#3b82f6', hover: '#d1d5db'}
                         },
                         physics: {
-                            enabled: true, // Enable physics engine
-                            // Optional: Choose a solver. barnesHut is generally good.
-                            // forceAtlas2Based might feel more 'floaty'.
-                            solver: 'barnesHut',
+                            enabled: true, solver: 'barnesHut',
                             barnesHut: {
-                                gravitationalConstant: -8000, // Adjust repulsion
-                                centralGravity: 0.1,         // Adjust attraction to center
-                                springLength: 150,           // Adjust preferred edge length (less relevant with hierarchical)
-                                springConstant: 0.02,        // Adjust spring stiffness
-                                damping: 0.09,               // Adjust stabilization speed
-                                avoidOverlap: 0.2            // Try to prevent nodes overlapping
+                                gravitationalConstant: -10000, centralGravity: 0.15,
+                                springLength: 180, springConstant: 0.03,
+                                damping: 0.09, avoidOverlap: 0.3
                             },
-                            // Disable stabilization if you want nodes to settle faster or if hierarchical layout is primary
-                            stabilization: {
-                                enabled: true,
-                                iterations: 1000, // Default is 1000
-                                fit: true
-                            }
-                            // If hierarchical layout causes issues with dragging, you might need
-                            // to disable hierarchical physics specifically within the layout section,
-                            // or disable the hierarchical layout altogether if free-form dragging is preferred.
+                            stabilization: {enabled: true, iterations: 1000, fit: true}
                         },
                         interaction: {
-                            hover: true,
-                            tooltipDelay: 200,
-                            navigationButtons: true, // Add zoom/fit buttons
-                            keyboard: true,
-                            dragNodes: true,
-                            dragView: true
+                            hover: true, tooltipDelay: 200, navigationButtons: true,
+                            keyboard: true, dragNodes: true, dragView: true
                         },
-                        groups: {
+                        groups: { /* ... your existing groups ... */
                             model: {
                                 color: {
                                     border: '#3B82F6',
                                     background: '#DBEAFE',
                                     highlight: {border: '#2563EB', background: '#BFDBFE'}
-                                }, // Blue
-                                font: {color: '#1E40AF'}
+                                }, font: {color: '#1E40AF'}
                             },
                             source: {
                                 color: {
                                     border: '#10B981',
                                     background: '#D1FAE5',
                                     highlight: {border: '#059669', background: '#A7F3D0'}
-                                }, // Green
-                                font: {color: '#065F46'}
+                                }, font: {color: '#065F46'}
                             },
-                            macro: { // Added just in case
+                            macro: {
                                 color: {
                                     border: '#8B5CF6',
                                     background: '#EDE9FE',
                                     highlight: {border: '#7C3AED', background: '#DDD6FE'}
-                                }, // Purple
-                                font: {color: '#5B21B6'}
+                                }, font: {color: '#5B21B6'}
                             }
-                            // Add other resource_types as needed
                         }
                     };
-
-                    // Create the network
+                    if (currentVisNetwork) {
+                        currentVisNetwork.destroy(); // Destroy old instance before creating new
+                    }
                     currentVisNetwork = new vis.Network(lineageGraphContainer.value, {nodes, edges}, options);
-
-                    // Add double-click listener
                     currentVisNetwork.on('doubleClick', (params) => {
                         if (params.nodes.length > 0) {
                             const clickedNodeId = params.nodes[0];
-                            if (clickedNodeId === selectedItem.value.unique_id) {
-                                // Prevent navigation if double-clicking the center node again
-                                return
-                            }
+                            if (clickedNodeId === selectedItem.value.unique_id) return;
                             const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId];
                             if (nodeToNavigate) {
-                                navigateToDependency(nodeToNavigate);
-                            } else {
-                                console.warn("Could not find node details for ID:", clickedNodeId);
+                                navigateToDependency(nodeToNavigate); // This will update hash
                             }
                         }
                     });
-
-                    // Optional: Fit the graph after rendering/stabilization
                     currentVisNetwork.once('stabilizationIterationsDone', () => {
-                        // Only fit if not in fullscreen, otherwise let user control zoom/pan
                         if (!isLineageFullScreen.value) {
                             currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
                         }
                     });
-                    // Fit immediately if stabilization is short or disabled, respect fullscreen
                     if (!isLineageFullScreen.value) {
                         currentVisNetwork.fit();
                     }
-
-
                 } catch (error) {
                     console.error("Error rendering lineage graph with vis-network:", error);
                     lineageError.value = true;
@@ -1593,17 +1586,13 @@
                 if (item) {
                     return getIconClassForResourceType(item.resource_type, item.language);
                 }
-                return 'fas fa-table text-blue-500';
+                return 'fas fa-table text-blue-500'; // Default
             }
-
 
             const getIconClassForResourceType = (resourceType = "model", resourceLanguage = 'sql') => {
                 switch (resourceType) {
                     case 'model':
-                        if (resourceLanguage === "python") {
-                            return 'fa-brands fa-python text-yellow-500';
-                        }
-                        return 'fas fa-table text-blue-500';
+                        return resourceLanguage === "python" ? 'fa-brands fa-python text-yellow-500' : 'fas fa-table text-blue-500';
                     case 'source':
                         return 'fas fa-table text-green-500';
                     case 'macro':
@@ -1613,72 +1602,41 @@
                     case 'seed':
                         return 'fa-solid fa-file-csv text-gray-500';
                     default:
-                        return 'fa-regular fa-circle text-gray-500'; // Default icon
+                        return 'fa-regular fa-circle text-gray-500';
                 }
             };
 
-            // Watchers
-            watch([activeTab, selectedItem, lineageMaxDepth], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
+            watch([activeTab, selectedItem], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
                 if (newActiveTab === 'code' && (newActiveTab !== oldActiveTab || newSelectedItem !== oldSelectedItem)) {
                     nextTick(() => {
-                        hljs.highlightAll();
+                        if (typeof hljs !== 'undefined') hljs.highlightAll();
                     });
                 }
-            }, {deep: true});
+                // No need to watch lineageMaxDepth here for hash, it's handled by setLineageDepth -> renderTableLineageGraph
+            }, {deep: true}); // deep true might not be necessary if only watching refs directly
 
-            // Watch the databaseTree and set the initial value when it's ready
             watch(databaseTree, (newTree) => {
-                // Only set initial value if the tree is populated and expandedNodes hasn't been set yet
-                if (newTree.length > 0 && newTree[0].schemas.length > 0 && expandedNodes.value.length === 0) {
+                if (newTree.length > 0 && newTree[0].schemas.length > 0 && expandedNodes.value.length === 0 && !window.location.hash) { // Only if no hash
                     const firstDatabase = newTree[0].name;
                     const firstSchema = newTree[0].schemas[0].name;
-                    expandedNodes.value = [ // Assign the array to the .value property
+                    expandedNodes.value = [
                         firstDatabase,
                         `${firstDatabase}.${firstSchema}`,
-                        // Optional: Add these back if you want models/sources expanded initially too
-                        // `${firstDatabase}.${firstSchema}.models`,
-                        // `${firstDatabase}.${firstSchema}.sources`
                     ];
                 }
             });
 
             return {
-                isLoading,
-                ODBTM,
-                databaseTree,
-                expandedNodes,
-                selectedItem,
-                searchQuery,
-                searchResults,
-                lineageContainer,
-                lineageGraphContainer,
-                lineageMaxDepth,
-                lineageRendering, // expose loading state
-                lineageError, // expose error state
-                activeTab,
-                displayColumns, // Make sure this is returned
-                selectedItemStats, // Make sure this is returned
-                isLineageFullScreen,      // Expose fullscreen state
-                toggleLineageFullScreen,  // Expose toggle function
-                getModelCode,
-                highlightMatches,
-                performSearch,
-                clearSearch,
-                selectItem,
-                selectSearchResult,
-                navigateToDependency,
-                navigateToDependencyId,
-                renderTableLineageGraph, // Expose the main render function
-                getDependencies,
-                getDependents,
-                toggleNode,
-                setLineageDepth, // Expose depth setter
-                getIconClassForResourceType,
-                getIconClassForResourceTypeById
+                isLoading, ODBTM, databaseTree, expandedNodes, selectedItem, searchQuery, searchResults,
+                lineageContainer, lineageGraphContainer, lineageMaxDepth, lineageRendering, lineageError,
+                activeTab, displayColumns, selectedItemStats, isLineageFullScreen,
+                toggleLineageFullScreen, getModelCode, highlightMatches, performSearch, clearSearch,
+                selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
+                renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
+                getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText
             };
         },
-        mounted() {
-        }
+        // mounted() {} // mounted logic is now in setup with onMounted
     }).mount('#app');
 </script>
 </body>

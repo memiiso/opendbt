@@ -2,12 +2,13 @@
   "metadata": {
     "dbt_schema_version": "https://schemas.getdbt.com/dbt/catalog/v1.json",
     "dbt_version": "1.9.4",
-    "generated_at": "2025-04-22T09:16:44.346647Z",
-    "invocation_id": "742c6339-ca49-4d87-9aab-e8f90fb3ef7f",
+    "generated_at": "2025-05-15T18:01:15.469569Z",
+    "invocation_id": "4a81f777-5b15-45b3-8c88-b08d0f7bb9ea",
     "env": {}
   },
   "nodes": {
     "model.dbtfinance.my_cross_project_ref_model": {
+      "stats": {},
       "columns": {
         "id": {
           "name": "id",
@@ -37,10 +38,10 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_first_dbt_model": {
+      "stats": {},
       "columns": {
         "data_value": {
           "name": "data_value",
@@ -88,7 +89,7 @@
         },
         "id": {
           "name": "id",
-          "description": "The primary key for this table",
+          "description": "The **primary key** for this table",
           "meta": {},
           "data_type": null,
           "constraints": [],
@@ -109,15 +110,15 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_executesql_dbt_model": {
+      "stats": {},
       "columns": {},
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_failing_dbt_model": {
+      "stats": {},
       "columns": {
         "my_failing_column": {
           "name": "my_failing_column",
@@ -129,10 +130,10 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_core_table1": {
+      "stats": {},
       "columns": {
         "id": {
           "name": "id",
@@ -175,10 +176,10 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_second_dbt_model": {
+      "stats": {},
       "columns": {
         "pk_id": {
           "name": "pk_id",
@@ -261,9 +262,9 @@
           ],
           "depends_on": [
             {
-              "name": "column_3",
+              "name": "data_value",
               "type": "unknown",
-              "column_fqn": "dev.core.my_first_dbt_model.column_3",
+              "column_fqn": "dev.core.my_first_dbt_model.data_value",
               "table_fqn": "dev.core.my_first_dbt_model",
               "table_relative_fqn": "core.my_first_dbt_model",
               "transformations": [],
@@ -271,9 +272,9 @@
               "model_id": "model.dbtcore.my_first_dbt_model"
             },
             {
-              "name": "data_value",
+              "name": "column_3",
               "type": "unknown",
-              "column_fqn": "dev.core.my_first_dbt_model.data_value",
+              "column_fqn": "dev.core.my_first_dbt_model.column_3",
               "table_fqn": "dev.core.my_first_dbt_model",
               "table_relative_fqn": "core.my_first_dbt_model",
               "transformations": [],
@@ -323,15 +324,15 @@
           ]
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_executepython_dlt_model": {
+      "stats": {},
       "columns": {},
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_executedlt_model": {
+      "stats": {},
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -366,10 +367,10 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "model.dbtcore.my_executepython_model": {
+      "stats": {},
       "columns": {
         "event_id": {
           "name": "event_id",
@@ -404,18 +405,17 @@
           "depends_on": []
         }
       },
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "source.dbtfinance.core.my_executepython_model": {
+      "stats": {},
       "columns": {},
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     },
     "source.dbtfinance.core.my_executepython_dlt_model": {
+      "stats": {},
       "columns": {},
-      "metadata": {},
-      "stats": {}
+      "metadata": {}
     }
   },
   "sources": {},

@@ -2,70 +2,70 @@
   "metadata": {
     "dbt_schema_version": "https://schemas.getdbt.com/dbt/run-results/v6.json",
     "dbt_version": "1.9.4",
-    "generated_at": "2025-04-22T09:16:41.884373Z",
-    "invocation_id": "acca0b4a-839b-45f9-855f-e77e2fc48b29",
+    "generated_at": "2025-05-15T18:01:12.604966Z",
+    "invocation_id": "03a957b9-3b54-4612-b157-2c69961dbcf9",
     "env": {}
   },
-  "elapsed_time": 7.190835237503052,
+  "elapsed_time": 11.362421989440918,
   "args": {
-    "send_anonymous_usage_stats": true,
-    "log_level": "info",
-    "macro_debugging": false,
-    "partial_parse": true,
-    "log_format_file": "debug",
-    "project_dir": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore",
-    "show": false,
-    "which": "build",
-    "require_nested_cumulative_type_params": false,
-    "empty": false,
-    "populate_cache": true,
-    "partial_parse_file_diff": true,
-    "resource_types": [],
-    "static_parser": true,
     "warn_error_options": {
       "include": [],
       "exclude": []
     },
-    "log_path": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore/logs",
-    "indirect_selection": "eager",
-    "require_batched_execution_for_custom_microbatch_strategy": false,
-    "log_format": "default",
-    "favor_state": false,
-    "invocation_command": "dbt test_dbt_docs.py::TestDbtDocs::test_run_docs_generate",
-    "require_explicit_package_overrides_for_builtin_materializations": true,
-    "require_resource_names_without_spaces": false,
-    "write_json": true,
-    "vars": {},
-    "target": "dev",
-    "source_freshness_run_project_hooks": false,
-    "select": [],
+    "show": false,
+    "which": "build",
+    "state_modified_compare_vars": false,
+    "export_saved_queries": false,
+    "include_saved_query": false,
     "use_colors": true,
-    "printer_width": 80,
-    "use_colors_file": true,
-    "log_file_max_bytes": 10485760,
-    "log_level_file": "debug",
+    "version_check": true,
+    "log_format_file": "debug",
+    "require_explicit_package_overrides_for_builtin_materializations": true,
+    "log_level": "info",
+    "source_freshness_run_project_hooks": false,
+    "populate_cache": true,
+    "defer": false,
+    "select": [],
+    "require_batched_execution_for_custom_microbatch_strategy": false,
+    "print": true,
+    "state_modified_compare_more_unrendered_values": false,
+    "strict_mode": false,
     "require_yaml_configuration_for_mf_time_spines": false,
+    "send_anonymous_usage_stats": true,
+    "log_file_max_bytes": 10485760,
+    "exclude": [],
+    "resource_types": [],
+    "log_format": "default",
+    "partial_parse_file_diff": true,
+    "write_json": true,
+    "invocation_command": "dbt test_dbt_docs.py::TestDbtDocs::test_run_docs_generate",
+    "quiet": false,
+    "target": "dev",
+    "vars": {},
+    "favor_state": false,
+    "log_path": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore/logs",
+    "macro_debugging": false,
+    "exclude_resource_types": [],
+    "require_nested_cumulative_type_params": false,
+    "require_resource_names_without_spaces": false,
+    "static_parser": true,
+    "show_resource_report": false,
+    "printer_width": 80,
+    "introspect": true,
+    "cache_selected_only": false,
+    "log_level_file": "debug",
     "skip_nodes_if_on_run_start_fails": false,
     "profiles_dir": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore",
-    "state_modified_compare_more_unrendered_values": false,
-    "print": true,
-    "introspect": true,
-    "exclude": [],
-    "version_check": true,
-    "state_modified_compare_vars": false,
-    "cache_selected_only": false,
-    "defer": false,
-    "quiet": false,
-    "export_saved_queries": false,
-    "show_resource_report": false,
-    "strict_mode": false,
-    "exclude_resource_types": [],
-    "include_saved_query": false
+    "project_dir": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore",
+    "use_colors_file": true,
+    "empty": false,
+    "partial_parse": true,
+    "indirect_selection": "eager"
   },
   "nodes": {
     "model.dbtcore.my_core_table1": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:35",
+      "run_completed_at": "2025-05-15 18:01:01",
       "run_message": "OK",
       "run_failures": null,
       "run_adapter_response": {
@@ -74,7 +74,7 @@
     },
     "model.dbtcore.my_executedlt_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:39",
+      "run_completed_at": "2025-05-15 18:01:09",
       "run_message": "Executed DLT pipeline",
       "run_failures": null,
       "run_adapter_response": {
@@ -85,7 +85,7 @@
     },
     "model.dbtcore.my_executepython_dlt_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Executed Python",
       "run_failures": null,
       "run_adapter_response": {
@@ -96,7 +96,7 @@
     },
     "model.dbtcore.my_executepython_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Executed Python",
       "run_failures": null,
       "run_adapter_response": {
@@ -107,7 +107,7 @@
     },
     "model.dbtcore.my_executesql_dbt_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "OK",
       "run_failures": null,
       "run_adapter_response": {
@@ -116,7 +116,7 @@
     },
     "model.dbtcore.my_first_dbt_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "OK",
       "run_failures": null,
       "run_adapter_response": {
@@ -125,7 +125,7 @@
     },
     "test.dbtcore.not_null_my_first_dbt_model_id.5fb22c2710": {
       "run_status": "warn",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Got 1 result, configured to warn if >0",
       "run_failures": 1,
       "run_adapter_response": {
@@ -134,7 +134,7 @@
     },
     "test.dbtcore.unique_my_first_dbt_model_id.16e066b321": {
       "run_status": "warn",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Got 1 result, configured to warn if >0",
       "run_failures": 1,
       "run_adapter_response": {
@@ -143,14 +143,14 @@
     },
     "model.dbtcore.my_failing_dbt_model": {
       "run_status": "error",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Runtime Error in model my_failing_dbt_model (models/my_failing_dbt_model.sql)\n  Binder Error: Referenced column \"non_exists_column\" not found in FROM clause!\n  Candidate bindings: \"id\"\n  \n  LINE 11:       select non_exists_column as my_failing_column\n                        ^",
       "run_failures": null,
       "run_adapter_response": {}
     },
     "model.dbtcore.my_second_dbt_model": {
       "run_status": "success",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "OK",
       "run_failures": null,
       "run_adapter_response": {
@@ -159,7 +159,7 @@
     },
     "test.dbtcore.not_null_my_second_dbt_model_pk_id.b08c51696a": {
       "run_status": "pass",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": null,
       "run_failures": 0,
       "run_adapter_response": {
@@ -168,7 +168,7 @@
     },
     "test.dbtcore.unique_my_second_dbt_model_pk_id.b8b65b2a4f": {
       "run_status": "fail",
-      "run_completed_at": "2025-04-22 09:16:41",
+      "run_completed_at": "2025-05-15 18:01:12",
       "run_message": "Got 1 result, configured to fail if != 0",
       "run_failures": 1,
       "run_adapter_response": {
