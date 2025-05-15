@@ -1,11 +1,12 @@
 import json
-import sqlglot
-import tqdm
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Dict, Optional
+
+import sqlglot
+import tqdm
 from sqlglot import Expression
 from sqlglot.lineage import lineage, SqlglotError, exp
-from typing import Dict, Optional
 
 from opendbt.logger import OpenDbtLogger
 from opendbt.utils import Utils
@@ -66,29 +67,22 @@ class OpenDbtNode(OpenDbtLogger):
     def __init__(self, manifest_node: dict, catalog_node: dict, dialect: str):
         self.node: dict = manifest_node
         # Enrich node with catalog information
-        self.node["metadata"] = Utils.merge_dicts(dict1=catalog_node.get("metadata", {}),
+        self.node["metadata"] = Utils.merge_dicts(dict1=self.node.get("metadata", {}),
                                                   dict2=catalog_node.get("metadata", {}))
-        self.node["stats"] = Utils.merge_dicts(dict1=catalog_node.get("stats", {}),
+        self.node["stats"] = Utils.merge_dicts(dict1=self.node.get("stats", {}),
                                                dict2=catalog_node.get("stats", {}))
         self.table_ref = OpenDbtTableRef(database=self.node.get("database", "$database"),
                                          schema=self.node.get("schema", "$schema"),
                                          table=self.node.get("name", "$name"))
-        self.node["columns"]: Dict[str, OpenDbtColumn] = self.__merge_columns(
+        self.node["columns"]: Dict[str, OpenDbtColumn] = self.__columns(
             catalog_cols=catalog_node.get("columns", {})
         )
         self.dialect = dialect
         self.parent_nodes: Dict[str, OpenDbtNode] = {}
 
-    def __merge_columns(self, catalog_cols: dict) -> Dict[str, OpenDbtColumn]:
-        combined = Utils.lowercase_dict_keys(input_dict=self.node.get("columns", {}))
-        catalog_cols = Utils.lowercase_dict_keys(input_dict=catalog_cols if catalog_cols else {})
-        for col_name, col_data in catalog_cols.items():
-            col_data['db_comment'] = col_data.pop('comment', '')
-            if col_name not in combined:
-                combined[col_name] = col_data
-            else:
-                combined[col_name].update(col_data)
-
+    def __columns(self, catalog_cols: dict) -> Dict[str, OpenDbtColumn]:
+        combined = Utils.merge_dicts(dict1=self.node.get("columns", {}),
+                                     dict2=catalog_cols.get("columns", {}))
         cols = {}
         for col_name, col_data in combined.items():
             col_name: str
