@@ -1,0 +1,179 @@
+{
+  "metadata": {
+    "dbt_schema_version": "https://schemas.getdbt.com/dbt/run-results/v6.json",
+    "dbt_version": "1.9.4",
+    "generated_at": "2025-05-15T18:01:12.604966Z",
+    "invocation_id": "03a957b9-3b54-4612-b157-2c69961dbcf9",
+    "env": {}
+  },
+  "elapsed_time": 11.362421989440918,
+  "args": {
+    "warn_error_options": {
+      "include": [],
+      "exclude": []
+    },
+    "show": false,
+    "which": "build",
+    "state_modified_compare_vars": false,
+    "export_saved_queries": false,
+    "include_saved_query": false,
+    "use_colors": true,
+    "version_check": true,
+    "log_format_file": "debug",
+    "require_explicit_package_overrides_for_builtin_materializations": true,
+    "log_level": "info",
+    "source_freshness_run_project_hooks": false,
+    "populate_cache": true,
+    "defer": false,
+    "select": [],
+    "require_batched_execution_for_custom_microbatch_strategy": false,
+    "print": true,
+    "state_modified_compare_more_unrendered_values": false,
+    "strict_mode": false,
+    "require_yaml_configuration_for_mf_time_spines": false,
+    "send_anonymous_usage_stats": true,
+    "log_file_max_bytes": 10485760,
+    "exclude": [],
+    "resource_types": [],
+    "log_format": "default",
+    "partial_parse_file_diff": true,
+    "write_json": true,
+    "invocation_command": "dbt test_dbt_docs.py::TestDbtDocs::test_run_docs_generate",
+    "quiet": false,
+    "target": "dev",
+    "vars": {},
+    "favor_state": false,
+    "log_path": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore/logs",
+    "macro_debugging": false,
+    "exclude_resource_types": [],
+    "require_nested_cumulative_type_params": false,
+    "require_resource_names_without_spaces": false,
+    "static_parser": true,
+    "show_resource_report": false,
+    "printer_width": 80,
+    "introspect": true,
+    "cache_selected_only": false,
+    "log_level_file": "debug",
+    "skip_nodes_if_on_run_start_fails": false,
+    "profiles_dir": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore",
+    "project_dir": "/Users/simseki/IdeaProjects/opendbt/tests/resources/dbtcore",
+    "use_colors_file": true,
+    "empty": false,
+    "partial_parse": true,
+    "indirect_selection": "eager"
+  },
+  "nodes": {
+    "model.dbtcore.my_core_table1": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:01",
+      "run_message": "OK",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "model.dbtcore.my_executedlt_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:09",
+      "run_message": "Executed DLT pipeline",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "Executed DLT pipeline",
+        "code": "import dlt\nfrom dlt.pipeline import TPipeline\n\n\n@dlt.resource(\n    columns={\"event_tstamp\": {\"data_type\": \"timestamp\", \"precision\": 3}},\n    primary_key=\"event_id\",\n)\ndef events():\n    yield [{\"event_id\": 1, \"event_tstamp\": \"2024-07-30T10:00:00.123\"},\n           {\"event_id\": 2, \"event_tstamp\": \"2025-02-30T10:00:00.321\"}]\n\n\ndef model(dbt, pipeline: TPipeline):\n    \"\"\"\n\n    :param dbt:\n    :param pipeline: Pre-configured dlt pipeline. dlt target connection and dataset is pre-set using the model config!\n    :return:\n    \"\"\"\n    dbt.config(materialized=\"executedlt\")\n    print(\"========================================================\")\n    print(f\"INFO: DLT Pipeline pipeline_name:{pipeline.pipeline_name}\")\n    print(f\"INFO: DLT Pipeline dataset_name:{pipeline.dataset_name}\")\n    print(f\"INFO: DLT Pipeline dataset_name:{pipeline}\")\n    print(f\"INFO: DLT Pipeline staging:{pipeline.staging}\")\n    print(f\"INFO: DLT Pipeline destination:{pipeline.destination}\")\n    print(f\"INFO: DLT Pipeline _pipeline_storage:{pipeline._pipeline_storage}\")\n    print(f\"INFO: DLT Pipeline _schema_storage:{pipeline._schema_storage}\")\n    print(f\"INFO: DLT Pipeline state:{pipeline.state}\")\n    print(f\"INFO: DBT this:{dbt.this}\")\n    print(\"========================================================\")\n    load_info = pipeline.run(events(), table_name=str(str(dbt.this).split('.')[-1]).strip('\"'))\n    print(load_info)\n    row_counts = pipeline.last_trace.last_normalize_info\n    print(row_counts)\n    print(\"========================================================\")\n    return None\n\n\n# This part is user provided model code\n# you will need to copy the next section to run the code\n# COMMAND ----------\n# this part is dbt logic for get ref work, do not modify\n\ndef ref(*args, **kwargs):\n    refs = {}\n    key = '.'.join(args)\n    version = kwargs.get(\"v\") or kwargs.get(\"version\")\n    if version:\n        key += f\".v{version}\"\n    dbt_load_df_function = kwargs.get(\"dbt_load_df_function\")\n    return dbt_load_df_function(refs[key])\n\n\ndef source(*args, dbt_load_df_function):\n    sources = {}\n    key = '.'.join(args)\n    return dbt_load_df_function(sources[key])\n\n\nconfig_dict = {}\n\n\nclass config:\n    def __init__(self, *args, **kwargs):\n        pass\n\n    @staticmethod\n    def get(key, default=None):\n        return config_dict.get(key, default)\n\nclass this:\n    \"\"\"dbt.this() or dbt.this.identifier\"\"\"\n    database = \"dev\"\n    schema = \"core\"\n    identifier = \"my_executedlt_model\"\n    \n    def __repr__(self):\n        return '\"dev\".\"core\".\"my_executedlt_model\"'\n\n\nclass dbtObj:\n    def __init__(self, load_df_function) -> None:\n        self.source = lambda *args: source(*args, dbt_load_df_function=load_df_function)\n        self.ref = lambda *args, **kwargs: ref(*args, **kwargs, dbt_load_df_function=load_df_function)\n        self.config = config\n        self.this = this()\n        self.is_incremental = False\n\n# COMMAND ----------\n\n\n",
+        "rows_affected": -1
+      }
+    },
+    "model.dbtcore.my_executepython_dlt_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Executed Python",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "Executed Python",
+        "code": "import dlt\n\n\n@dlt.resource(\n    columns={\"event_tstamp\": {\"data_type\": \"timestamp\", \"precision\": 3}},\n    primary_key=\"event_id\",\n)\ndef events():\n    yield [{\"event_id\": 1, \"event_tstamp\": \"2024-07-30T10:00:00.123\"},\n           {\"event_id\": 2, \"event_tstamp\": \"2025-02-30T10:00:00.321\"}]\n\n\ndef model(dbt, session):\n    dbt.config(materialized=\"executepython\")\n    print(\"========================================================\")\n    print(f\"INFO: DLT Version:{dlt.version.__version__}\")\n    print(f\"INFO: DBT Duckdb Session:{type(session)}\")\n    print(f\"INFO: DBT Duckdb Connection:{type(session._env.conn)}\")\n    print(\"========================================================\")\n    p = dlt.pipeline(\n        pipeline_name=\"dbt_dlt\",\n        destination=dlt.destinations.duckdb(session._env.conn),\n        dataset_name=dbt.this.schema,\n        dev_mode=False,\n    )\n    load_info = p.run(events())\n    print(load_info)\n    row_counts = p.last_trace.last_normalize_info\n    print(row_counts)\n    print(\"========================================================\")\n    return None\n\n\n# This part is user provided model code\n# you will need to copy the next section to run the code\n# COMMAND ----------\n# this part is dbt logic for get ref work, do not modify\n\ndef ref(*args, **kwargs):\n    refs = {}\n    key = '.'.join(args)\n    version = kwargs.get(\"v\") or kwargs.get(\"version\")\n    if version:\n        key += f\".v{version}\"\n    dbt_load_df_function = kwargs.get(\"dbt_load_df_function\")\n    return dbt_load_df_function(refs[key])\n\n\ndef source(*args, dbt_load_df_function):\n    sources = {}\n    key = '.'.join(args)\n    return dbt_load_df_function(sources[key])\n\n\nconfig_dict = {}\n\n\nclass config:\n    def __init__(self, *args, **kwargs):\n        pass\n\n    @staticmethod\n    def get(key, default=None):\n        return config_dict.get(key, default)\n\nclass this:\n    \"\"\"dbt.this() or dbt.this.identifier\"\"\"\n    database = \"dev\"\n    schema = \"core\"\n    identifier = \"my_executepython_dlt_model\"\n    \n    def __repr__(self):\n        return '\"dev\".\"core\".\"my_executepython_dlt_model\"'\n\n\nclass dbtObj:\n    def __init__(self, load_df_function) -> None:\n        self.source = lambda *args: source(*args, dbt_load_df_function=load_df_function)\n        self.ref = lambda *args, **kwargs: ref(*args, **kwargs, dbt_load_df_function=load_df_function)\n        self.config = config\n        self.this = this()\n        self.is_incremental = False\n\n# COMMAND ----------\n\n\n",
+        "rows_affected": -1
+      }
+    },
+    "model.dbtcore.my_executepython_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Executed Python",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "Executed Python",
+        "code": "import os\nimport platform\n\nfrom dbt import version\n\n\ndef print_info():\n    _str = f\"name:{os.name}, system:{platform.system()} release:{platform.release()}\"\n    _str += f\"\\npython version:{platform.python_version()}, dbt:{version.__version__}\"\n    print(_str)\n\n\ndef model(dbt, session):\n    dbt.config(materialized=\"executepython\")\n    print(\"==================================================\")\n    print(\"========IM LOCALLY EXECUTED PYTHON MODEL==========\")\n    print(\"==================================================\")\n    print_info()\n    print(\"==================================================\")\n    print(\"===============MAKE DBT GREAT AGAIN===============\")\n    print(\"==================================================\")\n    return None\n\n\n# This part is user provided model code\n# you will need to copy the next section to run the code\n# COMMAND ----------\n# this part is dbt logic for get ref work, do not modify\n\ndef ref(*args, **kwargs):\n    refs = {}\n    key = '.'.join(args)\n    version = kwargs.get(\"v\") or kwargs.get(\"version\")\n    if version:\n        key += f\".v{version}\"\n    dbt_load_df_function = kwargs.get(\"dbt_load_df_function\")\n    return dbt_load_df_function(refs[key])\n\n\ndef source(*args, dbt_load_df_function):\n    sources = {}\n    key = '.'.join(args)\n    return dbt_load_df_function(sources[key])\n\n\nconfig_dict = {}\n\n\nclass config:\n    def __init__(self, *args, **kwargs):\n        pass\n\n    @staticmethod\n    def get(key, default=None):\n        return config_dict.get(key, default)\n\nclass this:\n    \"\"\"dbt.this() or dbt.this.identifier\"\"\"\n    database = \"dev\"\n    schema = \"core\"\n    identifier = \"my_executepython_model\"\n    \n    def __repr__(self):\n        return '\"dev\".\"core\".\"my_executepython_model\"'\n\n\nclass dbtObj:\n    def __init__(self, load_df_function) -> None:\n        self.source = lambda *args: source(*args, dbt_load_df_function=load_df_function)\n        self.ref = lambda *args, **kwargs: ref(*args, **kwargs, dbt_load_df_function=load_df_function)\n        self.config = config\n        self.this = this()\n        self.is_incremental = False\n\n# COMMAND ----------\n\n\n",
+        "rows_affected": -1
+      }
+    },
+    "model.dbtcore.my_executesql_dbt_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "OK",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "model.dbtcore.my_first_dbt_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "OK",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "test.dbtcore.not_null_my_first_dbt_model_id.5fb22c2710": {
+      "run_status": "warn",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Got 1 result, configured to warn if >0",
+      "run_failures": 1,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "test.dbtcore.unique_my_first_dbt_model_id.16e066b321": {
+      "run_status": "warn",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Got 1 result, configured to warn if >0",
+      "run_failures": 1,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "model.dbtcore.my_failing_dbt_model": {
+      "run_status": "error",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Runtime Error in model my_failing_dbt_model (models/my_failing_dbt_model.sql)\n  Binder Error: Referenced column \"non_exists_column\" not found in FROM clause!\n  Candidate bindings: \"id\"\n  \n  LINE 11:       select non_exists_column as my_failing_column\n                        ^",
+      "run_failures": null,
+      "run_adapter_response": {}
+    },
+    "model.dbtcore.my_second_dbt_model": {
+      "run_status": "success",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "OK",
+      "run_failures": null,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "test.dbtcore.not_null_my_second_dbt_model_pk_id.b08c51696a": {
+      "run_status": "pass",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": null,
+      "run_failures": 0,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    },
+    "test.dbtcore.unique_my_second_dbt_model_pk_id.b8b65b2a4f": {
+      "run_status": "fail",
+      "run_completed_at": "2025-05-15 18:01:12",
+      "run_message": "Got 1 result, configured to fail if != 0",
+      "run_failures": 1,
+      "run_adapter_response": {
+        "_message": "OK"
+      }
+    }
+  }
+}
