@@ -1062,7 +1062,7 @@
         }
 
         const runInfoData = dbtRunInfoJson ?? {};
-        for (const [uniqueId, result] of Object.entries(runInfoData.nodes)) {
+        for (const [uniqueId, result] of Object.entries(runInfoData?.nodes || {})) {
             if (allNodes.hasOwnProperty(uniqueId)) {
                 allNodes.nodes = deepMerge(allNodes[uniqueId], result)
             }
