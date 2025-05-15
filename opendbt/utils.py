@@ -46,9 +46,7 @@ class Utils:
                     merged[key] = Utils.merge_dicts(merged[key], value)
                 else:
                     # Add dict2 value if dict2 value is not exists
-                    if merged.get(key, None):
-                        continue
-                    else:
+                    if not merged.get(key, None):
                         merged[key] = value
             else:
                 # Key not in dict1, simply add it
