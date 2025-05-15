@@ -32,7 +32,7 @@ class Utils:
     @staticmethod
     def merge_dicts(dict1: dict, dict2: dict) -> dict:
         """
-        Recursively merges dict2 into dict1.
+        Recursively merges dict2 into dict1, when both values exists dict1 value retained
         Returns:
             A new dictionary representing the merged result.
         """
@@ -45,8 +45,9 @@ class Utils:
                     # Both are dicts, recurse
                     merged[key] = Utils.merge_dicts(merged[key], value)
                 else:
-                    # Not both dicts, value from dict2 overwrites
-                    merged[key] = value
+                    # Add dict2 value if dict2 value is not exists
+                    if not merged.get(key, None):
+                        merged[key] = value
             else:
                 # Key not in dict1, simply add it
                 merged[key] = value
