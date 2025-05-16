@@ -634,6 +634,12 @@
                             Metadata
                         </button>
                         <button
+                                :class="['tab-button', { 'active': activeTab === 'configuration' }]"
+                                @click="activeTab = 'configuration'"
+                                v-if="selectedItem && selectedItem.config">
+                            Configuration
+                        </button>
+                        <button
                                 :class="['tab-button', { 'active': activeTab === 'lineage' }]"
                                 @click="activeTab = 'lineage'; renderTableLineageGraph()"
                         >
@@ -857,6 +863,10 @@
                                     <p class="mt-1 text-sm text-gray-900">
                                         {{ new Date(selectedItem.created_at * 1000).toLocaleString() }}</p>
                                 </div>
+                                <div class="bg-gray-50 p-3 rounded">
+                                    <h4 class="text-xs font-medium text-gray-500 uppercase tracking-wider">Tags</h4>
+                                    <p class="mt-1 text-sm text-gray-900">{{ selectedItem.tags }}</p>
+                                </div>
                             </div>
 
                             <!-- Statistics Section -->
@@ -875,6 +885,14 @@
                             <div class="mt-6 text-sm text-gray-500" v-else>
                                 No statistics available for this item.
                             </div>
+                        </div>
+
+                        <!-- Configuration Tab -->
+                        <div v-if="activeTab === 'configuration' && selectedItem && selectedItem.config">
+                            <h3 class="text-lg font-medium text-gray-900 mb-3">Configuration</h3>
+                            <pre class="code-block mt-3"><code
+                                    class="language-json">{{ JSON.stringify(selectedItem.config, null, 2)
+                                }}</code></pre>
                         </div>
 
                         <!-- Lineage Tab -->
@@ -943,7 +961,7 @@
                     <div class="px-6 py-12 text-center">
                         <i class="fas fa-book-open text-4xl text-gray-400 mb-4"></i>
                         <h3 class="text-lg font-medium text-gray-900 mb-2">Welcome to DBT Docs</h3>
-                        <p class="text-gray-500 max-w-md mx-auto">
+                        <p class="max-w-2xl mx-auto">
                             Select an item from the sidebar to view its documentation, or use the search bar to find
                             specific models, sources, or macros.
                         </p>
@@ -1175,7 +1193,7 @@
                 // If lineage tab was active, trigger render
                 if (activeTab.value === 'lineage') {
                     renderTableLineageGraph();
-                } else if (activeTab.value === 'code') {
+                } else if (['code', 'configuration'].includes(activeTab.value)) {
                     nextTick(() => {
                         hljs.highlightAll();
                     });
@@ -1607,13 +1625,12 @@
             };
 
             watch([activeTab, selectedItem], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
-                if (newActiveTab === 'code' && (newActiveTab !== oldActiveTab || newSelectedItem !== oldSelectedItem)) {
+                if (['code', 'configuration'].includes(newActiveTab) && (newActiveTab !== oldActiveTab || newSelectedItem !== oldSelectedItem)) {
                     nextTick(() => {
                         if (typeof hljs !== 'undefined') hljs.highlightAll();
                     });
                 }
-                // No need to watch lineageMaxDepth here for hash, it's handled by setLineageDepth -> renderTableLineageGraph
-            }, {deep: true}); // deep true might not be necessary if only watching refs directly
+            }, {deep: true});
 
             watch(databaseTree, (newTree) => {
                 if (newTree.length > 0 && newTree[0].schemas.length > 0 && expandedNodes.value.length === 0 && !window.location.hash) { // Only if no hash
