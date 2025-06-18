@@ -2,6 +2,7 @@ import os
 import platform
 
 from dbt import version
+from dbt.adapters.contracts.connection import Connection
 
 
 def print_info():
@@ -10,7 +11,7 @@ def print_info():
     print(_str)
 
 
-def model(dbt, session):
+def model(dbt, connection: Connection):
     dbt.config(materialized="executepython")
     print("==================================================")
     print("========IM LOCALLY EXECUTED PYTHON MODEL==========")

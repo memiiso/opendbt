@@ -42,21 +42,7 @@ class OpenDbtBaseAdapter(BaseAdapter):
         connection = self.connections.get_if_exists()
         if not connection:
             connection = self.connections.get_thread_connection()
-        self._execute_python_model(model_name=parsed_model['name'], compiled_code=compiled_code,
-                                   session=connection.handle)
-
-    @available
-    def submit_local_dlt_job(self, parsed_model: Dict, compiled_code: str):
-        connection = self.connections.get_if_exists()
-        if not connection:
-            connection = self.connections.get_thread_connection()
-
-        import dlt
-        # IMPORTANT: here we are pre-configuring and preparing dlt.pipeline for the model!
-        _pipeline = dlt.pipeline(
-            pipeline_name=str(parsed_model['unique_id']).replace(".", "-"),
-            destination=dlt.destinations.duckdb(connection.handle._env.conn),
-            dataset_name=parsed_model['schema'],
-            dev_mode=False,
-        )
-        self._execute_python_model(model_name=parsed_model['name'], compiled_code=compiled_code, pipeline=_pipeline)
+        self._execute_python_model(model_name=parsed_model['name'],
+                                   compiled_code=compiled_code,
+                                   # following args passed to model
+                                   connection=connection)
