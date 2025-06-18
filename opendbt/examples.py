@@ -10,7 +10,7 @@ from dbt.adapters.duckdb import DuckDBAdapter
 
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):
-    def __init__(self, config, mp_context: SpawnContext) -> None:
+    def __init__(self, config, mp_context: SpawnContext = None) -> None:
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
         # pylint: disable=no-value-for-parameter
         super().__init__(config=config, mp_context=mp_context)
