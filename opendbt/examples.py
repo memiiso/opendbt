@@ -36,7 +36,7 @@ class DuckDBAdapterV2Custom(DuckDBAdapter):
                     spec.loader.exec_module(module)
                     dbt_obj = module.dbtObj(None)
                     # Access and call `model` function of the model!
-                    # IMPORTANT: here we are passing down duckdb session from the adapter to the model
+                    # IMPORTANT: here we are passing down dbt connection object from the adapter to the model
                     module.model(dbt=dbt_obj, **kwargs)
                 except Exception as e:
                     raise Exception(
