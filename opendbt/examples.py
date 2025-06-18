@@ -13,7 +13,12 @@ class DuckDBAdapterV2Custom(DuckDBAdapter):
     def __init__(self, config, mp_context: SpawnContext = None) -> None:
         print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
         # pylint: disable=no-value-for-parameter
-        super().__init__(config=config, mp_context=mp_context)
+        if mp_context:
+            # DBT 1.8 and above
+            super().__init__(config=config, mp_context=mp_context)
+        else:
+            # DBT 1.7
+            super().__init__(config=config)
 
     def _execute_python_model(self, model_name: str, compiled_code: str, **kwargs):
         try:
