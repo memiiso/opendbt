@@ -14,11 +14,6 @@ on:
       - '.run/**'
 
 jobs:
-  test-dbt-1-7:
-    uses: ./.github/workflows/tests-dbt-version.yml
-    with:
-      dbt-version: "1.7"
-    needs: test-dbt-1-8
   test-dbt-1-8:
     uses: ./.github/workflows/tests-dbt-version.yml
     with:
@@ -28,3 +23,8 @@ jobs:
     uses: ./.github/workflows/tests-dbt-version.yml
     with:
       dbt-version: "1.9"
+    needs: test-dbt-1-10
+  test-dbt-1-10:
+    uses: ./.github/workflows/tests-dbt-version.yml
+    with:
+      dbt-version: "1.10"
