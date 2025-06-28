@@ -6,6 +6,9 @@ on:
       dbt-version:
         required: true
         type: string
+      dbt-duckdb-version:
+        required: true
+        type: string
 
 jobs:
   test-dbt-version:
@@ -24,11 +27,11 @@ jobs:
       - name: Build & Install DBT ${{ inputs.dbt-version }}
         run: |
           pip install -q coverage pylint
-          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-version }}.* --force-reinstall --upgrade
+          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-duckdb-version }}.* --force-reinstall --upgrade
           # FIX for protobuf issue: https://github.com/dbt-labs/dbt-core/issues/9759
           pip install -q "apache-airflow<3.0.0" "opentelemetry-proto<1.28.0" --prefer-binary
           pip install -q .[test] --prefer-binary
-          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-version }}.* --force-reinstall --upgrade
+          pip install -q dbt-core==${{ inputs.dbt-version }}.* dbt-duckdb==${{ inputs.dbt-duckdb-version }}.* --force-reinstall --upgrade
           python --version
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
           python -m compileall -f opendbt
