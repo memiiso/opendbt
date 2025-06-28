@@ -14,17 +14,26 @@ on:
       - '.run/**'
 
 jobs:
-  test-dbt-1-7:
+  test-dbt-1-10:
     uses: ./.github/workflows/tests-dbt-version.yml
     with:
-      dbt-version: "1.7"
-    needs: test-dbt-1-8
-  test-dbt-1-8:
-    uses: ./.github/workflows/tests-dbt-version.yml
-    with:
-      dbt-version: "1.8"
-    needs: test-dbt-1-9
+      dbt-version: "1.10"
+      dbt-duckdb-version: "1.9"
   test-dbt-1-9:
     uses: ./.github/workflows/tests-dbt-version.yml
     with:
       dbt-version: "1.9"
+      dbt-duckdb-version: "1.9"
+    needs: test-dbt-1-10
+  test-dbt-1-8:
+    uses: ./.github/workflows/tests-dbt-version.yml
+    with:
+      dbt-version: "1.8"
+      dbt-duckdb-version: "1.8"
+    needs: test-dbt-1-9
+  test-dbt-1-7:
+    uses: ./.github/workflows/tests-dbt-version.yml
+    with:
+      dbt-version: "1.7"
+      dbt-duckdb-version: "1.7"
+    needs: test-dbt-1-8
