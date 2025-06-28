@@ -17,7 +17,7 @@ try:
         from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v17.config.runtime import OpenDbtRuntimeConfig
         from opendbt.dbt.v17.task.run import OpenDbtModelRunner
-    elif Version("1.8.0") <= dbt_version < Version("1.10.0"):
+    elif Version("1.8.0") <= dbt_version < Version("1.11.0"):
         RuntimePatcher(module_name="dbt.task.docs").patch_attribute(attribute_name="DOCS_INDEX_FILE_PATH",
                                                                     new_value=OPENDBT_INDEX_HTML_FILE)
         from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
