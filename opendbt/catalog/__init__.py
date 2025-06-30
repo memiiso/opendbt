@@ -205,7 +205,7 @@ class OpenDbtNode(OpenDbtLogger):
         return self.columns
 
     def sqlglot_column_lineage_map(self):
-        if not self.compiled_code:
+        if self.resource_type == "model" and not self.compiled_code:
             self.log.warning(f"Compiled code not found for model {self.unique_id}")
             return {}
 
