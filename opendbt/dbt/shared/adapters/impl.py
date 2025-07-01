@@ -31,11 +31,11 @@ class OpenDbtBaseAdapter(BaseAdapter):
                     module.model(dbt=dbt_obj, **kwargs)
                 except Exception as e:
                     raise Exception(
-                        f"Failed to load or execute python model:{model_name} from file {model_file.as_posix()}") from e
+                        f"Failed to load or execute python model:{model_name} from file {model_file.name} due to: {e!r}") from e
                 finally:
                     model_file.close()
         except Exception as e:
-            raise Exception(f"Failed to create temp py file for model:{model_name}") from e
+            raise Exception(f"Failed to create temp py file for model:{model_name} due to: {e!r}") from e
 
     @available
     def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):

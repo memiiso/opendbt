@@ -1,5 +1,4 @@
 import dlt
-from dbt.adapters.contracts.connection import Connection
 
 @dlt.resource(
     columns={"event_tstamp": {"data_type": "timestamp", "precision": 3}},
@@ -10,7 +9,7 @@ def events():
            {"event_id": 2, "event_tstamp": "2025-02-30T10:00:00.321"}]
 
 
-def model(dbt, connection: Connection):
+def model(dbt, connection: "Connection"):
     """
 
     :param dbt:
