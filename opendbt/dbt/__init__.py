@@ -12,14 +12,14 @@ try:
     dbt_version = Version(version.get_installed_version().to_version_string(skip_matcher=True))
     if Version("1.7.0") <= dbt_version < Version("1.8.0"):
         RuntimePatcher(module_name="dbt.include.global_project").patch_attribute(attribute_name="DOCS_INDEX_FILE_PATH",
-                                                                                 new_value=str(OPENDBT_INDEX_HTML_FILE))
+                                                                                 new_value=OPENDBT_INDEX_HTML_FILE.as_posix())
         from opendbt.dbt.v17.adapters.factory import OpenDbtAdapterContainer
         from opendbt.dbt.v17.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v17.config.runtime import OpenDbtRuntimeConfig
         from opendbt.dbt.v17.task.run import OpenDbtModelRunner
     elif Version("1.8.0") <= dbt_version < Version("1.11.0"):
         RuntimePatcher(module_name="dbt.task.docs").patch_attribute(attribute_name="DOCS_INDEX_FILE_PATH",
-                                                                    new_value=str(OPENDBT_INDEX_HTML_FILE))
+                                                                    new_value=OPENDBT_INDEX_HTML_FILE.as_posix())
         from opendbt.dbt.v18.adapters.factory import OpenDbtAdapterContainer
         from opendbt.dbt.v18.task.docs.generate import OpenDbtGenerateTask
         from opendbt.dbt.v18.config.runtime import OpenDbtRuntimeConfig
