@@ -653,7 +653,7 @@
                         <div v-if="activeTab === 'overview'">
                             <h3 class="text-lg font-medium text-gray-900 mb-2">Description</h3>
                             <div class="text-gray-700 prose lg:prose-sm"
-                                 v-html="highlightMatches(selectedItem.description ?? 'No description available')"></div>
+                                 v-html="displayDescriptionText(selectedItem.description ?? 'No description available')"></div>
                             <!-- Use ?? -->
                         </div>
 
@@ -971,11 +971,77 @@
         </div>
     </div>
 </div>
-<script>
-    async function loadDbtFiles(isLoading, ODBTM) {
-        isLoading.value = true;
+<script type="module">
+    const {createApp, ref, computed, onMounted, onUnmounted, nextTick, watch} = Vue;
+
+    // --- HELPERS -- //
+
+    /**
+     * Recursively merges properties from source to target, enriching the target.
+     * A value in the target is updated only if it is undefined, null, or an empty string.
+     * If both target and source properties are objects, it merges them recursively.
+     * @param {object} target The object to be merged into.
+     * @param {object} source The object to merge from.
+     * @returns {object} The merged object (target).
+     */
+    function deepMerge(target, source) {
+        if (!target || typeof target !== 'object' || !source || typeof source !== 'object') {
+            return target;
+        }
+        const isObject = (obj) => obj && typeof obj === 'object' && !Array.isArray(obj);
+
+        for (const key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                const sourceVal = source[key];
+                const targetVal = target[key];
+
+                if (isObject(targetVal) && isObject(sourceVal)) {
+                    deepMerge(targetVal, sourceVal);
+                } else if (targetVal === undefined || targetVal === null || targetVal === '') {
+                    target[key] = sourceVal;
+                }
+            }
+        }
+        return target;
+    }
+
+    /**
+     * Combines nodes and sources from manifest, catalog, and run results into a single object.
+     * @param {object} dbtManifestData - The content of manifest.json.
+     * @param {object} dbtCatalogData - The content of catalog.json.
+     * @param {object} dbtRunInfoJson - The content of run_results.json.
+     * @returns {object} A unified map of all dbt nodes.
+     */
+    function getAllDbtNodes(dbtManifestData, dbtCatalogData, dbtRunInfoJson) {
+        const allNodes = {};
+        if (!dbtManifestData) {
+            console.warn("getAllDbtNodes called with no manifest data.");
+            return allNodes;
+        }
+
+        const manifestNodes = {...dbtManifestData.nodes, ...dbtManifestData.sources};
+        const catalogNodes = {...dbtCatalogData?.nodes, ...dbtCatalogData?.sources};
+
+        for (const [nodeId, manifestNode] of Object.entries(manifestNodes)) {
+            const catalogNode = catalogNodes[nodeId] ?? {};
+            allNodes[nodeId] = deepMerge(JSON.parse(JSON.stringify(manifestNode)), catalogNode);
+        }
+
+        const runInfoData = dbtRunInfoJson ?? {};
+        for (const [uniqueId, result] of Object.entries(runInfoData?.nodes || {})) {
+            if (Object.prototype.hasOwnProperty.call(allNodes, uniqueId)) {
+                deepMerge(allNodes[uniqueId], result);
+            }
+        }
+        return allNodes;
+    }
+
+    /**
+     * Fetches and processes all necessary dbt artifact files.
+     * @returns {Promise<object>} A promise that resolves to the processed manifest object.
+     */
+    async function loadDbtFiles() {
         try {
-            // Use Promise.all to fetch both files concurrently
             const [manifestResponse, catalogResponse, cataloglResponse, dbtRunInfoResponse] = await Promise.all([
                 fetch('manifest.json'),
                 fetch('catalog.json'),
@@ -983,127 +1049,69 @@
                 fetch('run_info.json')
             ]);
 
-            if (!manifestResponse.ok) {
-                throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
-            }
-            ODBTM.value = await manifestResponse.json();
+            if (!manifestResponse.ok) throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
+            const dbtManifestJson = await manifestResponse.json();
 
             let dbtCatalogJson = {};
-            let dbtRunInfoJson = {};
             if (cataloglResponse.ok) {
                 dbtCatalogJson = await cataloglResponse.json();
-                console.log("Loading opendbt catalog, including lineage data `catalogl.json`.")
+                console.log("Loading opendbt catalog, including lineage data `catalogl.json`.");
             } else if (catalogResponse.ok) {
                 dbtCatalogJson = await catalogResponse.json();
             } else {
                 console.warn(`Failed to load catalog.json: ${catalogResponse.statusText}. Catalog features might be unavailable.`);
             }
+
+            let dbtRunInfoJson = {};
             if (dbtRunInfoResponse.ok) {
                 dbtRunInfoJson = await dbtRunInfoResponse.json();
             } else {
-                console.warn(`Failed to load run_results.json: ${dbtRunInfoResponse.statusText}. Some of the run results information might be unavailable.`);
+                console.warn(`Failed to load run_results.json: ${dbtRunInfoResponse.statusText}. Some run results might be unavailable.`);
             }
 
-            ODBTM.value.allnodes = getAllDbtNodes(ODBTM.value, dbtCatalogJson, dbtRunInfoJson);
+            dbtManifestJson.allnodes = getAllDbtNodes(dbtManifestJson, dbtCatalogJson, dbtRunInfoJson);
+            return dbtManifestJson;
         } catch (error) {
             console.error('Error loading DBT files:', error);
-        } finally {
-            isLoading.value = false;
+            return {}; // Return empty object on failure to prevent app crash
         }
     }
 
-    // Priority given to obj1, it's enriched with obj2 values
-    function deepMerge(obj1, obj2) {
-        if (obj1 === null) return obj2;
-        if (obj2 === null) return obj1;
-        if (typeof obj1 !== 'object') {
-            console.error("deepMerge: obj1 must be an object.");
-            return obj1;
-        }
-        if (typeof obj2 !== 'object') {
-            console.error("deepMerge: obj2 must be an object.");
-            return obj1;
-        }
 
-        for (const key in obj2) {
-            if (obj2.hasOwnProperty(key)) {
-                const valueFromObj2 = obj2[key];
-                const valueFromObj1 = obj1[key];
-                const keyExistsInObj1 = obj1.hasOwnProperty(key);
+    // --- CONFIGURATION -- //
 
-                if (typeof valueFromObj1 === 'object' && typeof valueFromObj2 === 'object' && !Array.isArray(valueFromObj2)) {
-                    if (valueFromObj1 !== null && valueFromObj2 !== null) {
-                        // both are object. We need to recursively merge properties.
-                        deepMerge(obj1[key], valueFromObj2);
-                    }
-                }
-                // It's updated if the key is not in obj1, or if obj1[key] is null or an empty string.
-                const shouldUpdateObj1Key = !keyExistsInObj1 || valueFromObj1 === null || valueFromObj1 === '';
-
-                if (shouldUpdateObj1Key) {
-                    // Check if the value from obj2 is a "plain" object (not an array or null)
-                    if (typeof valueFromObj2 === 'object' && valueFromObj2 !== null && !Array.isArray(valueFromObj2)) {
-                        // obj2[key] is an object. We need to recursively merge its properties.
-                        // Ensure obj1[key] is an object to merge into.
-                        // If obj1[key] was null, an empty string, or didn't exist, it needs to be initialized.
-                        if (typeof valueFromObj1 !== 'object' || valueFromObj1 === null || Array.isArray(valueFromObj1)) {
-                            obj1[key] = {};
-                        }
-                        deepMerge(obj1[key], valueFromObj2); // Recursive call
-                    } else {
-                        // obj2[key] is a primitive or an array. Assign it directly.
-                        obj1[key] = valueFromObj2;
-                    }
-                }
-                // If shouldUpdateObj1Key is false, obj1[key] (which exists and is not null/empty) is NOT changed.
-            }
-        }
-        return obj1;
-    }
-
-    function getAllDbtNodes(dbtManifestData, dbtCatalogData, dbtRunInfoJson) {
-        const allNodes = {};
-        if (!dbtManifestData) {
-            console.warn("getAllDbtNodes called with no manifest data.");
-            return allNodes;
-        }
-        const catalogData = dbtCatalogData ?? {};
-        for (const [nodeId, manifestNode] of Object.entries(dbtManifestData.nodes)) {
-            const catalogNode = catalogData.nodes?.[nodeId] ?? catalogData.sources?.[nodeId] ?? {};
-            allNodes[nodeId] = deepMerge(manifestNode, catalogNode ?? {});
-        }
-
-        // Process sources
-        for (const [sourceId, manifestNode] of Object.entries(dbtManifestData.sources)) {
-            const catalogNode = catalogData.sources?.[sourceId] ?? {};
-            allNodes[sourceId] = deepMerge(manifestNode, catalogNode ?? {});
-        }
-
-        const runInfoData = dbtRunInfoJson ?? {};
-        for (const [uniqueId, result] of Object.entries(runInfoData?.nodes || {})) {
-            if (allNodes.hasOwnProperty(uniqueId)) {
-                allNodes.nodes = deepMerge(allNodes[uniqueId], result)
-            }
-        }
-        return allNodes;
-    }
-</script>
-
-<script type="module">
-    const {createApp, ref, computed, onMounted, onUnmounted, nextTick, watch} = Vue;
-
-    // Configuration for Marked  This should be done before marked is used by the component.
     if (window.marked) {
-        window.marked.setOptions({
-            gfm: true,        // Enable GitHub Flavored Markdown (tables, strikethrough, etc.)
-            breaks: true,     // Convert single line breaks in Markdown into <br> tags
-            pedantic: false,  // Don't be too strict about Markdown syntax
-            sanitize: false   // IMPORTANT: Set to false if you are handling sanitization elsewhere or trust the source.
-                              // If true, marked will try to sanitize HTML, but it's generally better to use a dedicated HTML sanitizer.
-        });
+        window.marked.setOptions({gfm: true, breaks: true, pedantic: false, sanitize: false});
     } else {
-        console.warn("Marked.js library not found. Markdown rendering will not work as expected.");
+        console.warn("Marked.js library not found. Markdown rendering will not work.");
     }
+
+    const VIS_NETWORK_OPTIONS = {
+        layout: {
+            randomSeed: 42,
+            hierarchical: {enabled: true, direction: 'LR', sortMethod: 'directed', levelSeparation: 300, nodeSpacing: 180}
+        },
+        nodes: {shape: 'box', margin: 10, font: {size: 12, face: 'sans-serif'}, borderWidth: 1},
+        edges: {
+            arrows: 'to',
+            smooth: {enabled: true, type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.5},
+            color: {color: '#848484', highlight: '#3b82f6', hover: '#d1d5db'}
+        },
+        physics: {
+            enabled: true,
+            solver: 'barnesHut',
+            barnesHut: {gravitationalConstant: -10000, centralGravity: 0.15, springLength: 180, springConstant: 0.03, damping: 0.09, avoidOverlap: 0.3},
+            stabilization: {enabled: true, iterations: 1000, fit: true}
+        },
+        interaction: {hover: true, tooltipDelay: 200, navigationButtons: true, keyboard: true, dragNodes: true, dragView: true},
+        groups: {
+            model: {color: {border: '#3B82F6', background: '#DBEAFE', highlight: {border: '#2563EB', background: '#BFDBFE'}}, font: {color: '#1E40AF'}},
+            source: {color: {border: '#10B981', background: '#D1FAE5', highlight: {border: '#059669', background: '#A7F3D0'}}, font: {color: '#065F46'}},
+            macro: {color: {border: '#8B5CF6', background: '#EDE9FE', highlight: {border: '#7C3AED', background: '#DDD6FE'}}, font: {color: '#5B21B6'}}
+        }
+    };
+
+    // --- VUE APP -- //
 
     createApp({
         setup() {
@@ -1122,137 +1130,21 @@
             const isLineageFullScreen = ref(false);
             let currentVisNetwork = null;
 
-            // --- URL HASH LOGIC ---
-            const handleUrlHash = () => {
-                const hash = window.location.hash.substring(1); // Remove #
-                if (hash) {
-                    // Avoid re-selecting if the current selected item already matches the hash
-                    if (selectedItem.value && selectedItem.value.unique_id === hash) {
-                        return;
-                    }
-
-                    // Find item (allItems should be populated by the time this is called after loadDbtFiles)
-                    const itemFromHash = allItems.value.find(i => i.unique_id === hash);
-                    if (itemFromHash) {
-                        // Select the item but don't update the hash again (it's already in the URL)
-                        selectItem(itemFromHash, false);
-                    } else {
-                        console.warn(`Item with ID "${hash}" from URL hash not found.`);
-                        // Optionally, clear the hash if the item is invalid to avoid confusion
-                        // window.location.hash = '';
-                    }
-                } else {
-                    // No hash, or hash is empty.
-                    // If you want to clear the selected item when the hash is removed:
-                    // if (selectedItem.value) {
-                    //     selectedItem.value = null; // Or set to a default welcome state
-                    //     activeTab.value = 'overview'; // Reset tab
-                    // }
-                }
-            };
-
-            onMounted(async () => {
-                await loadDbtFiles(isLoading, ODBTM); // Wait for data to be loaded
-                handleUrlHash(); // Process initial URL hash
-                window.addEventListener('hashchange', handleUrlHash); // Listen for subsequent hash changes
-                document.addEventListener('fullscreenchange', handleFullScreenChange);
-            });
-
-            onUnmounted(() => {
-                window.removeEventListener('hashchange', handleUrlHash);
-                document.removeEventListener('fullscreenchange', handleFullScreenChange);
-            });
-
-            // --- MODIFIED selectItem function ---
-            const selectItem = (item, updateUrlHash = true) => {
-                selectedItem.value = item;
-
-                if (updateUrlHash) {
-                    const newHash = `#${item.unique_id}`;
-                    if (window.location.hash !== newHash) {
-                        window.location.hash = newHash;
-                    }
-                }
-
-                // Clear search
-                searchQuery.value = '';
-                searchResults.value = [];
-
-                // Expand the tree to show the selected item
-                const dbName = item?.database ?? '$database';
-                const schemaName = item?.schema ?? '$schema';
-                if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
-                if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
-
-                const itemTypeGroup = item.resource_type === 'model' || item.resource_type === 'snapshot' ? 'models' : 'sources';
-                if (!expandedNodes.value.includes(`${dbName}.${schemaName}.${itemTypeGroup}`)) {
-                    expandedNodes.value.push(`${dbName}.${schemaName}.${itemTypeGroup}`);
-                }
-
-
-                // If lineage tab was active, trigger render
-                if (activeTab.value === 'lineage') {
-                    renderTableLineageGraph();
-                } else if (['code', 'configuration'].includes(activeTab.value)) {
-                    nextTick(() => {
-                        hljs.highlightAll();
-                    });
-                }
-                // Scroll to top of main panel might be useful
-                // document.querySelector('.flex-1')?.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-
-            // ... (rest of your existing setup() code: toggleLineageFullScreen, handleFullScreenChange, databaseTree, allItems, etc.) ...
-            // Make sure allItems computed property is available before handleUrlHash is called effectively.
-            // The `await loadDbtFiles` in onMounted ensures ODBTM.value is populated, which allItems depends on.
-
-            const toggleLineageFullScreen = async () => {
-                if (!document.fullscreenElement) {
-                    try {
-                        await lineageContainer.value?.requestFullscreen();
-                        isLineageFullScreen.value = true;
-                    } catch (err) {
-                        console.error(`Error attempting full-screen: ${err.message}`);
-                        isLineageFullScreen.value = false;
-                    }
-                } else {
-                    if (document.exitFullscreen) {
-                        await document.exitFullscreen();
-                        isLineageFullScreen.value = false;
-                    }
-                }
-            };
-
-            const handleFullScreenChange = () => {
-                isLineageFullScreen.value = !!document.fullscreenElement;
-                // Re-fit the graph when state changes (e.g., ESC key)
-                nextTick(() => {
-                    currentVisNetwork?.fit();
-                });
-            };
-
-            // Create database tree structure
+            // --- COMPUTED PROPERTIES ---
             const databaseTree = computed(() => {
                 if (!ODBTM.value.allnodes) return [];
                 const databases = {};
-                Object.entries(ODBTM.value.allnodes).forEach(([itemId, item]) => {
-                    // If the resource type is not 'model' or 'source', skip this item
-                    if (!['model', 'source', 'seed', 'snapshot', 'test'].includes(item.resource_type)) {
-                        return;
-                    }
+                Object.values(ODBTM.value.allnodes).forEach(item => {
+                    if (!['model', 'source', 'seed', 'snapshot', 'test'].includes(item.resource_type)) return;
+
                     const dbName = item?.database ?? '$database';
                     const schemaName = item?.schema ?? '$schema';
-                    if (!databases[dbName]) {
-                        databases[dbName] = {name: dbName, schemas: {}};
-                    }
+
+                    if (!databases[dbName]) databases[dbName] = {name: dbName, schemas: {}};
                     if (!databases[dbName].schemas[schemaName]) {
-                        databases[dbName].schemas[schemaName] = {
-                            name: schemaName,
-                            models: [],
-                            sources: []
-                        };
+                        databases[dbName].schemas[schemaName] = {name: schemaName, models: [], sources: []};
                     }
+
                     if (['model', 'snapshot'].includes(item.resource_type)) {
                         databases[dbName].schemas[schemaName].models.push(item);
                     } else if (['source', 'seed', 'test'].includes(item.resource_type)) {
@@ -1260,8 +1152,6 @@
                     }
                 });
 
-                // 8. Convert the intermediate object structure to the final array format
-                //    Includes sorting for better UI presentation
                 return Object.values(databases).map(db => ({
                     name: db.name,
                     schemas: Object.values(db.schemas).map(schema => ({
@@ -1272,93 +1162,95 @@
                 })).sort((a, b) => a.name.localeCompare(b.name));
             });
 
-            // Flatten all items for search
             const allItems = computed(() => {
-                if (!databaseTree.value) return []; // Guard against undefined databaseTree
+                if (!databaseTree.value) return [];
                 return databaseTree.value.flatMap(db =>
                     db.schemas.flatMap(schema =>
-                        [...schema.models, ...schema.sources].map(item => ({
-                            ...item,
-                            section: `${db.name}.${schema.name}`,
-                            path: `${db.name}/${schema.name}/${item.name}`
-                        }))
+                        [...schema.models, ...schema.sources].map(item => ({...item}))
                     )
                 );
             });
 
-            const displayColumns = computed(() => {
-                const manifestColumns = selectedItem.value?.columns ?? {};
-                return Object.values(manifestColumns); // Simplified from Object.entries().map()
-            });
+            const allItemsById = computed(() => new Map(allItems.value.map(item => [item.unique_id, item])));
+            const displayColumns = computed(() => Object.values(selectedItem.value?.columns ?? {}));
+            const selectedItemStats = computed(() => Object.values(selectedItem.value?.stats ?? {}).filter(stat => stat.value));
 
-            const selectedItemStats = computed(() => {
-                const stats = selectedItem.value?.stats ?? {};
-                return Object.values(stats).filter(stat => stat.value)
-            });
+            // --- METHODS ---
+            const selectItem = (item, updateUrlHash = true) => {
+                selectedItem.value = item;
+                if (updateUrlHash) {
+                    const newHash = `#${item.unique_id}`;
+                    if (window.location.hash !== newHash) window.location.hash = newHash;
+                }
+                clearSearch();
 
-            // Toggle node expansion
+                const dbName = item?.database ?? '$database';
+                const schemaName = item?.schema ?? '$schema';
+                if (!expandedNodes.value.includes(dbName)) expandedNodes.value.push(dbName);
+                if (!expandedNodes.value.includes(`${dbName}.${schemaName}`)) expandedNodes.value.push(`${dbName}.${schemaName}`);
+                const itemTypeGroup = ['model', 'snapshot'].includes(item.resource_type) ? 'models' : 'sources';
+                if (!expandedNodes.value.includes(`${dbName}.${schemaName}.${itemTypeGroup}`)) {
+                    expandedNodes.value.push(`${dbName}.${schemaName}.${itemTypeGroup}`);
+                }
+
+                if (activeTab.value === 'lineage') renderTableLineageGraph();
+                else if (['code', 'configuration'].includes(activeTab.value)) nextTick(() => hljs.highlightAll());
+
+                document.querySelector('.flex-1')?.scrollTo({top: 0, behavior: 'smooth'});
+            };
+
+            const handleUrlHash = () => {
+                const hash = window.location.hash.substring(1);
+                if (hash && (!selectedItem.value || selectedItem.value.unique_id !== hash)) {
+                    const itemFromHash = allItemsById.value.get(hash);
+                    if (itemFromHash) selectItem(itemFromHash, false);
+                    else console.warn(`Item with ID "${hash}" from URL hash not found.`);
+                }
+            };
+
+            const toggleLineageFullScreen = async () => {
+                if (!document.fullscreenElement) {
+                    try {
+                        await lineageContainer.value?.requestFullscreen();
+                    } catch (err) {
+                        console.error(`Error attempting full-screen: ${err.message}`);
+                    }
+                } else if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                }
+            };
+
+            const handleFullScreenChange = () => {
+                isLineageFullScreen.value = !!document.fullscreenElement;
+                nextTick(() => currentVisNetwork?.fit());
+            };
+
             const toggleNode = (nodePath) => {
                 const index = expandedNodes.value.indexOf(nodePath);
                 if (index === -1) expandedNodes.value.push(nodePath);
                 else expandedNodes.value.splice(index, 1);
             };
 
-            // Generate SQL/Python code for a model
-            const getModelCode = (model) => {
-                if (!model) return '';
-                return model?.compiled_code ?? model?.raw_code ?? '';
+            const getModelCode = (model) => model?.compiled_code ?? model?.raw_code ?? '';
+
+            const displayDescriptionText = (text) => {
+                if (typeof text !== 'string' || !text.trim()) return '';
+                if (window.marked) {
+                    try {
+                        return window.marked.parse(text);
+                    } catch (error) {
+                        console.error('Error parsing Markdown:', error);
+                        return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    }
+                }
+                return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             };
 
-            // Highlight search matches
             const highlightMatches = (text) => {
-                if (!searchQuery.value || !text) return displayDescriptionText(text);
-                const str = String(displayDescriptionText(text)); // Ensure text is a string
+                if (!searchQuery.value || !text) return text;
+                const str = String(text);
                 const regex = new RegExp(searchQuery.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
                 return str.replace(regex, (match) => `<span class="search-highlight">${match}</span>`);
-            };
-
-            const escapeHtmlAndPreserveNewlines = (text) => {
-                if (typeof text !== 'string') return ''; // Basic type check
-                const escapedText = text
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;');
-                return escapedText.replace(/\n/g, '<br />');
-            };
-
-            const displayDescriptionText = (text, format = 'markdown') => {
-                if (typeof text !== 'string' || !text.trim()) {
-                    return ''; // Return empty string for invalid or empty input
-                }
-
-                switch (format) {
-                    case 'html':
-                        // For HTML, return the text directly.
-                        // CAUTION: Ensure this HTML is trusted or sanitized to prevent XSS.
-                        return text;
-
-                    case 'markdown':
-                        // Convert Markdown to HTML using the 'marked' library.
-                        if (window.marked) {
-                            try {
-                                return window.marked.parse(text); // Use marked.parse in newer versions
-                            } catch (error) {
-                                console.error('Error parsing Markdown:', error);
-                                // Fallback: display as plain text with escaped HTML and line breaks
-                                return escapeHtmlAndPreserveNewlines(text);
-                            }
-                        } else {
-                            console.warn("Marked.js not available, cannot render Markdown. Displaying as plain text.");
-                            return escapeHtmlAndPreserveNewlines(text);
-                        }
-
-                    case 'plain':
-                    default:
-                        // For plain text, escape any potential HTML characters and then convert newlines to <br>.
-                        return escapeHtmlAndPreserveNewlines(text);
-                }
             };
 
             const performSearch = () => {
@@ -1367,24 +1259,14 @@
                     return;
                 }
                 const query = searchQuery.value.toLowerCase();
-                searchResults.value = allItems.value.filter(item => {
-                    const nameMatch = item.name.toLowerCase().includes(query);
-                    const descriptionMatch = item.description?.toLowerCase().includes(query);
-                    const manifestColumnMatch = item.columns && Object.values(item.columns).some(col => // Use Object.values
-                        col.name.toLowerCase().includes(query) ||
-                        (col.description?.toLowerCase().includes(query))
-                    );
-                    let codeMatch = false;
-                    if (item.resource_type === 'model') {
-                        const rawCodeMatch = item.raw_code?.toLowerCase().includes(query);
-                        const compiledCodeMatch = item.compiled_code?.toLowerCase().includes(query);
-                        codeMatch = rawCodeMatch || compiledCodeMatch;
-                    }
-                    return nameMatch || descriptionMatch || manifestColumnMatch || codeMatch;
-                }).map(item => ({
-                    ...item,
-                    type: item.resource_type
-                }));
+                searchResults.value = allItems.value.filter(item =>
+                    item.name.toLowerCase().includes(query) ||
+                    item.description?.toLowerCase().includes(query) ||
+                    (item.columns && Object.values(item.columns).some(col =>
+                        col.name.toLowerCase().includes(query) || col.description?.toLowerCase().includes(query)
+                    )) ||
+                    (item.resource_type === 'model' && (item.raw_code?.toLowerCase().includes(query) || item.compiled_code?.toLowerCase().includes(query)))
+                );
             };
 
             const clearSearch = () => {
@@ -1392,39 +1274,19 @@
                 searchResults.value = [];
             };
 
-            const selectSearchResult = (result) => {
-                selectItem(result); // This will now update the hash by default
-            };
-
-            const getDependencies = (item) => {
-                if (!item || !item.unique_id) return [];
-                let parent_dependencies = ODBTM.value.parent_map?.[item.unique_id] ?? [];
-                return parent_dependencies.map(depId => ODBTM.value.allnodes?.[depId]).filter(Boolean);
-            };
-
-            const getDependents = (item) => {
-                if (!item || !item.unique_id) return [];
-                let child_dependencies = ODBTM.value.child_map?.[item.unique_id] ?? [];
-                return child_dependencies.map(depId => ODBTM.value.allnodes?.[depId]).filter(Boolean);
-            };
+            const selectSearchResult = (result) => selectItem(result);
+            const getDependencies = (item) => (ODBTM.value.parent_map?.[item.unique_id] ?? []).map(depId => allItemsById.value.get(depId)).filter(Boolean);
+            const getDependents = (item) => (ODBTM.value.child_map?.[item.unique_id] ?? []).map(depId => allItemsById.value.get(depId)).filter(Boolean);
 
             const navigateToDependencyId = (depId) => {
-                const item = allItems.value.find(i => i.unique_id === depId);
-                if (item) {
-                    selectItem(item);
-                    // Consider scrolling to the top of the main content panel
-                    // document.querySelector('.flex-1')?.scrollTo({ top: 0, behavior: 'smooth' });
-                } else {
-                    console.warn("Could not find item to navigate to by ID:", depId);
-                }
-            }
+                const item = allItemsById.value.get(depId);
+                if (item) selectItem(item);
+                else console.warn("Could not find item to navigate to by ID:", depId);
+            };
 
             const navigateToDependency = (dep) => {
-                if (dep && dep.unique_id) {
-                    navigateToDependencyId(dep.unique_id);
-                } else {
-                    console.warn("Could not navigate to invalid dependency:", dep);
-                }
+                if (dep?.unique_id) navigateToDependencyId(dep.unique_id);
+                else console.warn("Could not navigate to invalid dependency:", dep);
             };
 
             const setLineageDepth = (depth) => {
@@ -1435,152 +1297,67 @@
             const buildVisNetworkData = () => {
                 const visNodes = new Map();
                 const visEdges = new Set();
-                if (!selectedItem.value) return {nodes: [], edges: []}; // Guard
+                if (!selectedItem.value) return {nodes: [], edges: []};
                 const centerNodeId = selectedItem.value.unique_id;
 
-                const traverse = (node, currentDepth, isUpstream) => {
-                    if (!node || currentDepth > lineageMaxDepth.value) {
-                        return;
-                    }
-                    const itemId = node.unique_id;
-
-                    // Add node if not already present
-                    if (!visNodes.has(itemId)) {
-                        visNodes.set(itemId, {
-                            id: itemId,
+                const traverse = (node, depth, isUpstream) => {
+                    if (!node || depth > lineageMaxDepth.value) return;
+                    if (!visNodes.has(node.unique_id)) {
+                        visNodes.set(node.unique_id, {
+                            id: node.unique_id,
                             label: `${node?.schema ?? '?'}.${node.name}`,
-                            title: `Type: ${node.resource_type}\nID: ${itemId}`,
+                            title: `Type: ${node.resource_type}\nID: ${node.unique_id}`,
                             group: node.resource_type,
-                            shape: 'box',
-                            margin: 10,
-                            font: {multi: false},
                         });
                     }
+                    if (depth === lineageMaxDepth.value) return;
 
-                    // Stop traversal if max depth is reached for *this* path
-                    if (currentDepth === lineageMaxDepth.value) {
-                        return;
-                    }
                     const relatedNodes = isUpstream ? getDependencies(node) : getDependents(node);
                     relatedNodes.forEach(relatedNode => {
-                        if (!relatedNode) return; // Guard against undefined relatedNode
-                        const relatedNodeId = relatedNode.unique_id;
-                        const edgeId = isUpstream ? `${relatedNodeId}->${itemId}` : `${itemId}->${relatedNodeId}`;
+                        const edgeId = isUpstream ? `${relatedNode.unique_id}->${node.unique_id}` : `${node.unique_id}->${relatedNode.unique_id}`;
                         if (!visEdges.has(edgeId)) {
                             visEdges.add(edgeId);
-                            traverse(relatedNode, currentDepth + 1, isUpstream);
+                            traverse(relatedNode, depth + 1, isUpstream);
                         }
                     });
                 };
-                traverse(selectedItem.value, 0, true); // Upstream
+
+                traverse(selectedItem.value, 0, true);  // Upstream
                 traverse(selectedItem.value, 0, false); // Downstream
+
                 if (visNodes.has(centerNodeId)) {
                     const centerNodeData = visNodes.get(centerNodeId);
-                    centerNodeData.color = {
-                        border: '#e11d48', background: '#fecdd3',
-                        highlight: {border: '#be123c', background: '#fda4af'}
-                    };
+                    centerNodeData.color = {border: '#e11d48', background: '#fecdd3', highlight: {border: '#be123c', background: '#fda4af'}};
                     centerNodeData.font = {color: '#881337', bold: true};
                     centerNodeData.borderWidth = 2;
                 }
+
                 const edgesArray = Array.from(visEdges).map(edgeId => {
                     const [from, to] = edgeId.split('->');
                     return {from, to, arrows: 'to'};
                 });
-                return {
-                    nodes: Array.from(visNodes.values()),
-                    edges: edgesArray
-                };
+                return {nodes: Array.from(visNodes.values()), edges: edgesArray};
             };
 
             const renderTableLineageGraph = async () => {
-                if (!selectedItem.value) { // Added check for lineageGraphContainer
-                    console.log("Lineage prerequisites not met!");
-                    lineageRendering.value = false; // Ensure loading state is reset
-                    return;
-                }
+                if (!selectedItem.value || !lineageGraphContainer.value) return;
                 lineageRendering.value = true;
                 lineageError.value = false;
                 await nextTick();
+
                 try {
                     const {nodes, edges} = buildVisNetworkData();
+                    if (currentVisNetwork) currentVisNetwork.destroy();
+
                     if (nodes.length === 0) {
-                        console.log("No nodes to render for lineage.");
-                        if (currentVisNetwork) { // Destroy old network if it exists
-                            currentVisNetwork.destroy();
-                            currentVisNetwork = null;
-                        }
-                        lineageGraphContainer.value.innerHTML = '<p class="text-center text-gray-500 p-4">No lineage data to display for this selection or depth.</p>'; // Clear previous graph
-                        lineageRendering.value = false;
+                        lineageGraphContainer.value.innerHTML = '<p class="text-center text-gray-500 p-4">No lineage data to display.</p>';
                         return;
                     }
-                    const options = { /* ... your existing vis options ... */
-                        layout: {
-                            randomSeed: 42,
-                            hierarchical: {
-                                enabled: true, direction: 'LR', sortMethod: 'directed',
-                                levelSeparation: 300, nodeSpacing: 180, // Adjusted for potentially more nodes
-                            }
-                        },
-                        nodes: {
-                            shape: 'box', margin: 10,
-                            font: {size: 12, face: 'sans-serif'},
-                            borderWidth: 1,
-                        },
-                        edges: {
-                            arrows: 'to',
-                            smooth: {enabled: true, type: 'cubicBezier', forceDirection: 'horizontal', roundness: 0.5},
-                            color: {color: '#848484', highlight: '#3b82f6', hover: '#d1d5db'}
-                        },
-                        physics: {
-                            enabled: true, solver: 'barnesHut',
-                            barnesHut: {
-                                gravitationalConstant: -10000, centralGravity: 0.15,
-                                springLength: 180, springConstant: 0.03,
-                                damping: 0.09, avoidOverlap: 0.3
-                            },
-                            stabilization: {enabled: true, iterations: 1000, fit: true}
-                        },
-                        interaction: {
-                            hover: true, tooltipDelay: 200, navigationButtons: true,
-                            keyboard: true, dragNodes: true, dragView: true
-                        },
-                        groups: { /* ... your existing groups ... */
-                            model: {
-                                color: {
-                                    border: '#3B82F6',
-                                    background: '#DBEAFE',
-                                    highlight: {border: '#2563EB', background: '#BFDBFE'}
-                                }, font: {color: '#1E40AF'}
-                            },
-                            source: {
-                                color: {
-                                    border: '#10B981',
-                                    background: '#D1FAE5',
-                                    highlight: {border: '#059669', background: '#A7F3D0'}
-                                }, font: {color: '#065F46'}
-                            },
-                            macro: {
-                                color: {
-                                    border: '#8B5CF6',
-                                    background: '#EDE9FE',
-                                    highlight: {border: '#7C3AED', background: '#DDD6FE'}
-                                }, font: {color: '#5B21B6'}
-                            }
-                        }
-                    };
-                    if (currentVisNetwork) {
-                        currentVisNetwork.destroy(); // Destroy old instance before creating new
-                    }
-                    currentVisNetwork = new vis.Network(lineageGraphContainer.value, {nodes, edges}, options);
-                    currentVisNetwork.on('doubleClick', (params) => {
-                        if (params.nodes.length > 0) {
-                            const clickedNodeId = params.nodes[0];
-                            if (clickedNodeId === selectedItem.value.unique_id) return;
-                            const nodeToNavigate = ODBTM.value.allnodes?.[clickedNodeId];
-                            if (nodeToNavigate) {
-                                navigateToDependency(nodeToNavigate); // This will update hash
-                            }
+
+                    currentVisNetwork = new vis.Network(lineageGraphContainer.value, {nodes, edges}, VIS_NETWORK_OPTIONS);
+                    currentVisNetwork.on('doubleClick', ({nodes}) => {
+                        if (nodes.length > 0 && nodes[0] !== selectedItem.value.unique_id) {
+                            navigateToDependencyId(nodes[0]);
                         }
                     });
                     currentVisNetwork.once('stabilizationIterationsDone', () => {
@@ -1588,11 +1365,8 @@
                             currentVisNetwork.fit({animation: {duration: 500, easingFunction: 'easeInOutQuad'}});
                         }
                     });
-                    if (!isLineageFullScreen.value) {
-                        currentVisNetwork.fit();
-                    }
                 } catch (error) {
-                    console.error("Error rendering lineage graph with vis-network:", error);
+                    console.error("Error rendering lineage graph:", error);
                     lineageError.value = true;
                 } finally {
                     lineageRendering.value = false;
@@ -1600,46 +1374,48 @@
             };
 
             const getIconClassForResourceTypeById = (resourceId) => {
-                const item = allItems.value.find(i => i.unique_id === resourceId);
-                if (item) {
-                    return getIconClassForResourceType(item.resource_type, item.language);
-                }
-                return 'fas fa-table text-blue-500'; // Default
-            }
+                const item = allItemsById.value.get(resourceId);
+                return item ? getIconClassForResourceType(item.resource_type, item.language) : 'fas fa-table text-blue-500';
+            };
 
             const getIconClassForResourceType = (resourceType = "model", resourceLanguage = 'sql') => {
                 switch (resourceType) {
-                    case 'model':
-                        return resourceLanguage === "python" ? 'fa-brands fa-python text-yellow-500' : 'fas fa-table text-blue-500';
-                    case 'source':
-                        return 'fas fa-table text-green-500';
-                    case 'macro':
-                        return 'fa-solid fa-scroll text-purple-500';
-                    case 'test':
-                        return 'fa-solid fa-flask-vial text-purple-500';
-                    case 'seed':
-                        return 'fa-solid fa-file-csv text-gray-500';
-                    default:
-                        return 'fa-regular fa-circle text-gray-500';
+                    case 'model': return resourceLanguage === "python" ? 'fa-brands fa-python text-yellow-500' : 'fas fa-table text-blue-500';
+                    case 'source': return 'fas fa-table text-green-500';
+                    case 'macro': return 'fa-solid fa-scroll text-purple-500';
+                    case 'test': return 'fa-solid fa-flask-vial text-purple-500';
+                    case 'seed': return 'fa-solid fa-file-csv text-gray-500';
+                    default: return 'fa-regular fa-circle text-gray-500';
                 }
             };
 
-            watch([activeTab, selectedItem], ([newActiveTab, newSelectedItem], [oldActiveTab, oldSelectedItem]) => {
-                if (['code', 'configuration'].includes(newActiveTab) && (newActiveTab !== oldActiveTab || newSelectedItem !== oldSelectedItem)) {
-                    nextTick(() => {
-                        if (typeof hljs !== 'undefined') hljs.highlightAll();
-                    });
+            // --- LIFECYCLE & WATCHERS ---
+            onMounted(async () => {
+                ODBTM.value = await loadDbtFiles();
+                isLoading.value = false;
+                await nextTick();
+                handleUrlHash();
+                window.addEventListener('hashchange', handleUrlHash);
+                document.addEventListener('fullscreenchange', handleFullScreenChange);
+            });
+
+            onUnmounted(() => {
+                window.removeEventListener('hashchange', handleUrlHash);
+                document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            });
+
+            watch([activeTab, selectedItem], ([newActiveTab]) => {
+                if (['code', 'configuration'].includes(newActiveTab)) {
+                    nextTick(() => hljs.highlightAll());
                 }
-            }, {deep: true});
+            });
 
             watch(databaseTree, (newTree) => {
-                if (newTree.length > 0 && newTree[0].schemas.length > 0 && expandedNodes.value.length === 0 && !window.location.hash) { // Only if no hash
-                    const firstDatabase = newTree[0].name;
-                    const firstSchema = newTree[0].schemas[0].name;
-                    expandedNodes.value = [
-                        firstDatabase,
-                        `${firstDatabase}.${firstSchema}`,
-                    ];
+                if (newTree.length > 0 && !window.location.hash && expandedNodes.value.length === 0) {
+                    const firstDb = newTree[0];
+                    if (firstDb?.schemas.length > 0) {
+                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstDb.schemas[0].name}`);
+                    }
                 }
             });
 
@@ -1652,8 +1428,7 @@
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
                 getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText
             };
-        },
-        // mounted() {} // mounted logic is now in setup with onMounted
+        }
     }).mount('#app');
 </script>
 </body>
