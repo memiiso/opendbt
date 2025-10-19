@@ -1,0 +1,49 @@
+
+version: 2
+
+models:
+  - name: my_first_dbt_model
+    description: >
+      # A starter dbt model
+      
+      this is a __sample__ model used as an example
+    columns:
+      - name: data_value
+      - name: column_3
+      - name: id
+        description: "The **primary key** for this table"
+        tests:
+          - unique:
+              config:
+                severity: error
+                error_if: ">1000"
+                warn_if: ">0"
+          - not_null:
+              config:
+                severity: error
+                error_if: ">1000"
+                warn_if: ">0"
+
+  - name: my_second_dbt_model
+    description: "A starter dbt model"
+    columns:
+      - name: pk_id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+      - name: data_value1
+      - name: data_value2
+      - name: event_tstamp
+  - name: my_core_table1
+    columns:
+      - name: id
+      - name: row_data
+  - name: my_executedlt_model
+    columns:
+      - name: event_id
+      - name: event_tstamp
+  - name: my_executepython_model
+    columns:
+      - name: event_id
+      - name: event_tstamp

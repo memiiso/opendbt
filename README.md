@@ -59,6 +59,8 @@ pip install https://github.com/memiiso/opendbt/archive/refs/tags/0.4.0.zip --upg
 The project completely open-source, using the Apache 2.0 license.
 opendbt still is a young project and there are things to improve.
 Please feel free to test it, give feedback, open feature requests or send pull requests.
+Check out the [Contributing Guide](docs/contributing.md) for a full walkthrough on setting up your environment,
+running tests, and submitting changes.
 
 ### Contributors
 

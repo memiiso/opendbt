@@ -63,8 +63,8 @@ class OpenDbtColumn:
         self.data["column_fqn"] = f"{self.table_ref.table_fqn()}.{self.name}".lower()
         self.data["table_fqn"] = self.table_ref.table_fqn().lower()
         self.data["table_relative_fqn"] = f"{self.table_ref.schema}.{self.table_ref.table}"
-        self.data["transformations"] = self.data.get("transformations", [])
-        self.data["depends_on"] = self.data.get("depends_on", [])
+        self.data["transformations"] = []
+        self.data["depends_on"] = []
 
     @property
     def transformations(self):
@@ -107,7 +107,6 @@ class OpenDbtNode(OpenDbtLogger):
         )
         self.dialect = dialect
         self.parent_nodes: Dict[str, OpenDbtNode] = {}
-        self._lineage_populated = False
 
     def __columns(self, catalog_cols: dict) -> Dict[str, OpenDbtColumn]:
         combined = Utils.merge_dicts(dict1=self.node.get("columns", {}),
@@ -172,7 +171,7 @@ class OpenDbtNode(OpenDbtLogger):
 
         return OpenDbtColumn(table_ref=table_ref, data={"name": column_name})
 
-    def populate_lineage(self, tables2nodes: dict, force: bool = False):
+    def populate_lineage(self, tables2nodes: dict):
         """
         Calculates the column-level lineage for the node.
 
@@ -185,13 +184,6 @@ class OpenDbtNode(OpenDbtLogger):
                   - 'transformation': A string containing the SQL expression that
                                       transforms the source(s) into the target column.
         """
-        if self._lineage_populated and not force:
-            return self.columns
-
-        for column in self.columns.values():
-            column.transformations.clear()
-            column.depends_on.clear()
-
         sqlglot_column_lineage_map = self.sqlglot_column_lineage_map()
         # pylint: disable=too-many-nested-blocks
         for column_name, node in sqlglot_column_lineage_map.items():
@@ -221,15 +213,7 @@ class OpenDbtNode(OpenDbtLogger):
                                                                None)
                             if parent_model_id:
                                 parent_column.data["model_id"] = parent_model_id
-                            parent_dict = parent_column.to_dict().copy()
-                            self.columns[column_name].depends_on.append({
-                                "column": parent_dict["name"],
-                                "column_fqn": parent_dict["column_fqn"],
-                                "table_fqn": parent_dict["table_fqn"],
-                                "table_relative_fqn": parent_dict["table_relative_fqn"],
-                                "model_id": parent_dict.get("model_id"),
-                                "type": parent_dict.get("type"),
-                            })
+                            self.columns[column_name].depends_on.append(parent_column)
                         except Exception as e:
                             self.log.error(
                                 f"Unexpected error processing lineage source node for column "
@@ -246,34 +230,7 @@ class OpenDbtNode(OpenDbtLogger):
                 )
             if self.columns[column_name].transformations:
                 self.columns[column_name].transformations.reverse()
-        self._lineage_populated = True
-        self.node["column_lineage"] = self.column_lineage()
         return self.columns
-
-    def column_lineage(self) -> dict:
-        lineage_map = {}
-        for column_name, column in self.columns.items():
-            column_dict = column.to_dict()
-            lineage_map[column_name] = {
-                "column_fqn": column_dict.get("column_fqn"),
-                "table_fqn": column_dict.get("table_fqn"),
-                "transformations": list(column.transformations),
-                "depends_on": []
-            }
-            for dependency in column.depends_on:
-                if isinstance(dependency, OpenDbtColumn):
-                    dependency_dict = dependency.to_dict()
-                else:
-                    dependency_dict = dependency
-                lineage_map[column_name]["depends_on"].append({
-                    "column": dependency_dict.get("column") or dependency_dict.get("name"),
-                    "column_fqn": dependency_dict.get("column_fqn"),
-                    "table_fqn": dependency_dict.get("table_fqn"),
-                    "table_relative_fqn": dependency_dict.get("table_relative_fqn"),
-                    "model_id": dependency_dict.get("model_id"),
-                    "type": dependency_dict.get("type"),
-                })
-        return lineage_map
 
     def sqlglot_column_lineage_map(self):
         if not self.compiled_code:
@@ -377,7 +334,7 @@ class OpenDbtCatalog(OpenDbtLogger):
         catalog = self.catalog
         catalog["nodes"] = self.catalog.get("nodes", {})
         catalog["sources"] = self.catalog.get("sources", {})
-        keys_to_export = {"metadata", "stats", "columns", "column_lineage"}
+        keys_to_export = {"metadata", "stats", "columns"}
         for model_id, model in tqdm.tqdm(self.nodes.items()):
             model.populate_lineage(self.tables2nodes)
             node_dict = {key: model.node[key] for key in keys_to_export if key in model.node}
@@ -429,12 +386,5 @@ class OpenDbtCatalog(OpenDbtLogger):
                         node.parent_nodes[parent_node_id] = parent_node_obj
                     else:
                         self.log.warning(f"Parent model {parent_node_id} not found in catalog")
-
-            self._tables2nodes = {node.table_fqn.strip().lower(): key for key, node in self._nodes.items()}
-            for node_id, node in self._nodes.items():
-                try:
-                    node.populate_lineage(self._tables2nodes)
-                except Exception as e:
-                    self.log.warning(f"Could not populate lineage for '{node_id}': {e}")
 
         return self._nodes
