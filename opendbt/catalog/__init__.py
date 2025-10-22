@@ -111,7 +111,7 @@ class OpenDbtNode(OpenDbtLogger):
 
     def __columns(self, catalog_cols: dict) -> Dict[str, OpenDbtColumn]:
         combined = Utils.merge_dicts(dict1=self.node.get("columns", {}),
-                                     dict2=catalog_cols.get("columns", {}))
+                                     dict2=catalog_cols)
         cols = {}
         for col_name, col_data in combined.items():
             col_name: str

@@ -21,17 +21,13 @@ git clone https://github.com/<your-user>/opendbt.git
 cd opendbt
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -e ".[test,dev]"
+pip install -e .
 ```
 
 The editable install gives you the command line entry point (`opendbt`) and all dependencies used in the
 test suite (`.[test]`) and documentation tooling (`.[dev]`).
 
 If you rely on optional integrations (for example, Airflow), install the relevant extras as well:
-
-```bash
-pip install -e ".[airflow]"
-```
 
 ---
 
