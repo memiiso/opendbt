@@ -385,21 +385,6 @@
                         {{ ODBTM.metadata?.project_name ?? 'DBT' }} Doc
                     </h1>
                 </div>
-                <!-- Project Selector -->
-                <div class="flex items-center">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-folder-open text-gray-400 text-sm"></i>
-                        </div>
-                        <select id="project-selector"
-                                class="appearance-none bg-white border border-gray-300 rounded-lg pl-9 pr-10 py-2 text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-colors cursor-pointer">
-                            <option value="">Loading...</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                        </div>
-                    </div>
-                </div>
             </div>
             <!-- Search Input Container -->
             <div class="relative flex-grow">
@@ -1057,14 +1042,11 @@
      */
     async function loadDbtFiles() {
         try {
-            // Add project parameter to JSON fetches
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectParam = urlParams.get("project") ? "?project=" + urlParams.get("project") : "";
             const [manifestResponse, catalogResponse, cataloglResponse, dbtRunInfoResponse] = await Promise.all([
-                fetch('manifest.json' + projectParam),
-                fetch('catalog.json' + projectParam),
-                fetch('catalogl.json' + projectParam),
-                fetch('run_info.json' + projectParam)
+                fetch('manifest.json'),
+                fetch('catalog.json'),
+                fetch('catalogl.json'),
+                fetch('run_info.json')
             ]);
 
             if (!manifestResponse.ok) throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
@@ -1450,54 +1432,4 @@
     }).mount('#app');
 </script>
 </body>
-
-<script>
-// Multi-Project Selector
-document.addEventListener('DOMContentLoaded', function() {
-    const selector = document.getElementById("project-selector");
-    if (!selector) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentProject = urlParams.get("project");
-    const projectParam = currentProject ? "?project=" + currentProject : "";
-
-    fetch("/dbt/projects" + projectParam, {
-        credentials: 'same-origin',
-        headers: { 'Accept': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Projects loaded:", data);
-        selector.innerHTML = "";
-
-        const projects = data.projects.filter(p => p.is_valid);
-        if (projects.length === 0) {
-            selector.innerHTML = "<option>No projects</option>";
-            selector.disabled = true;
-            return;
-        }
-
-        projects.forEach(project => {
-            const option = document.createElement("option");
-            option.value = project.name;
-            option.textContent = project.name;
-            if (project.name === (currentProject || data.current)) {
-                option.selected = true;
-            }
-            selector.appendChild(option);
-        });
-
-        selector.addEventListener("change", function() {
-            const url = new URL(window.location);
-            url.searchParams.set("project", this.value);
-            window.location.href = url.toString();
-        });
-    })
-    .catch(error => {
-        console.error("Error loading projects:", error);
-        selector.innerHTML = "<option>Error</option>";
-        selector.disabled = true;
-    });
-});
-</script>
 </html>
