@@ -51,3 +51,9 @@ https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc
 
 **Step-3:** Click on the `DBT Docs` link to open your dbt documentation.
 ![airflow-dbt-docs-page.png](assets%2Fairflow-dbt-docs-page.png)
+
+**Step-4:** To use UI of Data Catalog (Demo), run command and reload the page:
+```
+python -m opendbt docs generate
+```
+![docs-lineage.png](assets%2Fdocs-lineage.png)
