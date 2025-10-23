@@ -22,6 +22,12 @@ class OpenDbtGenerateTask(GenerateTask):
                 click.echo(f"Using user provided documentation page: {index_html.as_posix()}")
                 return
 
+        # If no user-provided index.html found, deploy opendbt's enhanced catalog UI
+        opendbt_index = Path(__file__).parent.parent.parent.parent.parent.joinpath("dbt").joinpath("docs").joinpath("index.html")
+        if opendbt_index.is_file() and opendbt_index.exists():
+            shutil.copyfile(opendbt_index, target)
+            click.echo(f"Using opendbt enhanced catalog UI: {opendbt_index.as_posix()}")
+
     def generate_opendbt_catalogl_json(self):
         catalog_path = Path(self.config.project_target_path).joinpath(CATALOG_FILENAME)
         manifest_path = Path(self.config.project_target_path).joinpath(MANIFEST_FILE_NAME)
