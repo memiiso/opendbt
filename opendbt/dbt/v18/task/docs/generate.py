@@ -23,7 +23,6 @@ class OpenDbtGenerateTask(GenerateTask):
                 return
 
         # If no user-provided index.html found, deploy opendbt's enhanced catalog UI
-        # Path: opendbt/dbt/v18/task/docs/generate.py -> go up to opendbt/ then down to dbt/docs/
         opendbt_index = Path(__file__).parent.parent.parent.parent.parent.joinpath("dbt").joinpath("docs").joinpath("index.html")
         if opendbt_index.is_file() and opendbt_index.exists():
             shutil.copyfile(opendbt_index, target)
