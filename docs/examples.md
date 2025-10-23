@@ -43,7 +43,7 @@ here is how:
 Create a new Python file and name it appropriately, such as `dbt_docs_plugin.py`. Add following code to
 `dbt_docs_plugin.py` file.
 Ensure that the specified path accurately points to the folder where your dbt project generates its documentation.
-https://github.com/memiiso/opendbt/blob/a5a7a598a3e4f04e184b38257578279473d78cfc/tests/resources/airflow/plugins/airflow_dbtdocs_page.py#L1-L6
+https://github.com/memiiso/opendbt/blob/main/tests/resources/airflow/plugins/airflow_dbtdocs_page.py#L1-L6
 
 **Step-2:** Restart Airflow to activate the plugin. Once the restart is complete, you should see a new link labeled
 `DBT Docs` within your Airflow web interface. This link will provide access to your dbt documentation.
