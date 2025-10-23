@@ -1432,7 +1432,8 @@
                 if (newTree.length > 0 && !window.location.hash && expandedNodes.value.length === 0) {
                     const firstDb = newTree[0];
                     if (firstDb?.schemas.length > 0) {
-                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstDb.schemas[0].name}`);
+                        const firstSchema = firstDb.schemas[0];
+                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstSchema.name}`);
                     }
                 }
             });
