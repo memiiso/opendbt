@@ -1434,6 +1434,10 @@
                     if (firstDb?.schemas.length > 0) {
                         const firstSchema = firstDb.schemas[0];
                         expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstSchema.name}`);
+                        // Auto-expand Models if available
+                        if (firstSchema.models && firstSchema.models.length > 0) {
+                            expandedNodes.value.push(`${firstDb.name}.${firstSchema.name}.models`);
+                        }
                     }
                 }
             });
