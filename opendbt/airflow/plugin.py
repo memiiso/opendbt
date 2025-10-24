@@ -1,36 +1,32 @@
 import json
 import time
 from pathlib import Path
-from typing import Union, Dict, Optional, Tuple
+from typing import Union, Dict, Optional, Tuple, Type
 
 
-# pylint: disable=inconsistent-return-statements
-def init_plugins_dbtdocs_page(
-    dbt_docs_dir: Union[Path, str] = None,
-    variable_name: str = "dbt_docs_projects",
-    default_project: Optional[str] = None
-):
+def _create_dbt_docs_view_class(
+    legacy_mode: bool,
+    dbt_docs_dir: Optional[Path],
+    variable_name: str,
+    default_project: Optional[str]
+) -> Type:
     """
-    Initialize DBT Docs plugin with support for multiple projects.
+    Factory function to create DBTDocsView class with configuration.
 
     Args:
-        dbt_docs_dir: Legacy single project path (for backward compatibility)
+        legacy_mode: Whether to use single-project legacy mode
+        dbt_docs_dir: Path to single project (legacy mode only)
         variable_name: Name of Airflow Variable containing project dict
         default_project: Default project name to use if none specified
+
+    Returns:
+        DBTDocsView class configured with the given parameters
     """
-    from airflow.plugins_manager import AirflowPlugin
-    from flask import Blueprint, request, jsonify
+    from flask import request, jsonify, abort
     from flask_appbuilder import BaseView, expose
-    from flask import abort
     from airflow.www.auth import has_access
     from airflow.security import permissions
     from airflow.models import Variable
-
-    # Legacy mode: if dbt_docs_dir is provided, use single project
-    legacy_mode = dbt_docs_dir is not None
-    if legacy_mode:
-        if isinstance(dbt_docs_dir, str):
-            dbt_docs_dir = Path(dbt_docs_dir)
 
     class DBTDocsView(BaseView):
         route_base = "/dbt"
@@ -170,12 +166,40 @@ def init_plugins_dbtdocs_page(
         def catalogl(self):
             return self.return_json("catalogl.json")
 
+    return DBTDocsView
+
+
+# pylint: disable=inconsistent-return-statements
+def init_plugins_dbtdocs_page(
+    dbt_docs_dir: Union[Path, str] = None,
+    variable_name: str = "dbt_docs_projects",
+    default_project: Optional[str] = None
+):
+    """
+    Initialize DBT Docs plugin with support for multiple projects.
+
+    Args:
+        dbt_docs_dir: Legacy single project path (for backward compatibility)
+        variable_name: Name of Airflow Variable containing project dict
+        default_project: Default project name to use if none specified
+    """
+    from airflow.plugins_manager import AirflowPlugin
+    from flask import Blueprint
+
+    # Legacy mode: if dbt_docs_dir is provided, use single project
+    legacy_mode = dbt_docs_dir is not None
+    if legacy_mode:
+        if isinstance(dbt_docs_dir, str):
+            dbt_docs_dir = Path(dbt_docs_dir)
+
+    # Create DBTDocsView class with configuration
+    DBTDocsView = _create_dbt_docs_view_class(
+        legacy_mode, dbt_docs_dir, variable_name, default_project
+    )
+
     # Creating a flask blueprint to integrate the templates and static folder
     # Note: In multi-project mode, static files are served from individual project dirs
-    if legacy_mode:
-        static_folder = dbt_docs_dir.as_posix()
-    else:
-        static_folder = None  # Will be resolved per-request
+    static_folder = dbt_docs_dir.as_posix() if legacy_mode else None
 
     bp = Blueprint(
         "DBT Plugin",
