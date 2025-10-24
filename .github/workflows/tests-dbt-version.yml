@@ -41,3 +41,16 @@ jobs:
           python -c "from dbt.version import get_installed_version as get_dbt_version;print(f'dbt version={get_dbt_version()}')"
           python -m coverage run --source=./tests/ -m unittest discover -s tests/
           python -m coverage report -m ./opendbt/*.py
+      - name: Test Airflow Plugin
+        run: |
+          # Install test dependencies
+          pip install requests testcontainers
+
+          # Generate docs
+          cd tests/resources/dbtcore && python -m opendbt docs generate
+          cd ../dbtfinance && python -m opendbt docs generate
+          cd ../../..
+
+          # Run tests
+          python -m unittest tests.test_airflow.TestAirflowLegacyMode -v
+          python -m unittest tests.test_airflow.TestAirflowMultiProjectMode -v
