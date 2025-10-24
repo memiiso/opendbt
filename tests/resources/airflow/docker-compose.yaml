@@ -21,5 +21,7 @@ services:
     environment:
       - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
       - AIRFLOW_ENVIRONMENT=LOCAL
+      # Airflow Variable for multi-project mode testing
+      - AIRFLOW_VAR_DBT_DOCS_PROJECTS={"dbtcore":"/opt/dbtcore/target","dbtfinance":"/opt/dbtfinance/target"}
     ports:
       - "8080"
