@@ -9,6 +9,11 @@ import requests
 from testcontainers.compose import DockerCompose
 
 
+# Environment variable to control when Airflow Docker tests run
+# Set RUN_AIRFLOW_TESTS=1 to enable these tests
+SKIP_AIRFLOW_TESTS = not os.getenv("RUN_AIRFLOW_TESTS")
+
+
 class AirflowTestBase(unittest.TestCase):
     """Base class with common helper methods for Airflow tests"""
 
@@ -41,6 +46,7 @@ class AirflowTestBase(unittest.TestCase):
         print(f"✓ Copied plugin config: {plugin_file}")
 
 
+@unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
 class TestAirflowLegacyMode(AirflowTestBase):
     """Test single-project legacy mode (backward compatibility)"""
 
@@ -126,6 +132,7 @@ class TestAirflowLegacyMode(AirflowTestBase):
             print("  ✓ Projects endpoint shows legacy_mode=true")
 
 
+@unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
 class TestAirflowMultiProjectMode(AirflowTestBase):
     """Test multi-project mode with project switching"""
 

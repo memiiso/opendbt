@@ -42,6 +42,8 @@ jobs:
           python -m coverage run --source=./tests/ -m unittest discover -s tests/
           python -m coverage report -m ./opendbt/*.py
       - name: Test Airflow Plugin
+        env:
+          RUN_AIRFLOW_TESTS: "1"
         run: |
           # Install test dependencies
           pip install requests testcontainers
