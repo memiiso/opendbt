@@ -24,17 +24,53 @@ class AirflowTestBase(unittest.TestCase):
     @classmethod
     def _wait_for_airflow(cls, timeout=120):
         """Wait for Airflow to be healthy"""
+        import subprocess
         start = time.time()
         print(f"Waiting for Airflow to be ready at {cls.base_url}...")
+
         while time.time() - start < timeout:
             try:
                 response = requests.get(f"{cls.base_url}/health", timeout=5)
                 if response.status_code == 200:
                     print(f"✓ Airflow is ready!")
+
+                    # Show container logs for debugging
+                    print("\n" + "="*60)
+                    print("AIRFLOW CONTAINER LOGS (last 50 lines):")
+                    print("="*60)
+                    try:
+                        logs = subprocess.run(
+                            ["docker", "logs", "--tail", "50", "airflow"],
+                            capture_output=True, text=True, timeout=10
+                        )
+                        print(logs.stdout)
+                        if logs.stderr:
+                            print("STDERR:", logs.stderr)
+                    except Exception as e:
+                        print(f"Could not fetch logs: {e}")
+                    print("="*60 + "\n")
+
                     return
             except Exception as e:
                 pass
             time.sleep(3)
+
+        # Timeout - show logs before failing
+        print("\n" + "="*60)
+        print("TIMEOUT - AIRFLOW CONTAINER LOGS:")
+        print("="*60)
+        try:
+            logs = subprocess.run(
+                ["docker", "logs", "--tail", "100", "airflow"],
+                capture_output=True, text=True, timeout=10
+            )
+            print(logs.stdout)
+            if logs.stderr:
+                print("STDERR:", logs.stderr)
+        except Exception as e:
+            print(f"Could not fetch logs: {e}")
+        print("="*60 + "\n")
+
         raise TimeoutError(f"Airflow did not start in {timeout} seconds")
 
     @classmethod
@@ -42,8 +78,25 @@ class AirflowTestBase(unittest.TestCase):
         """Copy specified plugin config to active location"""
         source = cls.resources_dir / 'airflow/plugins' / plugin_file
         dest = cls.resources_dir / 'airflow/plugins/airflow_dbtdocs_page.py'
+
+        print(f"\n→ Copying plugin config:")
+        print(f"  Source: {source}")
+        print(f"  Dest: {dest}")
+        print(f"  Source exists: {source.exists()}")
+
+        if source.exists():
+            content = source.read_text()
+            print(f"  Source size: {len(content)} bytes")
+            print(f"  First 200 chars:\n{content[:200]}")
+
         shutil.copy(source, dest)
-        print(f"✓ Copied plugin config: {plugin_file}")
+
+        print(f"  Dest exists: {dest.exists()}")
+        if dest.exists():
+            dest_content = dest.read_text()
+            print(f"  Dest size: {len(dest_content)} bytes")
+
+        print(f"✓ Plugin config copied successfully")
 
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
@@ -52,6 +105,8 @@ class TestAirflowLegacyMode(AirflowTestBase):
 
     @classmethod
     def setUpClass(cls):
+        import subprocess
+
         print("\n" + "="*60)
         print("Testing Legacy Single-Project Mode")
         print("="*60)
@@ -78,6 +133,32 @@ class TestAirflowLegacyMode(AirflowTestBase):
         # Wait for Airflow
         cls._wait_for_airflow()
 
+        # Debug: Check files inside container
+        print("\n" + "="*60)
+        print("CONTAINER FILE SYSTEM CHECK:")
+        print("="*60)
+
+        commands_to_check = [
+            ("Plugin file", "docker exec airflow ls -la /opt/airflow/plugins/"),
+            ("Plugin content", "docker exec airflow head -20 /opt/airflow/plugins/airflow_dbtdocs_page.py"),
+            ("Opendbt version", "docker exec airflow pip show opendbt"),
+            ("Target directory", "docker exec airflow ls -la /opt/dbtcore/target/"),
+        ]
+
+        for desc, cmd in commands_to_check:
+            print(f"\n→ {desc}:")
+            try:
+                result = subprocess.run(
+                    cmd.split(), capture_output=True, text=True, timeout=10
+                )
+                print(result.stdout)
+                if result.stderr:
+                    print(f"STDERR: {result.stderr}")
+            except Exception as e:
+                print(f"  Error: {e}")
+
+        print("="*60 + "\n")
+
     @classmethod
     def tearDownClass(cls):
         print("\n" + "="*60)
@@ -89,7 +170,26 @@ class TestAirflowLegacyMode(AirflowTestBase):
     def test_legacy_index_page_accessible(self):
         """Test that DBT docs index page loads in legacy mode"""
         print("\n→ Testing index page accessibility...")
-        response = requests.get(f"{self.base_url}/dbt/dbt_docs_index.html", timeout=10)
+        url = f"{self.base_url}/dbt/dbt_docs_index.html"
+        print(f"  URL: {url}")
+
+        response = requests.get(url, timeout=10)
+        print(f"  Status: {response.status_code}")
+        print(f"  Headers: {dict(response.headers)}")
+
+        if response.status_code != 200:
+            print(f"  Response body (first 500 chars):\n{response.text[:500]}")
+
+            # Check if plugin is loaded
+            print("\n  Checking plugin status...")
+            try:
+                plugin_check = requests.get(f"{self.base_url}/api/v1/plugins", timeout=5)
+                print(f"  Plugins API status: {plugin_check.status_code}")
+                if plugin_check.status_code == 200:
+                    print(f"  Plugins: {plugin_check.text[:500]}")
+            except Exception as e:
+                print(f"  Could not check plugins: {e}")
+
         self.assertEqual(response.status_code, 200)
         self.assertIn("<!DOCTYPE html>", response.text)
         print("  ✓ Index page accessible")
