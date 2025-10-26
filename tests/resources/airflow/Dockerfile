@@ -24,6 +24,8 @@ RUN pip install "dbt-core==1.8.*"
 # See: https://github.com/duckdb/duckdb/issues/14367
 RUN OVERRIDE_GIT_DESCRIBE="v1.3.0" pip install "duckdb>=1.0.0,<1.4.0" --no-cache-dir
 
-RUN pip install "dbt-duckdb==1.8.*" opendbt
+# Install dbt-duckdb and local opendbt code (not PyPI version)
+RUN pip install "dbt-duckdb==1.8.*"
+RUN pip install -e /tmp/opendbt
 
 EXPOSE 8080
