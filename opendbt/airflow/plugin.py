@@ -1,8 +1,31 @@
-import json
-import time
 from pathlib import Path
 from typing import Union, Dict, Optional, Tuple, Type
 
+
+def _validate_project_info(name: str, path: Path) -> dict:
+    """
+    Validate a single project and return its info.
+
+    Args:
+        name: Project name
+        path: Path to the project directory
+
+    Returns:
+        Dictionary with project information and validation status
+    """
+    project_info = {
+        "name": name,
+        "path": str(path),
+        "has_manifest": path.joinpath("manifest.json").exists(),
+        "has_catalog": path.joinpath("catalog.json").exists(),
+        "has_catalogl": path.joinpath("catalogl.json").exists(),
+        "has_index": path.joinpath("index.html").exists(),
+    }
+    project_info["is_valid"] = (
+        project_info["has_manifest"] and
+        project_info["has_index"]
+    )
+    return project_info
 
 def _create_dbt_docs_view_class(
     legacy_mode: bool,
@@ -22,6 +45,9 @@ def _create_dbt_docs_view_class(
     Returns:
         DBTDocsView class configured with the given parameters
     """
+    import time
+    import json
+
     from flask import request, jsonify, abort
     from flask_appbuilder import BaseView, expose
     from airflow.www.auth import has_access
@@ -106,21 +132,8 @@ def _create_dbt_docs_view_class(
             projects = self._get_projects_dict()
 
             # Validate that target dirs exist and have required files
-            valid_projects = []
-            for name, path in projects.items():
-                project_info = {
-                    "name": name,
-                    "path": str(path),
-                    "has_manifest": path.joinpath("manifest.json").exists(),
-                    "has_catalog": path.joinpath("catalog.json").exists(),
-                    "has_catalogl": path.joinpath("catalogl.json").exists(),
-                    "has_index": path.joinpath("index.html").exists(),
-                }
-                project_info["is_valid"] = (
-                    project_info["has_manifest"] and
-                    project_info["has_index"]
-                )
-                valid_projects.append(project_info)
+            valid_projects = [_validate_project_info(name, path)
+                            for name, path in projects.items()]
 
             return jsonify({
                 "projects": valid_projects,
