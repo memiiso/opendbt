@@ -43,8 +43,8 @@ The priority order is:
    - Case-insensitive variable lookup for compatibility with `AIRFLOW_VAR_*` env vars
 
 ### Configuration
-   - `AIRFLOW_PLUGIN_MODE=single` (default): Single-project mode with static path
-   - `AIRFLOW_PLUGIN_MODE=multi`: Multi-project mode with Airflow Variable
+   - `export AIRFLOW_PLUGIN_MODE=single` (default): Single-project mode with static path
+   - `export AIRFLOW_PLUGIN_MODE=multi`: Multi-project mode with Airflow Variable
    - Setup Admin - Variables:
    ```
    dbt_docs_projects: 

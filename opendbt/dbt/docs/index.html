@@ -391,9 +391,16 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-folder-open text-gray-400 text-sm"></i>
                         </div>
-                        <select id="project-selector"
+                        <select v-model="currentProject" 
+                                @change="switchProject"
+                                :disabled="isLoading || availableProjects.length === 0"
                                 class="appearance-none bg-white border border-gray-300 rounded-lg pl-9 pr-10 py-2 text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-colors cursor-pointer">
-                            <option value="">Loading...</option>
+                            <option v-if="availableProjects.length === 0" value="">Loading...</option>
+                            <option v-for="project in availableProjects" 
+                                    :key="project.name" 
+                                    :value="project.name">
+                                {{ project.name }}
+                            </option>
                         </select>
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                             <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
@@ -1163,6 +1170,8 @@
             const lineageRendering = ref(false);
             const lineageError = ref(false);
             const isLineageFullScreen = ref(false);
+            const currentProject = ref(new URLSearchParams(window.location.search).get('project'));
+            const availableProjects = ref([]);
             let currentVisNetwork = null;
 
             // --- COMPUTED PROPERTIES ---
@@ -1209,9 +1218,35 @@
             const allItemsById = computed(() => new Map(allItems.value.map(item => [item.unique_id, item])));
             const displayColumns = computed(() => Object.values(selectedItem.value?.columns ?? {}));
             const selectedItemStats = computed(() => Object.values(selectedItem.value?.stats ?? {}).filter(stat => stat.value));
-
-            // --- METHODS ---
-            const selectItem = (item, updateUrlHash = true) => {
+            // --- METHODS ---  
+            const loadProjects = async () => {
+                    try {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const projectParam = urlParams.get('project') ? `?project=${urlParams.get('project')}` : '';
+                        
+                        const response = await fetch(`/dbt/projects${projectParam}`, {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        
+                        const data = await response.json();
+                        availableProjects.value = data.projects.filter(p => p.is_valid);
+                        
+                        if (!currentProject.value) {
+                            currentProject.value = data.current;
+                        }
+                    } catch (error) {
+                        console.error('Error loading projects:', error);
+                        availableProjects.value = [];
+                    }
+                };
+                
+                const switchProject = () => {
+                    const url = new URL(window.location);
+                    url.searchParams.set('project', currentProject.value);
+                    window.location.href = url.toString();
+                };            
+            const selectItem = (item, updateUrlHash = true) => {                
                 selectedItem.value = item;
                 if (updateUrlHash) {
                     const newHash = `#${item.unique_id}`;
@@ -1428,6 +1463,7 @@
 
             // --- LIFECYCLE & WATCHERS ---
             onMounted(async () => {
+                await loadProjects();
                 ODBTM.value = await loadDbtFiles();
                 isLoading.value = false;
                 await nextTick();
@@ -1469,6 +1505,7 @@
                 isLoading, ODBTM, databaseTree, expandedNodes, selectedItem, searchQuery, searchResults,
                 lineageContainer, lineageGraphContainer, lineageMaxDepth, lineageRendering, lineageError,
                 activeTab, activeCodeTab, displayColumns, selectedItemStats, isLineageFullScreen,
+                currentProject, availableProjects, switchProject,
                 toggleLineageFullScreen, getModelCode, getModelRawCode, highlightMatches, performSearch, clearSearch,
                 selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
@@ -1478,54 +1515,4 @@
     }).mount('#app');
 </script>
 </body>
-
-<script>
-// Multi-Project Selector
-document.addEventListener('DOMContentLoaded', function() {
-    const selector = document.getElementById("project-selector");
-    if (!selector) return;
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentProject = urlParams.get("project");
-    const projectParam = currentProject ? "?project=" + currentProject : "";
-
-    fetch("/dbt/projects" + projectParam, {
-        credentials: 'same-origin',
-        headers: { 'Accept': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log("Projects loaded:", data);
-        selector.innerHTML = "";
-
-        const projects = data.projects.filter(p => p.is_valid);
-        if (projects.length === 0) {
-            selector.innerHTML = "<option>No projects</option>";
-            selector.disabled = true;
-            return;
-        }
-
-        projects.forEach(project => {
-            const option = document.createElement("option");
-            option.value = project.name;
-            option.textContent = project.name;
-            if (project.name === (currentProject || data.current)) {
-                option.selected = true;
-            }
-            selector.appendChild(option);
-        });
-
-        selector.addEventListener("change", function() {
-            const url = new URL(window.location);
-            url.searchParams.set("project", this.value);
-            window.location.href = url.toString();
-        });
-    })
-    .catch(error => {
-        console.error("Error loading projects:", error);
-        selector.innerHTML = "<option>Error</option>";
-        selector.disabled = true;
-    });
-});
-</script>
 </html>

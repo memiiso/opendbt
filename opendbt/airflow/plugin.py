@@ -1,5 +1,13 @@
 from pathlib import Path
-from typing import Union, Dict, Optional, Tuple, Type
+from typing import Union, Dict, Optional
+import json
+
+from flask import request, jsonify, abort, Blueprint
+from flask_appbuilder import BaseView, expose
+from airflow.www.auth import has_access
+from airflow.security import permissions
+from airflow.models import Variable
+from airflow.plugins_manager import AirflowPlugin
 
 
 def _validate_project_info(name: str, path: Path) -> dict:
@@ -27,165 +35,164 @@ def _validate_project_info(name: str, path: Path) -> dict:
     )
     return project_info
 
-def _create_dbt_docs_view_class(
-    legacy_mode: bool,
-    dbt_docs_dir: Optional[Path],
-    variable_name: str,
-    default_project: Optional[str]
-) -> Type:
-    """
-    Factory function to create DBTDocsView class with configuration.
 
-    Args:
-        legacy_mode: Whether to use single-project legacy mode
-        dbt_docs_dir: Path to single project (legacy mode only)
-        variable_name: Name of Airflow Variable containing project dict
-        default_project: Default project name to use if none specified
-
-    Returns:
-        DBTDocsView class configured with the given parameters
-    """
-    import time
-    import json
-
-    from flask import request, jsonify, abort
-    from flask_appbuilder import BaseView, expose
-    from airflow.www.auth import has_access
-    from airflow.security import permissions
-    from airflow.models import Variable
-
-    class DBTDocsView(BaseView):
-        route_base = "/dbt"
-        default_view = "dbt_docs_index"
-
-        # Simple cache: (projects_dict, timestamp)
-        _projects_cache: Optional[Tuple[Dict[str, Path], float]] = None
-        _cache_ttl: int = 60  # seconds
-
-        def _get_projects_dict(self) -> Dict[str, Path]:
-            """Read projects from Airflow Variable with caching (dynamic, no restart needed!)"""
-            if legacy_mode:
-                # Backward compatibility: single project mode
-                return {"default": dbt_docs_dir}
-
-            # Check cache first
-            if self._projects_cache is not None:
-                cached_projects, cached_time = self._projects_cache
-                if time.time() - cached_time < self._cache_ttl:
-                    return cached_projects
-
-            try:
-                projects_json = Variable.get(variable_name, default_var=None)
-
-                # If not found, try uppercase (for AIRFLOW_VAR_ environment variables)
-                if projects_json is None:
-                    projects_json = Variable.get(variable_name.upper(), default_var=None)
-
-                if projects_json is None:
-                    self.log.warning(f"Airflow Variable '{variable_name}' not found (tried both cases)")
-                    return {}
-
-                if isinstance(projects_json, str):
-                    projects_json = json.loads(projects_json)
-
-                projects_dict = {k: Path(v) for k, v in projects_json.items()}
-
-                self._projects_cache = (projects_dict, time.time())
-
-                return projects_dict
-            except Exception as e:
-                self.log.error(f"Error loading projects from Variable '{variable_name}': {e}")
+class ProjectConfig:
+    """Configuration for DBT docs projects - handles both legacy and multi-project modes."""
+    
+    def __init__(
+        self,
+        legacy_path: Optional[Union[Path, str]] = None,
+        variable_name: str = "dbt_docs_projects",
+        default_project: Optional[str] = None
+    ):
+        """
+        Initialize project configuration.
+        
+        Args:
+            legacy_path: Path for single-project legacy mode (if provided, enables legacy mode)
+            variable_name: Name of Airflow Variable containing project dict (multi-project mode)
+            default_project: Default project name to use if none specified (multi-project mode)
+        """
+        self.legacy_mode = legacy_path is not None
+        self.legacy_path = Path(legacy_path) if legacy_path else None
+        self.variable_name = variable_name
+        self.default_project = default_project
+    
+    def get_projects(self) -> Dict[str, Path]:
+        """
+        Get all configured projects.
+        
+        Returns:
+            Dictionary mapping project names to their paths
+        """
+        if self.legacy_mode:
+            return {"default": self.legacy_path}
+        
+        try:
+            projects_json = Variable.get(self.variable_name, default_var=None)
+            
+            # Try uppercase variant (for AIRFLOW_VAR_ environment variables)
+            if projects_json is None:
+                projects_json = Variable.get(self.variable_name.upper(), default_var=None)
+            
+            if projects_json is None:
                 return {}
-
-        def _get_current_project(self) -> str:
-            """Get current project from query param or default"""
-            if legacy_mode:
-                return "default"
-
-            projects = self._get_projects_dict()
-            if not projects:
-                abort(503, "No DBT projects configured")
-
-            # Get from query param
-            project = request.args.get('project', default_project)
-
-            # Fallback to first available project
-            if not project:
-                project = list(projects.keys())[0]
-
-            return project
-
-        def _get_project_path(self, project_name: str) -> Path:
-            """Get path for specific project"""
-            projects = self._get_projects_dict()
-
-            if project_name not in projects:
-                available = ", ".join(projects.keys())
-                abort(404, f"Project '{project_name}' not found. Available: {available}")
-
-            return projects[project_name]
-
-        @expose("/projects")
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def list_projects(self):
-            """Return list of available projects with validation"""
-            projects = self._get_projects_dict()
-
-            # Validate that target dirs exist and have required files
-            valid_projects = [_validate_project_info(name, path)
-                            for name, path in projects.items()]
-
-            return jsonify({
-                "projects": valid_projects,
-                "current": self._get_current_project(),
-                "legacy_mode": legacy_mode
-            })
-
-        @expose("/dbt_docs_index.html")  # type: ignore[misc]
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def dbt_docs_index(self):
-            project = self._get_current_project()
-            project_path = self._get_project_path(project)
-
-            if not project_path.joinpath("index.html").is_file():
-                abort(404, f"index.html not found for project '{project}'")
-
-            return project_path.joinpath("index.html").read_text()
-
-        def return_json(self, json_file: str):
-            project = self._get_current_project()
-            project_path = self._get_project_path(project)
-
-            if not project_path.joinpath(json_file).is_file():
-                abort(404, f"{json_file} not found for project '{project}'")
-
-            data = project_path.joinpath(json_file).read_text()
-            return data, 200, {"Content-Type": "application/json"}
-
-        @expose("/catalog.json")  # type: ignore[misc]
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def catalog(self):
-            return self.return_json("catalog.json")
-
-        @expose("/manifest.json")  # type: ignore[misc]
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def manifest(self):
-            return self.return_json("manifest.json")
-
-        @expose("/run_info.json")  # type: ignore[misc]
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def run_info(self):
-            return self.return_json("run_info.json")
-
-        @expose("/catalogl.json")  # type: ignore[misc]
-        @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
-        def catalogl(self):
-            return self.return_json("catalogl.json")
-
-    return DBTDocsView
+            
+            if isinstance(projects_json, str):
+                projects_json = json.loads(projects_json)
+            
+            return {k: Path(v) for k, v in projects_json.items()}
+        
+        except Exception as e:
+            # Log error but don't crash - return empty dict
+            print(f"Error loading projects from Variable '{self.variable_name}': {e}")
+            return {}
 
 
-# pylint: disable=inconsistent-return-statements
+class DBTDocsView(BaseView):
+    """Flask view for serving DBT documentation with multi-project support."""
+    
+    route_base = "/dbt"
+    default_view = "dbt_docs_index"
+
+    def __init__(self, config: ProjectConfig):
+        super().__init__()
+        self.config = config
+
+    def _get_current_project(self) -> str:
+        """Get current project from query param or default."""
+        if self.config.legacy_mode:
+            return "default"
+        
+        projects = self.config.get_projects()
+        if not projects:
+            abort(503, "No DBT projects configured")
+        
+        # Get from query param, fallback to default, fallback to first available
+        project = request.args.get('project', self.config.default_project)
+        if not project:
+            project = list(projects.keys())[0]
+        
+        return project
+
+    def _get_project_path(self, project_name: str) -> Path:
+        """Get path for specific project."""
+        projects = self.config.get_projects()
+        
+        if project_name not in projects:
+            available = ", ".join(projects.keys())
+            abort(404, f"Project '{project_name}' not found. Available: {available}")
+        
+        return projects[project_name]
+
+    @expose("/projects")
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def list_projects(self):
+        """Return list of available projects with validation."""
+        projects = self.config.get_projects()
+        
+        # Validate that target dirs exist and have required files
+        valid_projects = [
+            _validate_project_info(name, path)
+            for name, path in projects.items()
+        ]
+        
+        return jsonify({
+            "projects": valid_projects,
+            "current": self._get_current_project(),
+            "legacy_mode": self.config.legacy_mode
+        })
+
+    @expose("/dbt_docs_index.html")  # type: ignore[misc]
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def dbt_docs_index(self):
+        """Serve the main DBT docs index page."""
+        project = self._get_current_project()
+        project_path = self._get_project_path(project)
+        
+        index_file = project_path.joinpath("index.html")
+        if not index_file.is_file():
+            abort(404, f"index.html not found for project '{project}'")
+        
+        return index_file.read_text()
+
+    def _return_json(self, json_file: str):
+        """Generic handler for returning JSON files."""
+        project = self._get_current_project()
+        project_path = self._get_project_path(project)
+        
+        file_path = project_path.joinpath(json_file)
+        if not file_path.is_file():
+            abort(404, f"{json_file} not found for project '{project}'")
+        
+        data = file_path.read_text()
+        return data, 200, {"Content-Type": "application/json"}
+
+    @expose("/catalog.json")  # type: ignore[misc]
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def catalog(self):
+        """Serve catalog.json for current project."""
+        return self._return_json("catalog.json")
+
+    @expose("/manifest.json")  # type: ignore[misc]
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def manifest(self):
+        """Serve manifest.json for current project."""
+        return self._return_json("manifest.json")
+
+    @expose("/run_info.json")  # type: ignore[misc]
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def run_info(self):
+        """Serve run_info.json for current project."""
+        return self._return_json("run_info.json")
+
+    @expose("/catalogl.json")  # type: ignore[misc]
+    @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
+    def catalogl(self):
+        """Serve catalogl.json for current project."""
+        return self._return_json("catalogl.json")
+
+
 def init_plugins_dbtdocs_page(
     dbt_docs_dir: Union[Path, str] = None,
     variable_name: str = "dbt_docs_projects",
@@ -198,25 +205,24 @@ def init_plugins_dbtdocs_page(
         dbt_docs_dir: Legacy single project path (for backward compatibility)
         variable_name: Name of Airflow Variable containing project dict
         default_project: Default project name to use if none specified
+
+    Returns:
+        AirflowPlugin class
     """
-    from airflow.plugins_manager import AirflowPlugin
-    from flask import Blueprint
-
-    # Legacy mode: if dbt_docs_dir is provided, use single project
-    legacy_mode = dbt_docs_dir is not None
-    if legacy_mode:
-        if isinstance(dbt_docs_dir, str):
-            dbt_docs_dir = Path(dbt_docs_dir)
-
-    # Create DBTDocsView class with configuration
-    DBTDocsView = _create_dbt_docs_view_class(
-        legacy_mode, dbt_docs_dir, variable_name, default_project
+    # Create configuration
+    config = ProjectConfig(
+        legacy_path=dbt_docs_dir,
+        variable_name=variable_name,
+        default_project=default_project
     )
-
-    # Creating a flask blueprint to integrate the templates and static folder
+    
+    # Create view instance
+    view = DBTDocsView(config)
+    
+    # Create Flask blueprint
     # Note: In multi-project mode, static files are served from individual project dirs
-    static_folder = dbt_docs_dir.as_posix() if legacy_mode else None
-
+    static_folder = config.legacy_path.as_posix() if config.legacy_mode else None
+    
     bp = Blueprint(
         "DBT Plugin",
         __name__,
@@ -227,6 +233,6 @@ def init_plugins_dbtdocs_page(
     class AirflowDbtDocsPlugin(AirflowPlugin):
         name = "DBT Docs Plugin"
         flask_blueprints = [bp]
-        appbuilder_views = [{"name": "DBT Docs", "category": "", "view": DBTDocsView()}]
+        appbuilder_views = [{"name": "DBT Docs", "category": "", "view": view}]
 
     return AirflowDbtDocsPlugin
