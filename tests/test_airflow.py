@@ -26,6 +26,7 @@ class AirflowTestBase(unittest.TestCase):
         """Wait for Airflow to be healthy"""
         import subprocess
         start = time.time()
+        counter = 0
         print(f"Waiting for Airflow to be ready at {cls.base_url}...")
 
         while time.time() - start < timeout:
@@ -36,11 +37,11 @@ class AirflowTestBase(unittest.TestCase):
 
                     # Show container logs for debugging
                     print("\n" + "="*60)
-                    print("AIRFLOW CONTAINER LOGS (last 50 lines):")
+                    print("AIRFLOW CONTAINER LOGS (last 10 lines):")
                     print("="*60)
                     try:
                         logs = subprocess.run(
-                            ["docker", "logs", "--tail", "50", "airflow"],
+                            ["docker", "logs", "--tail", "10", "airflow"],
                             capture_output=True, text=True, timeout=10
                         )
                         print(logs.stdout)
@@ -53,7 +54,9 @@ class AirflowTestBase(unittest.TestCase):
                     return
             except Exception as e:
                 pass
-            time.sleep(3)
+            time.sleep(5)
+            counter += 5
+            print(f"Waited for {counter} sec")
 
         # Timeout - show logs before failing
         print("\n" + "="*60)
@@ -73,30 +76,7 @@ class AirflowTestBase(unittest.TestCase):
 
         raise TimeoutError(f"Airflow did not start in {timeout} seconds")
 
-    @classmethod
-    def _copy_plugin_config(cls, plugin_file):
-        """Copy specified plugin config to active location"""
-        source = cls.resources_dir / 'airflow/plugins' / plugin_file
-        dest = cls.resources_dir / 'airflow/plugins/airflow_dbtdocs_page.py'
-
-        print(f"\n→ Copying plugin config:")
-        print(f"  Source: {source}")
-        print(f"  Dest: {dest}")
-        print(f"  Source exists: {source.exists()}")
-
-        if source.exists():
-            content = source.read_text()
-            print(f"  Source size: {len(content)} bytes")
-            print(f"  First 200 chars:\n{content[:200]}")
-
-        shutil.copy(source, dest)
-
-        print(f"  Dest exists: {dest.exists()}")
-        if dest.exists():
-            dest_content = dest.read_text()
-            print(f"  Dest size: {len(dest_content)} bytes")
-
-        print(f"✓ Plugin config copied successfully")
+    # Removed _copy_plugin_config - no longer needed with env var approach
 
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
@@ -111,20 +91,19 @@ class TestAirflowLegacyMode(AirflowTestBase):
         print("Testing Legacy Single-Project Mode")
         print("="*60)
 
-        # Copy legacy plugin config
-        cls._copy_plugin_config('airflow_dbtdocs_page_legacy.py')
+        # Set environment variable for single-project mode
+        os.environ['AIRFLOW_PLUGIN_MODE'] = 'single'
 
-        # Start Airflow
+        # Start Airflow (first clean up old containers to avoid cached files)
         os.chdir(cls.resources_dir.joinpath('airflow').as_posix())
         cls._compose = DockerCompose(
             cls.resources_dir.joinpath('airflow').as_posix(),
-            compose_file_name="docker-compose.yaml"
+            compose_file_name="docker-compose.yaml",
+            build=True  # Force rebuild to ensure fresh image with updated opendbt code
         )
-        cls._compose.stop()
         cls._compose.start()
 
-        port = cls._compose.get_service_port('airflow', 8080)
-        cls.base_url = f"http://localhost:{port}"
+        cls.base_url = "http://localhost:8081"
 
         print(f"\nAirflow URLs:")
         print(f"  Home: {cls.base_url}/home")
@@ -242,20 +221,19 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
         print("Testing Multi-Project Mode")
         print("="*60)
 
-        # Copy multi-project plugin config
-        cls._copy_plugin_config('airflow_dbtdocs_page_multi.py')
+        # Set environment variable for multi-project mode
+        os.environ['AIRFLOW_PLUGIN_MODE'] = 'multi'
 
-        # Start Airflow
+        # Start Airflow (first clean up old containers to avoid cached files)
         os.chdir(cls.resources_dir.joinpath('airflow').as_posix())
         cls._compose = DockerCompose(
             cls.resources_dir.joinpath('airflow').as_posix(),
-            compose_file_name="docker-compose.yaml"
+            compose_file_name="docker-compose.yaml",
+            build=True  # Force rebuild to ensure fresh image with updated opendbt code
         )
-        cls._compose.stop()
         cls._compose.start()
 
-        port = cls._compose.get_service_port('airflow', 8080)
-        cls.base_url = f"http://localhost:{port}"
+        cls.base_url = "http://localhost:8081"
 
         print(f"\nAirflow URLs:")
         print(f"  Home: {cls.base_url}/home")

@@ -3,13 +3,13 @@ LABEL authors="opendbt"
 
 # Install build dependencies for DuckDB compilation
 # DuckDB requires g++, make, and Python headers to build from source
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    g++ \
-    gcc \
-    make \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+# USER root
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     g++ \
+#     gcc \
+#     make \
+#     python3-dev \
+#     && rm -rf /var/lib/apt/lists/*
 USER airflow
 
 # install additional packages

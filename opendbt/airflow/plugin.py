@@ -50,9 +50,15 @@ def _create_dbt_docs_view_class(
 
             # Cache miss or expired - fetch from Variable
             try:
+                # Try lowercase first (for CLI-set variables)
                 projects_json = Variable.get(variable_name, default_var=None)
+
+                # If not found, try uppercase (for AIRFLOW_VAR_ environment variables)
                 if projects_json is None:
-                    self.log.warning(f"Airflow Variable '{variable_name}' not found")
+                    projects_json = Variable.get(variable_name.upper(), default_var=None)
+
+                if projects_json is None:
+                    self.log.warning(f"Airflow Variable '{variable_name}' not found (tried both cases)")
                     return {}
 
                 if isinstance(projects_json, str):
