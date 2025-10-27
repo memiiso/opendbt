@@ -19,10 +19,7 @@ COPY --chown=airflow:airflow pyproject.toml /tmp/opendbt/pyproject.toml
 
 RUN pip install --upgrade pip
 RUN pip install "dbt-core==1.8.*"
-
-# Install duckdb with workaround for source dist build issue in 1.3.0+
-# See: https://github.com/duckdb/duckdb/issues/14367
-RUN OVERRIDE_GIT_DESCRIBE="v1.3.0" pip install "duckdb>=1.0.0,<1.4.0" --no-cache-dir
+RUN pip install "duckdb>=1.0.0,<1.4.0" --prefer-binary --no-cache-dir
 
 # Install dbt-duckdb and local opendbt code (not PyPI version)
 RUN pip install "dbt-duckdb==1.8.*"
