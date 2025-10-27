@@ -103,7 +103,7 @@ class TestAirflowLegacyMode(AirflowTestBase):
         )
         cls._compose.start()
 
-        cls.base_url = "http://localhost:8081"
+        cls.base_url = "http://localhost:8080"
 
         print(f"\nAirflow URLs:")
         print(f"  Home: {cls.base_url}/home")
@@ -233,7 +233,7 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
         )
         cls._compose.start()
 
-        cls.base_url = "http://localhost:8081"
+        cls.base_url = "http://localhost:8080"
 
         print(f"\nAirflow URLs:")
         print(f"  Home: {cls.base_url}/home")

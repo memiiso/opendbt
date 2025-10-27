@@ -24,5 +24,3 @@ RUN pip install "duckdb>=1.0.0,<1.4.0" --prefer-binary --no-cache-dir
 # Install dbt-duckdb and local opendbt code (not PyPI version)
 RUN pip install "dbt-duckdb==1.8.*"
 RUN pip install -e /tmp/opendbt
-
-EXPOSE 8080

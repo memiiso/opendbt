@@ -14,7 +14,7 @@ services:
               airflow variables set dbt_docs_projects '{\"dbtcore\":\"/opt/dbtcore/target\",\"dbtfinance\":\"/opt/dbtfinance/target\"}' &&
               airflow standalone"
     ports: 
-      - "8081:8080"
+      - "8080:8080"
     volumes:
       # NOTE The path can be absolute or relative.
       - ./airflow/webserver_config.py:/opt/airflow/webserver_config.py
