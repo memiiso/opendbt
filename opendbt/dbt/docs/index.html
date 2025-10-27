@@ -645,6 +645,13 @@
                         >
                             Lineage
                         </button>
+                        <button
+                                :class="['tab-button', { 'active': activeTab === 'ai' }]"
+                                @click="activeTab = 'ai'"
+                                v-if="selectedItem?.resource_type === 'model'"
+                        >
+                            AI Assistant
+                        </button>
                     </div>
 
                     <!-- Tab Content -->
@@ -964,8 +971,95 @@
                                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
                                     <p class="text-gray-600 text-sm">Rendering lineage graph...</p>
                                 </div>
-                                <div class="text-center text-red-600" v-if="!lineageRendering && lineageError">
-                                    <i class="fas fa-exclamation-triangle mr-2"></i> Error rendering lineage graph.
+                        <div class="text-center text-red-600" v-if="!lineageRendering && lineageError">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Error rendering lineage graph.
+                        </div>
+                    </div>
+                </div>
+                        <!-- AI Assistant Tab -->
+                        <div v-if="activeTab === 'ai' && selectedItem?.resource_type === 'model'">
+                            <div class="space-y-4">
+                                <div class="bg-blue-50 border border-blue-200 text-blue-900 text-sm rounded-md p-4">
+                                    <p class="font-semibold text-sm mb-1">Assistente de IA para {{ selectedItem.name }}</p>
+                                    <p>Informe sua <code>OPENAI_KEY</code> (armazenada apenas no seu navegador) e descreva o que deseja, por exemplo: "melhore a documentação atual" ou "crie unit tests".</p>
+                                </div>
+                                <div class="grid gap-2">
+                                    <label class="text-xs font-medium uppercase text-gray-500" for="ai-api-key">OPENAI API Key</label>
+                                    <input
+                                            class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            id="ai-api-key"
+                                            placeholder="sk-..."
+                                            type="password"
+                                            v-model="aiApiKey">
+                                    <p class="text-xs text-gray-500">Guarde apenas uma chave com permissões restritas. O valor fica salvo no <em>localStorage</em>.</p>
+                                </div>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    <div class="flex flex-col gap-2">
+                                        <label class="text-xs font-medium uppercase text-gray-500" for="ai-model">Modelo</label>
+                                        <select
+                                                class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                id="ai-model"
+                                                v-model="aiModel">
+                                            <option value="gpt-4o-mini">gpt-4o-mini</option>
+                                            <option value="gpt-4o">gpt-4o</option>
+                                            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end justify-end">
+                                        <button
+                                                class="px-3 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100"
+                                                type="button"
+                                                @click="resetAiSession"
+                                                :disabled="!activeAiSession || (!activeAiSession.messages.length && !activeAiSession.draft)">
+                                            Limpar conversa
+                                        </button>
+                                    </div>
+                                </div>
+                                <div
+                                        class="border border-gray-200 rounded-md bg-gray-50 max-h-80 overflow-y-auto space-y-3 p-3"
+                                        v-if="activeAiSession && activeAiSession.messages.length">
+                                    <div
+                                            :class="message.role === 'assistant' ? 'bg-white border border-blue-100' : 'bg-blue-50 border border-blue-200'"
+                                            class="rounded-md p-3 shadow-sm"
+                                            v-for="(message, index) in activeAiSession.messages"
+                                            :key="index">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <span class="text-xs font-semibold uppercase text-gray-500">
+                                                {{ message.role === 'assistant' ? 'Assistente' : 'Você' }}
+                                            </span>
+                                            <span class="text-[10px] text-gray-400">{{ new Date(message.timestamp).toLocaleString() }}</span>
+                                        </div>
+                                        <div class="prose prose-sm max-w-none text-gray-800"
+                                             v-html="displayDescriptionText(message.content)"></div>
+                                    </div>
+                                </div>
+                                <div
+                                        class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2"
+                                        v-if="activeAiSession?.error">
+                                    {{ activeAiSession.error }}
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium uppercase text-gray-500" for="ai-prompt">Solicitação</label>
+                                    <textarea
+                                            :disabled="activeAiSession?.isLoading"
+                                            :placeholder="aiHasKey ? 'Descreva o que deseja que a IA faça...' : 'Informe sua OPENAI_KEY antes de enviar.'"
+                                            class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm p-3 resize-y"
+                                            id="ai-prompt"
+                                            rows="4"
+                                            v-model="aiDraft"></textarea>
+                                    <p class="text-xs text-gray-500">Sugestões: "Melhore a documentação atual", "Crie testes unitários", "Sugira consultas de validação".</p>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs text-gray-500">
+                                        A resposta usa o contexto do modelo atual, incluindo colunas e SQL compilado.
+                                    </div>
+                                    <button
+                                            :disabled="!canSendAiPrompt"
+                                            @click="sendAiPrompt"
+                                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        <i :class="activeAiSession?.isLoading ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-paper-plane mr-2'"></i>
+                                        <span>{{ activeAiSession?.isLoading ? 'Enviando...' : 'Enviar' }}</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -988,7 +1082,7 @@
     </div>
 </div>
 <script type="module">
-    const {createApp, ref, computed, onMounted, onUnmounted, nextTick, watch} = Vue;
+    const {createApp, ref, reactive, computed, onMounted, onUnmounted, nextTick, watch} = Vue;
 
     // --- HELPERS -- //
 
@@ -1123,7 +1217,8 @@
         groups: {
             model: {color: {border: '#3B82F6', background: '#DBEAFE', highlight: {border: '#2563EB', background: '#BFDBFE'}}, font: {color: '#1E40AF'}},
             source: {color: {border: '#10B981', background: '#D1FAE5', highlight: {border: '#059669', background: '#A7F3D0'}}, font: {color: '#065F46'}},
-            macro: {color: {border: '#8B5CF6', background: '#EDE9FE', highlight: {border: '#7C3AED', background: '#DDD6FE'}}, font: {color: '#5B21B6'}}
+            macro: {color: {border: '#8B5CF6', background: '#EDE9FE', highlight: {border: '#7C3AED', background: '#DDD6FE'}}, font: {color: '#5B21B6'}},
+            column: {color: {border: '#9CA3AF', background: '#E5E7EB', highlight: {border: '#6B7280', background: '#F3F4F6'}}, font: {color: '#374151'}}
         }
     };
 
@@ -1145,7 +1240,23 @@
             const lineageRendering = ref(false);
             const lineageError = ref(false);
             const isLineageFullScreen = ref(false);
+            const aiModel = ref('gpt-4o-mini');
+            const aiApiKey = ref('');
+            const aiSessions = reactive({});
             let currentVisNetwork = null;
+
+            const ensureAiSession = (itemId) => {
+                if (!itemId) return null;
+                if (!aiSessions[itemId]) {
+                    aiSessions[itemId] = {
+                        messages: [],
+                        draft: '',
+                        isLoading: false,
+                        error: null
+                    };
+                }
+                return aiSessions[itemId];
+            };
 
             // --- COMPUTED PROPERTIES ---
             const databaseTree = computed(() => {
@@ -1210,6 +1321,8 @@
                     expandedNodes.value.push(`${dbName}.${schemaName}.${itemTypeGroup}`);
                 }
 
+                ensureAiSession(item.unique_id);
+
                 if (activeTab.value === 'lineage') renderTableLineageGraph();
                 else if (['code', 'configuration'].includes(activeTab.value)) nextTick(() => hljs.highlightAll());
 
@@ -1240,6 +1353,177 @@
             const handleFullScreenChange = () => {
                 isLineageFullScreen.value = !!document.fullscreenElement;
                 nextTick(() => currentVisNetwork?.fit());
+            };
+
+            const activeAiSession = computed(() => {
+                const item = selectedItem.value;
+                if (!item) return null;
+                return ensureAiSession(item.unique_id);
+            });
+
+            const aiDraft = computed({
+                get() {
+                    return activeAiSession.value?.draft ?? '';
+                },
+                set(value) {
+                    const session = activeAiSession.value;
+                    if (session) session.draft = value;
+                }
+            });
+
+            const aiHasKey = computed(() => !!aiApiKey.value?.trim());
+
+            const canSendAiPrompt = computed(() => {
+                const session = activeAiSession.value;
+                if (!session) return false;
+                return aiHasKey.value && !!session.draft?.trim() && !session.isLoading;
+            });
+
+            const truncateText = (text, max = 4000) => {
+                if (typeof text !== 'string') return '';
+                return text.length > max ? `${text.slice(0, max)}\n...` : text;
+            };
+
+            const buildModelContext = (item) => {
+                if (!item) return '';
+                const lines = [
+                    `Model name: ${item.name}`,
+                    `Unique ID: ${item.unique_id}`,
+                    `Resource type: ${item.resource_type}`,
+                    `Database: ${item.database ?? 'n/a'}`,
+                    `Schema: ${item.schema ?? 'n/a'}`
+                ];
+                if (item.description) {
+                    lines.push(`Description: ${item.description}`);
+                }
+                const columns = Object.values(item.columns ?? {});
+                if (columns.length) {
+                    lines.push('Columns:');
+                    columns.slice(0, 20).forEach(col => {
+                        if (!col) return;
+                        const pieces = [`- ${col.name}`];
+                        if (col.description) {
+                            pieces.push(`desc: ${col.description}`);
+                        }
+                        const depends = Array.isArray(col.depends_on)
+                            ? col.depends_on
+                                .map(dep => dep?.column ?? dep?.name)
+                                .filter(Boolean)
+                                .slice(0, 5)
+                                .join(', ')
+                            : '';
+                        if (depends) {
+                            pieces.push(`depends_on: ${depends}`);
+                        }
+                        lines.push(pieces.join(' | '));
+                    });
+                    if (columns.length > 20) {
+                        lines.push(`(Total columns: ${columns.length}. Showing first 20.)`);
+                    }
+                }
+                const materialization = item?.config?.materialized ?? item?.materialized;
+                if (materialization) {
+                    lines.push(`Materialization: ${materialization}`);
+                }
+                const tags = Array.isArray(item?.tags) ? item.tags.join(', ') : '';
+                if (tags) {
+                    lines.push(`Tags: ${tags}`);
+                }
+                const modelSql = item.compiled_code ?? item.raw_code;
+                if (modelSql) {
+                    lines.push('Model SQL:');
+                    lines.push(truncateText(modelSql, 4000));
+                }
+                return lines.join('\n');
+            };
+
+            const sendAiPrompt = async () => {
+                const item = selectedItem.value;
+                if (!item) return;
+                const session = ensureAiSession(item.unique_id);
+                const trimmedKey = aiApiKey.value.trim();
+                const prompt = session.draft?.trim();
+                if (!trimmedKey) {
+                    session.error = "Informe sua OPENAI_KEY para usar o assistente.";
+                    return;
+                }
+                if (!prompt) {
+                    session.error = "Escreva uma solicitação antes de enviar.";
+                    return;
+                }
+                session.error = null;
+                session.isLoading = true;
+                const timestamp = new Date().toISOString();
+                session.messages.push({
+                    role: 'user',
+                    content: prompt,
+                    timestamp
+                });
+                session.draft = '';
+                try {
+                    const context = buildModelContext(item);
+                    const payloadMessages = [
+                        {
+                            role: 'system',
+                            content: [
+                                "Você é um assistente técnico especializado em dbt e engenharia de dados.",
+                                "Responda em português, com foco em orientação prática e exemplos concretos.",
+                                "Use o contexto do modelo abaixo para personalizar a resposta.",
+                                "",
+                                "Contexto do modelo:",
+                                context
+                            ].join('\n')
+                        },
+                        ...session.messages.map(msg => ({
+                            role: msg.role,
+                            content: msg.content
+                        }))
+                    ];
+
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${trimmedKey}`
+                        },
+                        body: JSON.stringify({
+                            model: aiModel.value,
+                            temperature: 0.2,
+                            messages: payloadMessages
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || `OpenAI API retornou status ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    const assistantContent = data?.choices?.[0]?.message?.content?.trim();
+                    if (!assistantContent) {
+                        throw new Error('Resposta vazia recebida da OpenAI.');
+                    }
+
+                    session.messages.push({
+                        role: 'assistant',
+                        content: assistantContent,
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (error) {
+                    console.error('AI assistant error:', error);
+                    session.error = error?.message ?? 'Erro ao consultar a API da OpenAI.';
+                } finally {
+                    session.isLoading = false;
+                }
+            };
+
+            const resetAiSession = () => {
+                const session = activeAiSession.value;
+                if (!session) return;
+                session.messages.splice(0);
+                session.draft = '';
+                session.error = null;
+                session.isLoading = false;
             };
 
             const toggleNode = (nodePath) => {
@@ -1314,35 +1598,213 @@
             };
 
             const buildVisNetworkData = () => {
+                const normalizeTableFqn = (value) => {
+                    if (typeof value !== 'string') return null;
+                    const parts = value.split('.').map(part => part.trim()).filter(Boolean);
+                    return parts.length ? parts.join('.').toLowerCase() : null;
+                };
+
                 const visNodes = new Map();
-                const visEdges = new Set();
+                const visEdges = new Map();
+                const visitedNodeIds = new Set();
+                const visitedTableByFqn = new Map();
                 if (!selectedItem.value) return {nodes: [], edges: []};
                 const centerNodeId = selectedItem.value.unique_id;
 
+                const getNodeById = (id) => allItemsById.value.get(id) || ODBTM.value.allnodes?.[id];
+                const resolveTableFqn = (node) => {
+                    if (!node) return null;
+                    const parts = [node.database, node.schema, node.name].filter(Boolean);
+                    if (parts.length === 0) return null;
+                    return normalizeTableFqn(parts.join('.'));
+                };
+                const addEdge = (from, to, options = {}) => {
+                    const edgeId = `${from}->${to}`;
+                    if (!visEdges.has(edgeId)) {
+                        visEdges.set(edgeId, {
+                            from,
+                            to,
+                            arrows: 'to',
+                            ...options
+                        });
+                    } else {
+                        Object.assign(visEdges.get(edgeId), options);
+                    }
+                };
+                const resolveDependencyNodeId = (dep) => {
+                    if (!dep) return null;
+                    if (dep.model_id && visNodes.has(dep.model_id)) {
+                        return dep.model_id;
+                    }
+                    const depFqn = normalizeTableFqn(dep.table_fqn ?? dep.table_relative_fqn ?? dep.tableFqn);
+                    if (depFqn && visitedTableByFqn.has(depFqn)) {
+                        return visitedTableByFqn.get(depFqn);
+                    }
+                    return null;
+                };
+                const getColumnLineageMap = (node) => {
+                    if (!node) return null;
+                    if (node.column_lineage && Object.keys(node.column_lineage).length) {
+                        return node.column_lineage;
+                    }
+                    const columns = node.columns;
+                    if (!columns || !Object.keys(columns).length) {
+                        return null;
+                    }
+                    const fallbackMap = {};
+                    Object.entries(columns).forEach(([columnName, columnInfo]) => {
+                        if (!columnInfo) {
+                            return;
+                        }
+                        const dependsOn = Array.isArray(columnInfo.depends_on) ? columnInfo.depends_on : [];
+                        const normalizedDependsOn = dependsOn
+                            .map(dep => {
+                                if (!dep) return null;
+                                const column = dep.column ?? dep.name ?? null;
+                                const tableFqnRaw = dep.table_fqn ?? dep.tableFqn ?? dep.table ?? null;
+                                const tableRelativeFqnRaw = dep.table_relative_fqn ?? dep.tableRelativeFqn ?? null;
+                                const normalizedTableFqn = normalizeTableFqn(tableFqnRaw ?? tableRelativeFqnRaw);
+                                const modelId = dep.model_id ?? dep.modelId ?? null;
+                                if (!column && !normalizedTableFqn && !modelId) {
+                                    return null;
+                                }
+                                return {
+                                    column,
+                                    column_fqn: dep.column_fqn ?? dep.columnFqn ?? null,
+                                    table_fqn: normalizedTableFqn ?? tableFqnRaw ?? null,
+                                    table_relative_fqn: tableRelativeFqnRaw ?? null,
+                                    model_id: modelId,
+                                    type: dep.type ?? null
+                                };
+                            })
+                            .filter(Boolean);
+                        const transformations = Array.isArray(columnInfo.transformations)
+                            ? columnInfo.transformations
+                            : [];
+                        fallbackMap[columnName] = {
+                            column_fqn: columnInfo.column_fqn ?? columnInfo.columnFqn ?? null,
+                            table_fqn: columnInfo.table_fqn ?? columnInfo.tableFqn ?? null,
+                            transformations,
+                            depends_on: normalizedDependsOn
+                        };
+                    });
+                    return Object.keys(fallbackMap).length ? fallbackMap : null;
+                };
+
+                const addColumnLineage = (node) => {
+                    const columnLineageMap = getColumnLineageMap(node);
+                    if (!columnLineageMap) return;
+                    const tableNodeId = node.unique_id;
+                    Object.entries(columnLineageMap).forEach(([columnName, columnInfo]) => {
+                        const columnNodeId = `col::${tableNodeId}::${columnName}`;
+                        if (!visNodes.has(columnNodeId)) {
+                            const isCenterNode = tableNodeId === centerNodeId;
+                            const columnTitle = `Column: ${columnName}\nTable: ${node.schema ?? '?'} . ${node.name}`;
+                            visNodes.set(columnNodeId, {
+                                id: columnNodeId,
+                                label: columnName,
+                                title: columnTitle,
+                                group: 'column',
+                                shape: 'ellipse',
+                                font: {face: 'monospace'},
+                                color: isCenterNode ? {
+                                    border: '#f59e0b',
+                                    background: '#fef3c7',
+                                    highlight: {border: '#b45309', background: '#fde68a'}
+                                } : {
+                                    border: '#6b7280',
+                                    background: '#e5e7eb',
+                                    highlight: {border: '#374151', background: '#d1d5db'}
+                                },
+                                margin: 5
+                            });
+                        }
+                        addEdge(tableNodeId, columnNodeId, {
+                            arrows: {to: {enabled: false}},
+                            dashes: true,
+                            color: {color: '#9ca3af'}
+                        });
+                        const dependencies = Array.isArray(columnInfo?.depends_on) ? columnInfo.depends_on : [];
+                        dependencies.forEach(dep => {
+                            const parentNodeId = resolveDependencyNodeId(dep);
+                            if (!parentNodeId || !visNodes.has(parentNodeId)) return;
+                            const parentColumnName = dep?.column ?? dep?.name;
+                            if (!parentColumnName) return;
+                            const parentNode = getNodeById(parentNodeId);
+                            const parentColumnNodeId = `col::${parentNodeId}::${parentColumnName}`;
+                            if (!visNodes.has(parentColumnNodeId)) {
+                                const isCenterParent = parentNodeId === centerNodeId;
+                                const parentColumnTitle = `Column: ${parentColumnName}\nTable: ${parentNode?.schema ?? '?'} . ${parentNode?.name ?? '?'}`;
+                                visNodes.set(parentColumnNodeId, {
+                                    id: parentColumnNodeId,
+                                    label: parentColumnName,
+                                    title: parentColumnTitle,
+                                    group: 'column',
+                                    shape: 'ellipse',
+                                    font: {face: 'monospace'},
+                                    color: isCenterParent ? {
+                                        border: '#f59e0b',
+                                        background: '#fef3c7',
+                                        highlight: {border: '#b45309', background: '#fde68a'}
+                                    } : {
+                                        border: '#9ca3af',
+                                        background: '#f3f4f6',
+                                        highlight: {border: '#6b7280', background: '#e5e7eb'}
+                                    },
+                                    margin: 5
+                                });
+                            }
+                            addEdge(parentNodeId, parentColumnNodeId, {
+                                arrows: {to: {enabled: false}},
+                                dashes: true,
+                                color: {color: '#d1d5db'}
+                            });
+                            addEdge(parentColumnNodeId, columnNodeId, {
+                                arrows: 'to',
+                                color: {color: '#2563eb'},
+                                width: 2
+                            });
+                        });
+                    });
+                };
+
                 const traverse = (node, depth, isUpstream) => {
                     if (!node || depth > lineageMaxDepth.value) return;
-                    if (!visNodes.has(node.unique_id)) {
-                        visNodes.set(node.unique_id, {
-                            id: node.unique_id,
+                    const itemId = node.unique_id;
+                    visitedNodeIds.add(itemId);
+                    if (!visNodes.has(itemId)) {
+                        visNodes.set(itemId, {
+                            id: itemId,
                             label: `${node?.schema ?? '?'}.${node.name}`,
-                            title: `Type: ${node.resource_type}\nID: ${node.unique_id}`,
+                            title: `Type: ${node.resource_type}\nID: ${itemId}`,
                             group: node.resource_type,
                         });
+                    }
+                    const resolvedFqn = resolveTableFqn(node);
+                    if (resolvedFqn) {
+                        visitedTableByFqn.set(resolvedFqn, itemId);
+                        visitedTableByFqn.set(`.${resolvedFqn}`, itemId);
                     }
                     if (depth === lineageMaxDepth.value) return;
 
                     const relatedNodes = isUpstream ? getDependencies(node) : getDependents(node);
                     relatedNodes.forEach(relatedNode => {
-                        const edgeId = isUpstream ? `${relatedNode.unique_id}->${node.unique_id}` : `${node.unique_id}->${relatedNode.unique_id}`;
-                        if (!visEdges.has(edgeId)) {
-                            visEdges.add(edgeId);
-                            traverse(relatedNode, depth + 1, isUpstream);
+                        if (!relatedNode) return;
+                        if (isUpstream) {
+                            addEdge(relatedNode.unique_id, itemId);
+                        } else {
+                            addEdge(itemId, relatedNode.unique_id);
                         }
+                        traverse(relatedNode, depth + 1, isUpstream);
                     });
                 };
 
                 traverse(selectedItem.value, 0, true);  // Upstream
                 traverse(selectedItem.value, 0, false); // Downstream
+                visitedNodeIds.forEach(nodeId => {
+                    const node = getNodeById(nodeId);
+                    addColumnLineage(node);
+                });
 
                 if (visNodes.has(centerNodeId)) {
                     const centerNodeData = visNodes.get(centerNodeId);
@@ -1351,10 +1813,7 @@
                     centerNodeData.borderWidth = 2;
                 }
 
-                const edgesArray = Array.from(visEdges).map(edgeId => {
-                    const [from, to] = edgeId.split('->');
-                    return {from, to, arrows: 'to'};
-                });
+                const edgesArray = Array.from(visEdges.values());
                 return {nodes: Array.from(visNodes.values()), edges: edgesArray};
             };
 
@@ -1375,9 +1834,18 @@
 
                     currentVisNetwork = new vis.Network(lineageGraphContainer.value, {nodes, edges}, VIS_NETWORK_OPTIONS);
                     currentVisNetwork.on('doubleClick', ({nodes}) => {
-                        if (nodes.length > 0 && nodes[0] !== selectedItem.value.unique_id) {
-                            navigateToDependencyId(nodes[0]);
+                        if (nodes.length === 0) return;
+                        const clickedNodeId = nodes[0];
+                        if (clickedNodeId === selectedItem.value.unique_id) return;
+                        if (clickedNodeId.startsWith('col::')) {
+                            const parts = clickedNodeId.split('::');
+                            const parentId = parts[1];
+                            if (parentId && parentId !== selectedItem.value.unique_id) {
+                                navigateToDependencyId(parentId);
+                            }
+                            return;
                         }
+                        navigateToDependencyId(clickedNodeId);
                     });
                     currentVisNetwork.once('stabilizationIterationsDone', () => {
                         if (!isLineageFullScreen.value) {
@@ -1410,6 +1878,16 @@
 
             // --- LIFECYCLE & WATCHERS ---
             onMounted(async () => {
+                try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                        const storedKey = window.localStorage.getItem('OPENDBT_OPENAI_KEY');
+                        if (storedKey) {
+                            aiApiKey.value = storedKey;
+                        }
+                    }
+                } catch (error) {
+                    console.warn("Unable to read OPENAI key from localStorage:", error);
+                }
                 ODBTM.value = await loadDbtFiles();
                 isLoading.value = false;
                 await nextTick();
@@ -1421,6 +1899,23 @@
             onUnmounted(() => {
                 window.removeEventListener('hashchange', handleUrlHash);
                 document.removeEventListener('fullscreenchange', handleFullScreenChange);
+            });
+
+            watch(aiApiKey, (newValue) => {
+                if (typeof window === 'undefined' || !window.localStorage) return;
+                try {
+                    if (!newValue) {
+                        window.localStorage.removeItem('OPENDBT_OPENAI_KEY');
+                    } else {
+                        window.localStorage.setItem('OPENDBT_OPENAI_KEY', newValue);
+                    }
+                } catch (error) {
+                    console.warn("Unable to persist OPENAI key to localStorage:", error);
+                }
+            });
+
+            watch(selectedItem, (item) => {
+                if (item) ensureAiSession(item.unique_id);
             });
 
             watch([activeTab, selectedItem], ([newActiveTab]) => {
@@ -1449,7 +1944,8 @@
                 toggleLineageFullScreen, getModelCode, getModelRawCode, highlightMatches, performSearch, clearSearch,
                 selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
-                getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText
+                getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText,
+                aiModel, aiApiKey, activeAiSession, aiDraft, aiHasKey, canSendAiPrompt, sendAiPrompt, resetAiSession
             };
         }
     }).mount('#app');

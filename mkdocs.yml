@@ -18,6 +18,7 @@ nav:
   - Python(Local) Model: python_integration.md
   - DLT Model: dlt_integration.md
   - Examples: examples.md
+  - Contributing: contributing.md
   - Data Catalog: catalog.md
   - Data Catalog (Demo): opendbtdocs/index.html
 
