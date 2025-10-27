@@ -776,12 +776,28 @@
 
                         <!-- Code Tab -->
                         <div v-if="activeTab === 'code' && getModelCode(selectedItem)">
+                            <div class="flex border-b border-gray-200 bg-gray-50 rounded-b-lg shadow mb-4"
+                                  v-if="selectedItem.language === 'sql'">
+                              <button
+                                      :class="['tab-button', { 'active': activeCodeTab === 'compiled' }]"
+                                      @click="activeCodeTab = 'compiled'"
+                              >
+                                  SQL
+                              </button>
+                              <button
+                                      :class="['tab-button', { 'active': activeCodeTab === 'raw' }]"
+                                      @click="activeCodeTab = 'raw'"
+                              >
+                                  Jinja SQL
+                              </button>
+                            </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-3">
                                 {{ selectedItem.language === 'python' ? 'Python' : 'SQL' }} Definition
                             </h3>
                             <pre class="code-block mt-3"><code
-                                    :class="selectedItem.language === 'python' ? 'language-python' : 'language-sql'">{{ getModelCode(selectedItem).trim()
-                                }}</code></pre>
+                                  :class="selectedItem.language === 'python' ? 'language-python' : 'language-sql'"
+                                    >{{ activeCodeTab === 'raw' ? getModelRawCode(selectedItem).trim() : getModelCode(selectedItem).trim()
+                                  }}</code></pre>
                         </div>
 
                         <!-- Dependencies Tab -->
@@ -1136,6 +1152,7 @@
             const isLoading = ref(true);
             const ODBTM = ref({});
             const activeTab = ref('overview');
+            const activeCodeTab = ref('compiled');
             const expandedNodes = ref([]);
             const selectedItem = ref(null);
             const searchQuery = ref('');
@@ -1250,6 +1267,8 @@
             };
 
             const getModelCode = (model) => model?.compiled_code ?? model?.raw_code ?? '';
+
+            const getModelRawCode = (model) => model?.raw_code ?? '';
 
             const displayDescriptionText = (text) => {
                 if (typeof text !== 'string' || !text.trim()) return '';
@@ -1428,6 +1447,10 @@
                 }
             });
 
+            watch([activeCodeTab], ([newActiveCodeTab]) => {
+                nextTick(() => hljs.highlightAll());
+            });
+
             watch(databaseTree, (newTree) => {
                 if (newTree.length > 0 && !window.location.hash && expandedNodes.value.length === 0) {
                     const firstDb = newTree[0];
@@ -1445,8 +1468,8 @@
             return {
                 isLoading, ODBTM, databaseTree, expandedNodes, selectedItem, searchQuery, searchResults,
                 lineageContainer, lineageGraphContainer, lineageMaxDepth, lineageRendering, lineageError,
-                activeTab, displayColumns, selectedItemStats, isLineageFullScreen,
-                toggleLineageFullScreen, getModelCode, highlightMatches, performSearch, clearSearch,
+                activeTab, activeCodeTab, displayColumns, selectedItemStats, isLineageFullScreen,
+                toggleLineageFullScreen, getModelCode, getModelRawCode, highlightMatches, performSearch, clearSearch,
                 selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
                 getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText
