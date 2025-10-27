@@ -48,9 +48,7 @@ def _create_dbt_docs_view_class(
                 if time.time() - cached_time < self._cache_ttl:
                     return cached_projects
 
-            # Cache miss or expired - fetch from Variable
             try:
-                # Try lowercase first (for CLI-set variables)
                 projects_json = Variable.get(variable_name, default_var=None)
 
                 # If not found, try uppercase (for AIRFLOW_VAR_ environment variables)
@@ -66,7 +64,6 @@ def _create_dbt_docs_view_class(
 
                 projects_dict = {k: Path(v) for k, v in projects_json.items()}
 
-                # Update cache
                 self._projects_cache = (projects_dict, time.time())
 
                 return projects_dict
@@ -102,7 +99,7 @@ def _create_dbt_docs_view_class(
 
             return projects[project_name]
 
-        @expose("/projects")  # NEW ENDPOINT
+        @expose("/projects")
         @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
         def list_projects(self):
             """Return list of available projects with validation"""
