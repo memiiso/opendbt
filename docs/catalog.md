@@ -34,50 +34,43 @@ The priority order is:
 2. Opendbt's enhanced catalog UI (automatic fallback)
 3. Standard dbt-generated UI (only if using `dbt docs generate`)
 
-## Multi-project setup
-
-### Core Functionality
-   - Added environment variable-based plugin mode switching (single/multi)
-   - Plugin now supports both single-project and multi-project modes
-   - Multi-project configuration via Airflow Variables
-   - Case-insensitive variable lookup for compatibility with `AIRFLOW_VAR_*` env vars
+## Airflow Integration
 
 ### Configuration
 
-The plugin auto-detects based on configuration:
-- If Airflow Variable `opendbt_docs_projects` is set, it will use that (overrides hardcoded paths)
-- Otherwise, it will use the path(s) provided in plugin initialization code
+The plugin auto-detects single/multi-project mode. If Airflow Variable `opendbt_docs_projects` is set, it overrides paths in the code.
 
-#### Option 1: Airflow Variable (recommended for dynamic configuration)
+#### Using Airflow Variable
 
-Setup Admin → Variables:
-   ```
-   opendbt_docs_projects:
-      [
-         "/opt/dbtcore/target",
-         "/opt/dbtfinance/target"
-      ]
-   ```
+```bash
+# Single project
+airflow variables set opendbt_docs_projects '"/opt/dbtcore/target"'
 
-Or for a single project:
-   ```
-   opendbt_docs_projects: "/opt/dbtcore/target"
-   ```
+# Multiple projects
+airflow variables set opendbt_docs_projects '["/opt/dbtcore/target", "/opt/dbtfinance/target"]'
+```
 
-#### Option 2: Hardcoded in plugin file
+#### Using hardcoded paths
 
-   ```python
-   # Single project
-   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
-       Path('/opt/dbtcore/target')
-   )
+```python
+from pathlib import Path
+from opendbt.airflow import plugin
 
-   # Or multiple projects
-   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page([
-       Path('/opt/project1/target'),
-       Path('/opt/project2/target')
-   ])
-   ```
+# Single project
+airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+    Path('/opt/dbtcore/target')
+)
+
+# Multiple projects
+airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page([
+    Path('/opt/dbtcore/target'),
+    Path('/opt/dbtfinance/target')
+])
+```
+
+Project names are extracted from parent directory (e.g., `/opt/dbtcore/target` → `dbtcore`).
+
+Access docs at `/dbt/dbt_docs_index.html`. For multiple projects, use `?project=<name>` or the dropdown selector.
 
 ## Catalog Files Summary
 
