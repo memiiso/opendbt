@@ -47,7 +47,7 @@ The priority order is:
    - `export AIRFLOW_PLUGIN_MODE=multi`: Multi-project mode with Airflow Variable
    - Setup Admin - Variables:
    ```
-   dbt_docs_projects: 
+   opendbt_docs_projects: 
       {
          "dbtcore": "/opt/dbtcore/target",
          "dbtfinance": "/opt/dbtfinance/target"

@@ -51,19 +51,16 @@ class ProjectConfig:
     
     def __init__(
         self,
-        legacy_path: Optional[Union[Path, str]] = None,
-        variable_name: str = "dbt_docs_projects"
+        legacy_path: Optional[Union[Path, str]] = None
     ):
         """
         Initialize project configuration.
         
         Args:
             legacy_path: Path for single-project legacy mode (if provided, enables legacy mode)
-            variable_name: Name of Airflow Variable containing project dict (multi-project mode)
         """
         self.legacy_mode = legacy_path is not None
         self.legacy_path = Path(legacy_path) if legacy_path else None
-        self.variable_name = variable_name
     
     def get_projects(self) -> Dict[str, Path]:
         """
@@ -76,11 +73,7 @@ class ProjectConfig:
             return {"default": self.legacy_path}
         
         try:
-            projects_json = Variable.get(self.variable_name, default_var=None)
-            
-            # Try uppercase variant (for AIRFLOW_VAR_ environment variables)
-            if projects_json is None:
-                projects_json = Variable.get(self.variable_name.upper(), default_var=None)
+            projects_json = Variable.get("opendbt_docs_projects")
             
             if projects_json is None:
                 return {}
@@ -91,10 +84,8 @@ class ProjectConfig:
             return {k: Path(v) for k, v in projects_json.items()}
         
         except Exception as e:
-            # Log error but don't crash - return empty dict
             log.error(
-                "Error loading projects from Variable '%s': %s",
-                self.variable_name, e
+                "Error loading projects from Variable 'opendbt_docs_projects': %s", e
             )
             return {}
 
@@ -114,11 +105,7 @@ class DBTDocsView(BaseView):
         if not self.config.legacy_mode:
             projects = self.config.get_projects()
             if not projects:
-                error_msg_template = _load_template("multi_project_config_error.txt")
-                error_msg = error_msg_template.format(
-                    variable_name=self.config.variable_name,
-                    variable_name_upper=self.config.variable_name.upper()
-                )
+                error_msg = _load_template("multi_project_config_error.txt")
                 log.error("No DBT projects configured in multi-project mode")
                 return _create_error_response(
                     "DBT Docs - Configuration Required",
@@ -231,23 +218,20 @@ class DBTDocsView(BaseView):
 
 
 def init_plugins_dbtdocs_page(
-    dbt_docs_dir: Union[Path, str] = None,
-    variable_name: str = "dbt_docs_projects"
-):
+    dbt_docs_dir: Union[Path, str] = None
+    ):
     """
     Initialize DBT Docs plugin with support for multiple projects.
 
     Args:
         dbt_docs_dir: Legacy single project path (for backward compatibility)
-        variable_name: Name of Airflow Variable containing project dict
 
     Returns:
         AirflowPlugin class
     """
     # Create configuration
     config = ProjectConfig(
-        legacy_path=dbt_docs_dir,
-        variable_name=variable_name
+        legacy_path=dbt_docs_dir
     )
     
     # Create view instance

@@ -5,9 +5,9 @@ ISSUE: The plugin is running in multi-project mode but no projects are configure
 
 CHECKLIST:
 
-1. Set the Airflow Variable '{variable_name}':
+1. Set the Airflow Variable 'opendbt_docs_projects':
    • Go to Admin → Variables in Airflow UI
-   • Create variable: '{variable_name}'
+   • Create variable: 'opendbt_docs_projects'
    • Value must be valid JSON mapping project names to paths
 
    Example JSON value:
@@ -18,7 +18,7 @@ CHECKLIST:
     "project2": "/opt/airflow/dbt/project2/target"}}
 
    OR set as environment variable:
-   AIRFLOW_VAR_{variable_name_upper}='{{
+   AIRFLOW_VAR_OPENDBT_DOCS_PROJECTS='{{
      "my_project": "/path/to/dbt/target"
    }}'
 
@@ -50,14 +50,12 @@ Set path in your Airflow plugin initialization code:
    plugin_mode = os.getenv('AIRFLOW_PLUGIN_MODE', 'single')
 
    if plugin_mode == 'multi':
-       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
-           variable_name='dbt_docs_projects'
-       )
+       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page()
    else:
        airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
            Path('/opt/dbtcore/target')  # <-- Set this path
        )
  ```
 This mode does NOT require:
-  • Airflow Variable '{variable_name}'
+  • Airflow Variable 'opendbt_docs_projects'
   • AIRFLOW_PLUGIN_MODE environment variable

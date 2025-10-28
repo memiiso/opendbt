@@ -11,7 +11,7 @@ services:
     container_name: airflow
     command: >
       bash -c "airflow db init &&
-              airflow variables set dbt_docs_projects '{\"dbtcore\":\"/opt/dbtcore/target\",\"dbtfinance\":\"/opt/dbtfinance/target\"}' &&
+              airflow variables set opendbt_docs_projects '{\"dbtcore\":\"/opt/dbtcore/target\",\"dbtfinance\":\"/opt/dbtfinance/target\"}' &&
               airflow standalone"
     ports: 
       - "8080:8080"
