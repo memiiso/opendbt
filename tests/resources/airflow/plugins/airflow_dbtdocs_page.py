@@ -9,8 +9,7 @@ plugin_mode = os.getenv('AIRFLOW_PLUGIN_MODE', 'single')
 
 if plugin_mode == 'multi':
     airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
-        variable_name="dbt_docs_projects",
-        default_project="dbtcore"
+        variable_name="dbt_docs_projects"
     )
 else:
     airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(

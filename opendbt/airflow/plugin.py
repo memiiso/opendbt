@@ -52,8 +52,7 @@ class ProjectConfig:
     def __init__(
         self,
         legacy_path: Optional[Union[Path, str]] = None,
-        variable_name: str = "dbt_docs_projects",
-        default_project: Optional[str] = None
+        variable_name: str = "dbt_docs_projects"
     ):
         """
         Initialize project configuration.
@@ -61,12 +60,10 @@ class ProjectConfig:
         Args:
             legacy_path: Path for single-project legacy mode (if provided, enables legacy mode)
             variable_name: Name of Airflow Variable containing project dict (multi-project mode)
-            default_project: Default project name to use if none specified (multi-project mode)
         """
         self.legacy_mode = legacy_path is not None
         self.legacy_path = Path(legacy_path) if legacy_path else None
         self.variable_name = variable_name
-        self.default_project = default_project
     
     def get_projects(self) -> Dict[str, Path]:
         """
@@ -136,8 +133,8 @@ class DBTDocsView(BaseView):
 
         projects = self.config.get_projects()
 
-        # Get from query param, fallback to default, fallback to first available
-        project = request.args.get('project', self.config.default_project)
+        # Get from query param, fallback to first available
+        project = request.args.get('project')
         if not project:
             project = list(projects.keys())[0]
 
@@ -235,8 +232,7 @@ class DBTDocsView(BaseView):
 
 def init_plugins_dbtdocs_page(
     dbt_docs_dir: Union[Path, str] = None,
-    variable_name: str = "dbt_docs_projects",
-    default_project: Optional[str] = None
+    variable_name: str = "dbt_docs_projects"
 ):
     """
     Initialize DBT Docs plugin with support for multiple projects.
@@ -244,7 +240,6 @@ def init_plugins_dbtdocs_page(
     Args:
         dbt_docs_dir: Legacy single project path (for backward compatibility)
         variable_name: Name of Airflow Variable containing project dict
-        default_project: Default project name to use if none specified
 
     Returns:
         AirflowPlugin class
@@ -252,8 +247,7 @@ def init_plugins_dbtdocs_page(
     # Create configuration
     config = ProjectConfig(
         legacy_path=dbt_docs_dir,
-        variable_name=variable_name,
-        default_project=default_project
+        variable_name=variable_name
     )
     
     # Create view instance
