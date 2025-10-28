@@ -7,9 +7,12 @@ USER airflow
 COPY --chown=airflow:airflow opendbt /tmp/opendbt/opendbt
 COPY --chown=airflow:airflow README.md /tmp/opendbt/README.md
 COPY --chown=airflow:airflow pyproject.toml /tmp/opendbt/pyproject.toml
-COPY --chown=airflow:airflow tests/resources/airflow/requirements.txt /tmp/opendbt/airflow/requirements.txt
 
 RUN pip install --upgrade pip==25.0.1 \
-    && pip install -r /tmp/opendbt/airflow/requirements.txt --prefer-binary --no-cache-dir
+    && pip install "dbt-core==1.8.*" \
+    "duckdb>=1.0.0,<1.4.0" \
+    "dbt-duckdb==1.8.*" \
+    --prefer-binary --no-cache-dir
+
 RUN pip install -e /tmp/opendbt
 
