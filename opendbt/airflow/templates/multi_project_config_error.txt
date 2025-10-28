@@ -1,0 +1,64 @@
+CURRENT MODE: Multi-Project
+ISSUE: The plugin is running in multi-project mode but no projects are configured.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CHECKLIST:
+
+1. Set the Airflow Variable '{variable_name}':
+   • Go to Admin → Variables in Airflow UI
+   • Create variable: '{variable_name}'
+   • Value must be valid JSON mapping project names to paths
+
+   Example JSON value:
+   {{"my_project": "/path/to/dbt/target"}}
+
+   For multiple projects:
+   {{"project1": "/opt/airflow/dbt/project1/target",
+    "project2": "/opt/airflow/dbt/project2/target"}}
+
+   OR set as environment variable:
+   AIRFLOW_VAR_{variable_name_upper}='{{
+     "my_project": "/path/to/dbt/target"
+   }}'
+
+2. Verify the paths point to dbt 'target' directories containing:
+   • manifest.json (required)
+   • catalog.json (optional)
+   • index.html (required)
+
+   For this you should run inside each project dir:
+   ```
+    python -m opendbt docs generate
+   ```
+
+3. Check AIRFLOW_PLUGIN_MODE environment variable:
+   • Current value should be: 'multi'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ALTERNATIVE: Use Single-Project Mode
+
+If you only have one dbt project, you can use legacy single-project mode.
+Set path in your Airflow plugin initialization code:
+
+ ```
+   import os
+   from pathlib import Path
+   from opendbt.airflow import plugin
+
+   plugin_mode = os.getenv('AIRFLOW_PLUGIN_MODE', 'single')
+
+   if plugin_mode == 'multi':
+       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+           variable_name='dbt_docs_projects',
+           default_project='dbtcore'
+       )
+   else:
+       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+           Path('/opt/dbtcore/target')  # <-- Set this path
+       )
+ ```
+This mode does NOT require:
+  • Airflow Variable '{variable_name}'
+  • AIRFLOW_PLUGIN_MODE environment variable

@@ -14,5 +14,5 @@ if plugin_mode == 'multi':
     )
 else:
     airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
-        Path("/opt/dbtcore/target")
+        Path("/opt/dbtcore/target") # <-- Set this path to your project
     )

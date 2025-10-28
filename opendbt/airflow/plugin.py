@@ -1,26 +1,36 @@
 from pathlib import Path
 from typing import Union, Dict, Optional
 import json
+import logging
 
-from flask import request, jsonify, abort, Blueprint
+from flask import request, jsonify, abort, Blueprint, Response
 from flask_appbuilder import BaseView, expose
 from airflow.www.auth import has_access
 from airflow.security import permissions
 from airflow.models import Variable
 from airflow.plugins_manager import AirflowPlugin
 
+log = logging.getLogger(__name__)
+
+# Directory containing templates
+TEMPLATE_DIR = Path(__file__).parent / "templates"
+
+
+def _load_template(template_name: str) -> str:
+    """Load a template file from the templates directory."""
+    template_path = TEMPLATE_DIR / template_name
+    return template_path.read_text()
+
+
+def _create_error_response(title: str, message: str, status_code: int = 503) -> Response:
+    """Create a custom HTML error response using external template."""
+    template = _load_template("error.html")
+    html = template.replace("{{ title }}", title).replace("{{ message }}", message)
+    return Response(html, status=status_code, mimetype='text/html')
+
 
 def _validate_project_info(name: str, path: Path) -> dict:
-    """
-    Validate a single project and return its info.
-
-    Args:
-        name: Project name
-        path: Path to the project directory
-
-    Returns:
-        Dictionary with project information and validation status
-    """
+    """Validate a single project and return its info."""
     project_info = {
         "name": name,
         "path": str(path),
@@ -85,7 +95,10 @@ class ProjectConfig:
         
         except Exception as e:
             # Log error but don't crash - return empty dict
-            print(f"Error loading projects from Variable '{self.variable_name}': {e}")
+            log.error(
+                "Error loading projects from Variable '%s': %s",
+                self.variable_name, e
+            )
             return {}
 
 
@@ -99,20 +112,35 @@ class DBTDocsView(BaseView):
         super().__init__()
         self.config = config
 
+    def _check_configuration(self) -> Optional[Response]:
+        """Check if configuration is valid. Returns error response if invalid, None if OK."""
+        if not self.config.legacy_mode:
+            projects = self.config.get_projects()
+            if not projects:
+                error_msg_template = _load_template("multi_project_config_error.txt")
+                error_msg = error_msg_template.format(
+                    variable_name=self.config.variable_name,
+                    variable_name_upper=self.config.variable_name.upper()
+                )
+                log.error("No DBT projects configured in multi-project mode")
+                return _create_error_response(
+                    "DBT Docs - Configuration Required",
+                    error_msg
+                )
+        return None
+
     def _get_current_project(self) -> str:
         """Get current project from query param or default."""
         if self.config.legacy_mode:
             return "default"
-        
+
         projects = self.config.get_projects()
-        if not projects:
-            abort(503, "No DBT projects configured")
-        
+
         # Get from query param, fallback to default, fallback to first available
         project = request.args.get('project', self.config.default_project)
         if not project:
             project = list(projects.keys())[0]
-        
+
         return project
 
     def _get_project_path(self, project_name: str) -> Path:
@@ -129,14 +157,18 @@ class DBTDocsView(BaseView):
     @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
     def list_projects(self):
         """Return list of available projects with validation."""
+        error_response = self._check_configuration()
+        if error_response:
+            return error_response
+
         projects = self.config.get_projects()
-        
+
         # Validate that target dirs exist and have required files
         valid_projects = [
             _validate_project_info(name, path)
             for name, path in projects.items()
         ]
-        
+
         return jsonify({
             "projects": valid_projects,
             "current": self._get_current_project(),
@@ -147,24 +179,32 @@ class DBTDocsView(BaseView):
     @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
     def dbt_docs_index(self):
         """Serve the main DBT docs index page."""
+        error_response = self._check_configuration()
+        if error_response:
+            return error_response
+
         project = self._get_current_project()
         project_path = self._get_project_path(project)
-        
+
         index_file = project_path.joinpath("index.html")
         if not index_file.is_file():
             abort(404, f"index.html not found for project '{project}'")
-        
+
         return index_file.read_text()
 
     def _return_json(self, json_file: str):
         """Generic handler for returning JSON files."""
+        error_response = self._check_configuration()
+        if error_response:
+            return error_response
+
         project = self._get_current_project()
         project_path = self._get_project_path(project)
-        
+
         file_path = project_path.joinpath(json_file)
         if not file_path.is_file():
             abort(404, f"{json_file} not found for project '{project}'")
-        
+
         data = file_path.read_text()
         return data, 200, {"Content-Type": "application/json"}
 
