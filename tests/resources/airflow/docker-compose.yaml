@@ -1,5 +1,3 @@
-version: '2'
-
 services:
   airflow:
     build:
@@ -7,8 +5,16 @@ services:
       # NOTE The path can be absolute or relative.
       # If it is relative, it is resolved from the Compose file's parent folder.
       context: ./../../../
+    platform: linux/amd64
     image: opendbt_airflow
-    entrypoint: airflow standalone
+    pull_policy: never
+    container_name: airflow
+    command: >
+      bash -c "airflow db init &&
+              airflow variables set opendbt_docs_projects '[\"/opt/dbtcore/target\", \"/opt/dbtfinance/target\"]' &&
+              airflow standalone"
+    ports: 
+      - "8080:8080"
     volumes:
       # NOTE The path can be absolute or relative.
       - ./airflow/webserver_config.py:/opt/airflow/webserver_config.py
@@ -21,5 +27,8 @@ services:
     environment:
       - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
       - AIRFLOW_ENVIRONMENT=LOCAL
-    ports:
-      - "8080"
+    networks: [airflow]
+
+networks:
+  airflow:
+    driver: bridge

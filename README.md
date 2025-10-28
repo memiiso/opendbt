@@ -18,6 +18,7 @@ adapter and providing jinja context with further adapter/python methods.
 ## Features
 
 - :white_check_mark: Includes superior [dbt catalog UI](https://memiiso.github.io/opendbt/opendbtdocs/), user-friendly
+  multi-project
   data catalog,
   including row level
   lineage, [see it here](https://memiiso.github.io/opendbt/opendbtdocs/)
@@ -35,8 +36,7 @@ adapter and providing jinja context with further adapter/python methods.
     - This feature was only available in "dbt Cloud Enterprise" so far.
   - Granular Model-Level Orchestration with Airflow: Integrate Airflow for fine-grained control over model execution.
   - Serve dbt Docs in Airflow UI: Create a custom page on the Airflow server that displays dbt documentation as an
-    Airflow
-    UI page.
+    Airflow UI page. Supports both single-project and multi-project configurations with UI-based project switching.
   - Register [dbt callbacks](https://docs.getdbt.com/reference/programmatic-invocations#registering-callbacks) within a
     dbt project to trigger custom actions or alerting based on selected dbt events.
 

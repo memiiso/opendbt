@@ -385,29 +385,6 @@
                         {{ ODBTM.metadata?.project_name ?? 'DBT' }} Doc
                     </h1>
                 </div>
-                <!-- Project Selector -->
-                <div class="flex items-center">
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-folder-open text-gray-400 text-sm"></i>
-                        </div>
-                        <select id="project-selector"
-                                v-model="currentProject" 
-                                @change="switchProject"
-                                :disabled="isLoading || availableProjects.length === 0"
-                                class="appearance-none bg-white border border-gray-300 rounded-lg pl-9 pr-10 py-2 text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-colors cursor-pointer">
-                            <option v-if="availableProjects.length === 0" value="">Loading...</option>
-                            <option v-for="project in availableProjects" 
-                                    :key="project.name" 
-                                    :value="project.name">
-                                {{ project.name }}
-                            </option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                        </div>
-                    </div>
-                </div>
             </div>
             <!-- Search Input Container -->
             <div class="relative flex-grow">
@@ -784,28 +761,12 @@
 
                         <!-- Code Tab -->
                         <div v-if="activeTab === 'code' && getModelCode(selectedItem)">
-                            <div class="flex border-b border-gray-200 bg-gray-50 rounded-b-lg shadow mb-4"
-                                  v-if="selectedItem.language === 'sql'">
-                              <button
-                                      :class="['tab-button', { 'active': activeCodeTab === 'compiled' }]"
-                                      @click="activeCodeTab = 'compiled'"
-                              >
-                                  SQL
-                              </button>
-                              <button
-                                      :class="['tab-button', { 'active': activeCodeTab === 'raw' }]"
-                                      @click="activeCodeTab = 'raw'"
-                              >
-                                  Jinja SQL
-                              </button>
-                            </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-3">
                                 {{ selectedItem.language === 'python' ? 'Python' : 'SQL' }} Definition
                             </h3>
                             <pre class="code-block mt-3"><code
-                                  :class="selectedItem.language === 'python' ? 'language-python' : 'language-sql'"
-                                    >{{ activeCodeTab === 'raw' ? getModelRawCode(selectedItem).trim() : getModelCode(selectedItem).trim()
-                                  }}</code></pre>
+                                    :class="selectedItem.language === 'python' ? 'language-python' : 'language-sql'">{{ getModelCode(selectedItem).trim()
+                                }}</code></pre>
                         </div>
 
                         <!-- Dependencies Tab -->
@@ -1081,14 +1042,11 @@
      */
     async function loadDbtFiles() {
         try {
-            // Add project parameter to JSON fetches
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectParam = urlParams.get("project") ? "?project=" + urlParams.get("project") : "";
             const [manifestResponse, catalogResponse, cataloglResponse, dbtRunInfoResponse] = await Promise.all([
-                fetch('manifest.json' + projectParam),
-                fetch('catalog.json' + projectParam),
-                fetch('catalogl.json' + projectParam),
-                fetch('run_info.json' + projectParam)
+                fetch('manifest.json'),
+                fetch('catalog.json'),
+                fetch('catalogl.json'),
+                fetch('run_info.json')
             ]);
 
             if (!manifestResponse.ok) throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
@@ -1160,7 +1118,6 @@
             const isLoading = ref(true);
             const ODBTM = ref({});
             const activeTab = ref('overview');
-            const activeCodeTab = ref('compiled');
             const expandedNodes = ref([]);
             const selectedItem = ref(null);
             const searchQuery = ref('');
@@ -1171,8 +1128,6 @@
             const lineageRendering = ref(false);
             const lineageError = ref(false);
             const isLineageFullScreen = ref(false);
-            const currentProject = ref(new URLSearchParams(window.location.search).get('project'));
-            const availableProjects = ref([]);
             let currentVisNetwork = null;
 
             // --- COMPUTED PROPERTIES ---
@@ -1219,35 +1174,9 @@
             const allItemsById = computed(() => new Map(allItems.value.map(item => [item.unique_id, item])));
             const displayColumns = computed(() => Object.values(selectedItem.value?.columns ?? {}));
             const selectedItemStats = computed(() => Object.values(selectedItem.value?.stats ?? {}).filter(stat => stat.value));
-            // --- METHODS ---  
-            const loadProjects = async () => {
-                    try {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const projectParam = urlParams.get('project') ? `?project=${urlParams.get('project')}` : '';
-                        
-                        const response = await fetch(`/dbt/projects${projectParam}`, {
-                            credentials: 'same-origin',
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        
-                        const data = await response.json();
-                        availableProjects.value = data.projects.filter(p => p.is_valid);
-                        
-                        if (!currentProject.value) {
-                            currentProject.value = data.current;
-                        }
-                    } catch (error) {
-                        console.error('Error loading projects:', error);
-                        availableProjects.value = [];
-                    }
-                };
-                
-                const switchProject = () => {
-                    const url = new URL(window.location);
-                    url.searchParams.set('project', currentProject.value);
-                    window.location.href = url.toString();
-                };            
-            const selectItem = (item, updateUrlHash = true) => {                
+
+            // --- METHODS ---
+            const selectItem = (item, updateUrlHash = true) => {
                 selectedItem.value = item;
                 if (updateUrlHash) {
                     const newHash = `#${item.unique_id}`;
@@ -1303,8 +1232,6 @@
             };
 
             const getModelCode = (model) => model?.compiled_code ?? model?.raw_code ?? '';
-
-            const getModelRawCode = (model) => model?.raw_code ?? '';
 
             const displayDescriptionText = (text) => {
                 if (typeof text !== 'string' || !text.trim()) return '';
@@ -1464,7 +1391,6 @@
 
             // --- LIFECYCLE & WATCHERS ---
             onMounted(async () => {
-                await loadProjects();
                 ODBTM.value = await loadDbtFiles();
                 isLoading.value = false;
                 await nextTick();
@@ -1484,20 +1410,11 @@
                 }
             });
 
-            watch([activeCodeTab], ([newActiveCodeTab]) => {
-                nextTick(() => hljs.highlightAll());
-            });
-
             watch(databaseTree, (newTree) => {
                 if (newTree.length > 0 && !window.location.hash && expandedNodes.value.length === 0) {
                     const firstDb = newTree[0];
                     if (firstDb?.schemas.length > 0) {
-                        const firstSchema = firstDb.schemas[0];
-                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstSchema.name}`);
-                        // Auto-expand Models if available
-                        if (firstSchema.models && firstSchema.models.length > 0) {
-                            expandedNodes.value.push(`${firstDb.name}.${firstSchema.name}.models`);
-                        }
+                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstDb.schemas[0].name}`);
                     }
                 }
             });
@@ -1505,9 +1422,8 @@
             return {
                 isLoading, ODBTM, databaseTree, expandedNodes, selectedItem, searchQuery, searchResults,
                 lineageContainer, lineageGraphContainer, lineageMaxDepth, lineageRendering, lineageError,
-                activeTab, activeCodeTab, displayColumns, selectedItemStats, isLineageFullScreen,
-                currentProject, availableProjects, switchProject,
-                toggleLineageFullScreen, getModelCode, getModelRawCode, highlightMatches, performSearch, clearSearch,
+                activeTab, displayColumns, selectedItemStats, isLineageFullScreen,
+                toggleLineageFullScreen, getModelCode, highlightMatches, performSearch, clearSearch,
                 selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,
                 getIconClassForResourceType, getIconClassForResourceTypeById, displayDescriptionText
