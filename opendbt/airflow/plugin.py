@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union, Dict, Optional
+from typing import Union, Dict, Optional, List
 import json
 import logging
 
@@ -47,19 +47,25 @@ def _validate_project_info(name: str, path: Path) -> dict:
 
 
 class ProjectConfig:
-    """Configuration for DBT docs projects - handles both legacy and multi-project modes."""
-    
+    """Configuration for DBT docs projects - handles both single and multi-project modes."""
+
     def __init__(
         self,
-        legacy_path: Optional[Union[Path, str]] = None
+        project_paths: Optional[Union[Path, str, List[Union[Path, str]]]] = None
     ):
         """
         Initialize project configuration.
-        
+
         Args:
-            legacy_path: Path for single-project legacy mode (if provided, enables legacy mode)
+            project_paths: Single path (str/Path) or list of paths for project(s)
         """
-        self.legacy_path = Path(legacy_path) if legacy_path else None
+        # Normalize to list of Paths
+        if project_paths is None:
+            self.paths = None
+        elif isinstance(project_paths, (list, tuple)):
+            self.paths = [Path(p) for p in project_paths]
+        else:
+            self.paths = [Path(project_paths)]
     
     def get_projects(self) -> Dict[str, Path]:
         """
@@ -72,13 +78,16 @@ class ProjectConfig:
         """
         # Try to get from Variable first (this overrides .py file config)
         try:
-            projects_list = Variable.get("opendbt_docs_projects", deserialize_json=True)
-
-            if projects_list is None:
-                projects_list = Variable.get("OPENDBT_DOCS_PROJECTS", deserialize_json=True)
+            projects_var = Variable.get("opendbt_docs_projects", deserialize_json=True)
 
             # If Variable exists and is valid, use it (override mode)
-            if projects_list:
+            if projects_var:
+                # Handle both single string and list of strings
+                if isinstance(projects_var, str):
+                    projects_list = [projects_var]
+                else:
+                    projects_list = projects_var
+
                 return {Path(p).parent.name: Path(p) for p in projects_list}
 
         except Exception as e:
@@ -86,9 +95,9 @@ class ProjectConfig:
                 "Error loading projects from Variable 'opendbt_docs_projects': %s", e
             )
 
-        # Fallback to legacy_path from .py file initialization
-        if self.legacy_path:
-            return {self.legacy_path.parent.name: self.legacy_path}
+        # Fallback to paths from .py file initialization
+        if self.paths:
+            return {path.parent.name: path for path in self.paths}
 
         return {}
 
@@ -222,22 +231,20 @@ def init_plugins_dbtdocs_page(
     Initialize DBT Docs plugin with support for multiple projects.
 
     Args:
-        dbt_docs_dir: Legacy single project path (for backward compatibility)
+        dbt_docs_dir: Single project path (for backward compatibility)
 
     Returns:
         AirflowPlugin class
     """
     # Create configuration
     config = ProjectConfig(
-        legacy_path=dbt_docs_dir
+        project_paths=dbt_docs_dir
     )
     
     # Create view instance
     view = DBTDocsView(config)
 
-    # Create Flask blueprint
-    # Note: In multi-project mode, static files are served from individual project dirs
-    static_folder = None # config.legacy_path.as_posix() if config.legacy_mode else None
+    static_folder = None
     
     bp = Blueprint(
         "DBT Plugin",

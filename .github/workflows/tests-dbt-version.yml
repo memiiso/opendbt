@@ -56,5 +56,6 @@ jobs:
           cd ../../..
 
           # Run tests
-          python -m unittest tests.test_airflow.TestAirflowLegacyMode -v
-          python -m unittest tests.test_airflow.TestAirflowMultiProjectMode -v
+          python -m unittest tests.test_airflow.TestAirflowSingleProjectMode
+          python -m unittest tests.test_airflow.TestAirflowMultiProjectMode
+          python -m unittest tests.test_airflow.TestAirflowSingleStringVariable

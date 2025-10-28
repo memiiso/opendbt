@@ -38,7 +38,7 @@ The priority order is:
 
 ### Core Functionality
    - Added environment variable-based plugin mode switching (single/multi)
-   - Plugin now supports both legacy single-project and new multi-project modes
+   - Plugin now supports both single-project and multi-project modes
    - Multi-project configuration via Airflow Variables
    - Case-insensitive variable lookup for compatibility with `AIRFLOW_VAR_*` env vars
 
