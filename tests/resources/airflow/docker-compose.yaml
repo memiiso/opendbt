@@ -27,7 +27,6 @@ services:
     environment:
       - AIRFLOW__WEBSERVER__INSTANCE_NAME=LOCAL
       - AIRFLOW_ENVIRONMENT=LOCAL
-      - AIRFLOW_PLUGIN_MODE=${AIRFLOW_PLUGIN_MODE:-single}
     networks: [airflow]
 
 networks:

@@ -43,20 +43,16 @@ class AirflowTestBase(unittest.TestCase):
         return f"{cls.base_url}/dbt/{path}"
 
     @classmethod
-    def _setup_airflow(cls, mode: str, title: str, pre_start_hook=None, post_start_hook=None):
+    def _setup_airflow(cls, title: str, pre_start_hook=None, post_start_hook=None):
         """
         Setup Airflow for tests with common initialization.
 
         Args:
-            mode: Airflow plugin mode ('single' or 'multi')
             title: Title to display in output
             pre_start_hook: Optional callable to run before starting compose (e.g., for YAML modification)
             post_start_hook: Optional callable to run after container is up (e.g., for debugging container state)
         """
         cls._print_separator(f"Testing {title}")
-
-        # Set environment variable
-        os.environ['AIRFLOW_PLUGIN_MODE'] = mode
 
         # Run pre-start hook if provided (e.g., YAML modification)
         if pre_start_hook:
@@ -219,7 +215,7 @@ class TestAirflowSingleProjectMode(AirflowTestBase):
             cls._run_debug_commands(commands_to_check)
             print(SEPARATOR + "\n")
 
-        cls._setup_airflow(mode='single', title='Single-Project Mode', post_start_hook=debug_container)
+        cls._setup_airflow(title='Single-Project Mode', post_start_hook=debug_container)
         cls._print_urls(
             ("Home", "../home"),
             ("DBT Docs", "dbt_docs_index.html")
@@ -278,7 +274,7 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
 
     @classmethod
     def setUpClass(cls):
-        cls._setup_airflow(mode='multi', title='Multi-Project Mode')
+        cls._setup_airflow(title='Multi-Project Mode')
         cls._print_urls(
             ("Home", "../home"),
             ("DBT Docs", "dbt_docs_index.html"),
@@ -401,7 +397,7 @@ class TestAirflowSingleStringVariable(AirflowTestBase):
 
             print("  ✓ Modified Variable to single string")
 
-        cls._setup_airflow(mode='single', title='Single String Path from Variable', pre_start_hook=modify_compose_for_single_string)
+        cls._setup_airflow(title='Single String Path from Variable', pre_start_hook=modify_compose_for_single_string)
         cls._print_urls(
             ("Home", "../home"),
             ("DBT Docs", "dbt_docs_index.html"),

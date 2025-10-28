@@ -43,15 +43,40 @@ The priority order is:
    - Case-insensitive variable lookup for compatibility with `AIRFLOW_VAR_*` env vars
 
 ### Configuration
-   - `export AIRFLOW_PLUGIN_MODE=single` (default): Single-project mode with static path
-   - `export AIRFLOW_PLUGIN_MODE=multi`: Multi-project mode with Airflow Variable
-   - Setup Admin - Variables:
+
+The plugin auto-detects based on configuration:
+- If Airflow Variable `opendbt_docs_projects` is set, it will use that (overrides hardcoded paths)
+- Otherwise, it will use the path(s) provided in plugin initialization code
+
+#### Option 1: Airflow Variable (recommended for dynamic configuration)
+
+Setup Admin → Variables:
    ```
-   opendbt_docs_projects: 
+   opendbt_docs_projects:
       [
          "/opt/dbtcore/target",
          "/opt/dbtfinance/target"
       ]
+   ```
+
+Or for a single project:
+   ```
+   opendbt_docs_projects: "/opt/dbtcore/target"
+   ```
+
+#### Option 2: Hardcoded in plugin file
+
+   ```python
+   # Single project
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+       Path('/opt/dbtcore/target')
+   )
+
+   # Or multiple projects
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page([
+       Path('/opt/project1/target'),
+       Path('/opt/project2/target')
+   ])
    ```
 
 ## Catalog Files Summary

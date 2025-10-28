@@ -1,19 +1,23 @@
-CURRENT MODE: Multi-Project
-ISSUE: The plugin is running in multi-project mode but no projects are configured.
+ISSUE: No DBT projects are configured.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CHECKLIST:
+The plugin requires at least one project to be configured.
+You can configure projects in two ways:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPTION 1: Use Airflow Variable (for single or multiple projects)
 
 1. Set the Airflow Variable 'opendbt_docs_projects':
    • Go to Admin → Variables in Airflow UI
    • Create variable: 'opendbt_docs_projects'
-   • Value must be valid list project paths
+   • Value can be a single path (string) or list of paths
 
-   Example value:
-   ["/path/to/dbt/target"]
+   Single project example:
+   "/opt/airflow/dbt/target"
 
-   For multiple projects:
+   Multiple projects example:
    [
       "/opt/airflow/dbt/project1/target",
       "/opt/airflow/dbt/project2/target"
@@ -24,35 +28,32 @@ CHECKLIST:
    • catalog.json (optional)
    • index.html (required)
 
-   For this you should run inside each project dir:
+   To generate these files, run inside each project dir:
    ```
     python -m opendbt docs generate
    ```
 
-3. Check AIRFLOW_PLUGIN_MODE environment variable:
-   • Current value should be: 'multi'
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-ALTERNATIVE: Use Single-Project Mode
+OPTION 2: Set path in plugin initialization code
 
-If you only have one dbt project, you can use single-project mode.
-Set path in your Airflow plugin initialization code:
+Set path(s) in your Airflow plugin file:
 
  ```
-   import os
    from pathlib import Path
    from opendbt.airflow import plugin
 
-   plugin_mode = os.getenv('AIRFLOW_PLUGIN_MODE', 'single')
+   # Single project
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+       Path('/opt/dbtcore/target')  # <-- Set this path
+   )
 
-   if plugin_mode == 'multi':
-       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page()
-   else:
-       airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
-           Path('/opt/dbtcore/target')  # <-- Set this path
-       )
+   # OR multiple projects
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page([
+       Path('/opt/project1/target'),
+       Path('/opt/project2/target')
+   ])
  ```
-This mode does NOT require:
-  • Airflow Variable 'opendbt_docs_projects'
-  • AIRFLOW_PLUGIN_MODE environment variable
+
+NOTE: If both are set, the Airflow Variable takes precedence and overrides
+the path(s) provided in the code.
