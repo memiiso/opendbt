@@ -3,16 +3,16 @@ LABEL authors="opendbt"
 
 USER airflow
 
+RUN pip install "dbt-core==1.8.7" \
+    "duckdb==1.2.2" \
+    "dbt-duckdb==1.8.4" \
+    --prefer-binary
+
+
 # install additional packages
-COPY --chown=airflow:airflow opendbt /tmp/opendbt/opendbt
 COPY --chown=airflow:airflow README.md /tmp/opendbt/README.md
 COPY --chown=airflow:airflow pyproject.toml /tmp/opendbt/pyproject.toml
-
-RUN pip install --upgrade pip==25.0.1 \
-    && pip install "dbt-core==1.8.*" \
-    "duckdb>=1.0.0,<1.4.0" \
-    "dbt-duckdb==1.8.*" \
-    --prefer-binary --no-cache-dir
+COPY --chown=airflow:airflow opendbt /tmp/opendbt/opendbt
 
 RUN pip install -e /tmp/opendbt
 

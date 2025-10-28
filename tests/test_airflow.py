@@ -199,17 +199,6 @@ class TestAirflowLegacyMode(AirflowTestBase):
         self.assertEqual(response.status_code, 200)
         print("  ✓ Enhanced catalog accessible")
 
-    def test_legacy_no_projects_endpoint(self):
-        """Test that /projects endpoint doesn't exist or returns legacy mode"""
-        print("\n→ Testing /projects endpoint in legacy mode...")
-        response = requests.get(f"{self.base_url}/dbt/projects", timeout=10)
-        # In legacy mode, projects endpoint should still work but show legacy_mode=true
-        if response.status_code == 200:
-            data = response.json()
-            # If endpoint exists, it should indicate legacy mode
-            self.assertTrue(data.get("legacy_mode", False))
-            print("  ✓ Projects endpoint shows legacy_mode=true")
-
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
 class TestAirflowMultiProjectMode(AirflowTestBase):
@@ -262,9 +251,6 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
         data = response.json()
         self.assertIn("projects", data)
         self.assertIn("current", data)
-        self.assertIn("legacy_mode", data)
-
-        self.assertFalse(data["legacy_mode"], "Should not be in legacy mode")
 
         # Check both projects are listed
         project_names = [p["name"] for p in data["projects"]]

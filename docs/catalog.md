@@ -48,10 +48,10 @@ The priority order is:
    - Setup Admin - Variables:
    ```
    opendbt_docs_projects: 
-      {
-         "dbtcore": "/opt/dbtcore/target",
-         "dbtfinance": "/opt/dbtfinance/target"
-      }
+      [
+         "/opt/dbtcore/target",
+         "/opt/dbtfinance/target"
+      ]
    ```
 
 ## Catalog Files Summary

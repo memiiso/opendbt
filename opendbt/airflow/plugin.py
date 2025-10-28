@@ -59,35 +59,38 @@ class ProjectConfig:
         Args:
             legacy_path: Path for single-project legacy mode (if provided, enables legacy mode)
         """
-        self.legacy_mode = legacy_path is not None
         self.legacy_path = Path(legacy_path) if legacy_path else None
     
     def get_projects(self) -> Dict[str, Path]:
         """
         Get all configured projects.
-        
+
+        Variable (if set) overrides .py file configuration.
+
         Returns:
             Dictionary mapping project names to their paths
         """
-        if self.legacy_mode:
-            return {"default": self.legacy_path}
-        
+        # Try to get from Variable first (this overrides .py file config)
         try:
-            projects_json = Variable.get("opendbt_docs_projects")
-            
-            if projects_json is None:
-                return {}
-            
-            if isinstance(projects_json, str):
-                projects_json = json.loads(projects_json)
-            
-            return {k: Path(v) for k, v in projects_json.items()}
-        
+            projects_list = Variable.get("opendbt_docs_projects", deserialize_json=True)
+
+            if projects_list is None:
+                projects_list = Variable.get("OPENDBT_DOCS_PROJECTS", deserialize_json=True)
+
+            # If Variable exists and is valid, use it (override mode)
+            if projects_list:
+                return {Path(p).parent.name: Path(p) for p in projects_list}
+
         except Exception as e:
             log.error(
                 "Error loading projects from Variable 'opendbt_docs_projects': %s", e
             )
-            return {}
+
+        # Fallback to legacy_path from .py file initialization
+        if self.legacy_path:
+            return {self.legacy_path.parent.name: self.legacy_path}
+
+        return {}
 
 
 class DBTDocsView(BaseView):
@@ -102,22 +105,18 @@ class DBTDocsView(BaseView):
 
     def _check_configuration(self) -> Optional[Response]:
         """Check if configuration is valid. Returns error response if invalid, None if OK."""
-        if not self.config.legacy_mode:
-            projects = self.config.get_projects()
-            if not projects:
-                error_msg = _load_template("multi_project_config_error.txt")
-                log.error("No DBT projects configured in multi-project mode")
-                return _create_error_response(
-                    "DBT Docs - Configuration Required",
-                    error_msg
+        projects = self.config.get_projects()
+        if not projects:
+            error_msg = _load_template("multi_project_config_error.txt")
+            log.error("No DBT projects configured in multi-project mode")
+            return _create_error_response(
+                "DBT Docs - Configuration Required",
+                error_msg
                 )
         return None
 
     def _get_current_project(self) -> str:
         """Get current project from query param or default."""
-        if self.config.legacy_mode:
-            return "default"
-
         projects = self.config.get_projects()
 
         # Get from query param, fallback to first available
@@ -155,8 +154,7 @@ class DBTDocsView(BaseView):
 
         return jsonify({
             "projects": valid_projects,
-            "current": self._get_current_project(),
-            "legacy_mode": self.config.legacy_mode
+            "current": self._get_current_project()
         })
 
     @expose("/dbt_docs_index.html")  # type: ignore[misc]
@@ -236,10 +234,10 @@ def init_plugins_dbtdocs_page(
     
     # Create view instance
     view = DBTDocsView(config)
-    
+
     # Create Flask blueprint
     # Note: In multi-project mode, static files are served from individual project dirs
-    static_folder = config.legacy_path.as_posix() if config.legacy_mode else None
+    static_folder = None # config.legacy_path.as_posix() if config.legacy_mode else None
     
     bp = Blueprint(
         "DBT Plugin",
