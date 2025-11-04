@@ -62,9 +62,9 @@ def get_projects(
         projects_var = Variable.get("opendbt_docs_projects", deserialize_json=True)
         # Handle both single string and list of strings
         if projects_var and isinstance(projects_var, (str, Path)):
-            projects = projects | {Path(p).parent.name: Path(p) for p in [projects_var]}
+            projects.update({Path(p).parent.name: Path(p) for p in [projects_var]})
         if projects_var and isinstance(projects_var, list):
-            projects = projects | {Path(p).parent.name: Path(p) for p in projects_var}
+            projects.update({Path(p).parent.name: Path(p) for p in projects_var})
     except Exception as e:
         log.error(
             "Error loading projects from Variable 'opendbt_docs_projects': %s", e
@@ -73,9 +73,9 @@ def get_projects(
     # Combine to paths from .py file initialization
     # Normalize to list of Paths
     if project_paths and isinstance(project_paths, (list, tuple)):
-        projects = projects | {path.parent.name: path for path in [Path(p) for p in project_paths]}
+        projects.update({path.parent.name: path for path in [Path(p) for p in project_paths]})
     if project_paths and isinstance(project_paths, (str, Path)):
-        projects = projects | {path.parent.name: path for path in [Path(project_paths)]}
+        projects.update({path.parent.name: path for path in [Path(project_paths)]})
 
     return projects
 

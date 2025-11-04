@@ -303,7 +303,7 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
         for project in data["projects"]:
             self.assertIn("is_valid", project)
             self.assertIn("has_manifest", project)
-            self.assertIn("has_index", project)
+            self.assertIn("has_custom_index", project)
             print(f"  ✓ {project['name']}: valid={project['is_valid']}, manifest={project['has_manifest']}")
 
     def test_default_project_loads(self):
