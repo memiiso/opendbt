@@ -21,9 +21,12 @@ PROJECT_CORE = "dbtcore"
 PROJECT_FINANCE = "dbtfinance"
 
 
-class AirflowTestBase(unittest.TestCase):
-    """Base class with common helper methods for Airflow tests"""
-
+class TestAirflowBase(unittest.TestCase):
+    """
+    Base class for Airflow tests using testcontainers.
+    Uses airflow docker image and mounts current code into it.
+    Login is disabled - all users can access the UI as Admin. Airflow is set up as Public.
+    """
     _compose: DockerCompose = None
     resources_dir = Path(__file__).parent.joinpath('resources')
     compose_dir = resources_dir / 'airflow'
@@ -67,10 +70,15 @@ class AirflowTestBase(unittest.TestCase):
         )
         cls._compose.start()
 
-        cls.base_url = "http://localhost:8080"
+        # Use testcontainers built-in methods to get dynamic host/port
+        host = cls._compose.get_service_host("airflow", 8080)
+        port = cls._compose.get_service_port("airflow", 8080)
+        cls.base_url = f"http://{host}:{port}"
 
-        # Wait for Airflow
-        cls._wait_for_airflow()
+        # Wait for Airflow using testcontainers built-in wait
+        print(f"Waiting for Airflow to be ready at {cls.base_url}...")
+        cls._compose.wait_for(f"http://{host}:{port}/health")
+        print(f"✓ Airflow is ready!")
 
         # Run post-start hook if provided (e.g., debug container)
         if post_start_hook:
@@ -84,61 +92,11 @@ class AirflowTestBase(unittest.TestCase):
             cls._compose.stop()
 
     @classmethod
-    def _wait_for_airflow(cls, timeout=120):
-        """Wait for Airflow to be healthy"""
-        import subprocess
-        start = time.time()
-        counter = 0
-        print(f"Waiting for Airflow to be ready at {cls.base_url}...")
-
-        while time.time() - start < timeout:
-            try:
-                response = requests.get(f"{cls.base_url}/health", timeout=5)
-                if response.status_code == 200:
-                    print(f"✓ Airflow is ready!")
-
-                    # Show container logs for debugging
-                    cls._print_separator("AIRFLOW CONTAINER LOGS (last 10 lines):")
-                    try:
-                        logs = subprocess.run(
-                            ["docker", "logs", "--tail", "10", "airflow"],
-                            capture_output=True, text=True, timeout=REQUEST_TIMEOUT
-                        )
-                        print(logs.stdout)
-                        if logs.stderr:
-                            print("STDERR:", logs.stderr)
-                    except Exception as e:
-                        print(f"Could not fetch logs: {e}")
-                    print(SEPARATOR + "\n")
-
-                    return
-            except Exception as e:
-                pass
-            time.sleep(5)
-            counter += 5
-            print(f"Waited for {counter} sec")
-
-        # Timeout - show logs before failing
-        cls._print_separator("TIMEOUT - AIRFLOW CONTAINER LOGS:")
-        try:
-            logs = subprocess.run(
-                ["docker", "logs", "--tail", "100", "airflow"],
-                capture_output=True, text=True, timeout=REQUEST_TIMEOUT
-            )
-            print(logs.stdout)
-            if logs.stderr:
-                print("STDERR:", logs.stderr)
-        except Exception as e:
-            print(f"Could not fetch logs: {e}")
-        print(SEPARATOR + "\n")
-
-        raise TimeoutError(f"Airflow did not start in {timeout} seconds")
-
-    @classmethod
     def _run_debug_commands(cls, commands_to_check):
         """Run docker exec debug commands and print output"""
         import subprocess
 
+        cls._print_separator("CONTAINER FILE SYSTEM CHECK:")
         for desc, cmd in commands_to_check:
             print(f"\n→ {desc}:")
             try:
@@ -198,7 +156,7 @@ class AirflowTestBase(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
-class TestAirflowSingleProjectMode(AirflowTestBase):
+class TestAirflowSingleProjectMode(TestAirflowBase):
     """Test single-project mode (backward compatibility)"""
 
     @classmethod
@@ -269,7 +227,7 @@ class TestAirflowSingleProjectMode(AirflowTestBase):
 
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
-class TestAirflowMultiProjectMode(AirflowTestBase):
+class TestAirflowMultiProjectMode(TestAirflowBase):
     """Test multi-project mode with project switching"""
 
     @classmethod
@@ -366,7 +324,7 @@ class TestAirflowMultiProjectMode(AirflowTestBase):
 
 
 @unittest.skipIf(SKIP_AIRFLOW_TESTS, "Airflow Docker tests disabled. Set RUN_AIRFLOW_TESTS=1 to enable")
-class TestAirflowSingleStringVariable(AirflowTestBase):
+class TestAirflowSingleStringVariable(TestAirflowBase):
     """Test single string path from Variable (not a list)"""
 
     @classmethod
@@ -446,46 +404,29 @@ class TestAirflowSingleStringVariable(AirflowTestBase):
 
 
 @unittest.skip("Manual test")
-class TestAirflowBase(unittest.TestCase):
+class TestAirflowManualDev(TestAirflowBase):
     """
-    Test class used to do airflow tests.
-    uses airflow docker image and mounts current code into it.
-    login is disabled all users can access the UI as Admin. Airflow is set up as Public
+    Manual test class for local development.
+    Used to deploy code inside docker airflow locally for testing.
+    UI login is disabled and made public.
     """
-    _compose: DockerCompose = None
-    resources_dir = Path(__file__).parent.joinpath('resources')
 
     @classmethod
     def setUpClass(cls):
-        os.chdir(cls.resources_dir.joinpath('airflow').as_posix())
-        cls._compose = DockerCompose(cls.resources_dir.joinpath('airflow').as_posix(),
-                                     compose_file_name="docker-compose.yaml",
-                                     # build=True,
-                                     docker_command_path='podman'
-                                     )
-        cls._compose.stop()
-        cls._compose.start()
-        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/home")
-        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/dbtdocs")
-        print(f"http://localhost:{cls._compose.get_service_port('airflow', 8080)}/dbtdocs/perf_info.json")
+        cls._setup_airflow("Manual Development Mode")
 
     @classmethod
     def tearDownClass(cls):
-        print("\n" + "="*60)
-        print("Stopping Single String Variable Test")
-        print("="*60)
-        if cls._compose:
-            cls._compose.stop()
-
-    def __exit__(self, exc_type, exc_val, traceback):
-        if self._compose:
-            self._compose.stop()
+        cls._teardown_airflow("Manual Development Mode")
 
     def test_start_airflow_local_and_wait(self):
         """
-        used to deploy the code inside docker airflow locally. UI login is disabled and made public!
-        useful to run local airflow with the new code changes and check the changes in airflow ui
-        while its running all the code changes are reflected in airflow after short time.
-        :return:
+        Starts Airflow locally with current code changes.
+        While running, all code changes are reflected in airflow after a short time.
+        Useful for manual testing in Airflow UI.
         """
+        print(f"\n{'='*60}")
+        print(f"Airflow is running at: {self.base_url}")
+        print(f"DBT Docs: {self._dbt_url('dbt_docs_index.html')}")
+        print(f"{'='*60}\n")
         sleep(99999999)
