@@ -46,76 +46,67 @@ def _validate_project_info(name: str, path: Path) -> dict:
     return project_info
 
 
-class ProjectConfig:
-    """Configuration for DBT docs projects - handles both single and multi-project modes."""
+def get_projects(
+    project_paths: Optional[Union[Path, str, List[Union[Path, str]]]] = None
+) -> Dict[str, Path]:
+    """
+    Get all configured projects.
 
-    def __init__(
-        self,
-        project_paths: Optional[Union[Path, str, List[Union[Path, str]]]] = None
-    ):
-        """
-        Initialize project configuration.
+    Variable (if set) overrides .py file configuration.
 
-        Args:
-            project_paths: Single path (str/Path) or list of paths for project(s)
-        """
-        # Normalize to list of Paths
-        if project_paths is None:
-            self.paths = []
-        elif isinstance(project_paths, (list, tuple)):
-            self.paths = [Path(p) for p in project_paths]
+    Args:
+        project_paths: Single path (str/Path) or list of paths for project(s)
+
+    Returns:
+        Dictionary mapping project names to their paths
+    """
+    # Try to get from Variable first (this overrides .py file config)
+    try:
+        projects_var = Variable.get("opendbt_docs_projects", deserialize_json=True)
+
+        # If Variable exists and is valid, use it (override mode)
+        if projects_var:
+            # Handle both single string and list of strings
+            if isinstance(projects_var, str):
+                projects_list = [projects_var]
+            else:
+                projects_list = projects_var
+
+            return {Path(p).parent.name: Path(p) for p in projects_list}
+
+    except Exception as e:
+        log.error(
+            "Error loading projects from Variable 'opendbt_docs_projects': %s", e
+        )
+
+    # Fallback to paths from .py file initialization
+    # Normalize to list of Paths
+    paths = []
+    if project_paths is not None:
+        if isinstance(project_paths, (list, tuple)):
+            paths = [Path(p) for p in project_paths]
         else:
-            self.paths = [Path(project_paths)]
-    
-    def get_projects(self) -> Dict[str, Path]:
-        """
-        Get all configured projects.
+            paths = [Path(project_paths)]
 
-        Variable (if set) overrides .py file configuration.
+    if paths:
+        return {path.parent.name: path for path in paths}
 
-        Returns:
-            Dictionary mapping project names to their paths
-        """
-        # Try to get from Variable first (this overrides .py file config)
-        try:
-            projects_var = Variable.get("opendbt_docs_projects", deserialize_json=True)
-
-            # If Variable exists and is valid, use it (override mode)
-            if projects_var:
-                # Handle both single string and list of strings
-                if isinstance(projects_var, str):
-                    projects_list = [projects_var]
-                else:
-                    projects_list = projects_var
-
-                return {Path(p).parent.name: Path(p) for p in projects_list}
-
-        except Exception as e:
-            log.error(
-                "Error loading projects from Variable 'opendbt_docs_projects': %s", e
-            )
-
-        # Fallback to paths from .py file initialization
-        if self.paths:
-            return {path.parent.name: path for path in self.paths}
-
-        return {}
+    return {}
 
 
 class DBTDocsView(BaseView):
     """Flask view for serving DBT documentation with multi-project support."""
-    
+
     route_base = "/dbt"
     default_view = "dbt_docs_index"
 
-    def __init__(self, config: ProjectConfig):
+    def __init__(self, projects: Dict[str, Path]):
         super().__init__()
-        self.config = config
+        self.projects = projects
 
     def _check_configuration(self) -> Optional[Response]:
         """Check if configuration is valid. Returns error response if invalid, None if OK."""
-        projects = self.config.get_projects()
-        if not projects:
+        if not self.projects:
             error_msg = _load_template("multi_project_config_error.txt")
             log.error("No DBT projects configured in multi-project mode")
             return _create_error_response(
@@ -126,24 +117,20 @@ class DBTDocsView(BaseView):
 
     def _get_current_project(self) -> str:
         """Get current project from query param or default."""
-        projects = self.config.get_projects()
-
         # Get from query param, fallback to first available
         project = request.args.get('project')
         if not project:
-            project = list(projects.keys())[0]
+            project = list(self.projects.keys())[0]
 
         return project
 
     def _get_project_path(self, project_name: str) -> Path:
         """Get path for specific project."""
-        projects = self.config.get_projects()
-        
-        if project_name not in projects:
-            available = ", ".join(projects.keys())
+        if project_name not in self.projects:
+            available = ", ".join(self.projects.keys())
             abort(404, f"Project '{project_name}' not found. Available: {available}")
-        
-        return projects[project_name]
+
+        return self.projects[project_name]
 
     @expose("/projects")
     @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
@@ -153,12 +140,10 @@ class DBTDocsView(BaseView):
         if error_response:
             return error_response
 
-        projects = self.config.get_projects()
-
         # Validate that target dirs exist and have required files
         valid_projects = [
             _validate_project_info(name, path)
-            for name, path in projects.items()
+            for name, path in self.projects.items()
         ]
 
         return jsonify({
@@ -236,13 +221,8 @@ def init_plugins_dbtdocs_page(
     Returns:
         AirflowPlugin class
     """
-    # Create configuration
-    config = ProjectConfig(
-        project_paths=dbt_docs_dir
-    )
-    
-    # Create view instance
-    view = DBTDocsView(config)
+    projects = get_projects(dbt_docs_dir)
+    view = DBTDocsView(projects)
 
     static_folder = None
     
