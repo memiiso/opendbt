@@ -37,12 +37,10 @@ def _validate_project_info(name: str, path: Path) -> dict:
         "has_manifest": path.joinpath("manifest.json").exists(),
         "has_catalog": path.joinpath("catalog.json").exists(),
         "has_catalogl": path.joinpath("catalogl.json").exists(),
-        "has_index": path.joinpath("index.html").exists(),
+        "has_custom_index": path.joinpath("index.html").exists(),
     }
-    project_info["is_valid"] = (
-        project_info["has_manifest"] and
-        project_info["has_index"]
-    )
+    # Valid if has manifest (index.html is optional - fallback to opendbt template)
+    project_info["is_valid"] = project_info["has_manifest"]
     return project_info
 
 
@@ -142,7 +140,7 @@ class DBTDocsView(BaseView):
     @expose("/dbt_docs_index.html")  # type: ignore[misc]
     @has_access([(permissions.ACTION_CAN_READ, permissions.RESOURCE_WEBSITE)])
     def dbt_docs_index(self):
-        """Serve the main DBT docs index page."""
+        """Serve the main DBT docs index page with fallback to opendbt template."""
         error_response = self._check_configuration()
         if error_response:
             return error_response
@@ -150,11 +148,20 @@ class DBTDocsView(BaseView):
         project = self._get_current_project()
         project_path = self._get_project_path(project)
 
-        index_file = project_path.joinpath("index.html")
-        if not index_file.is_file():
-            abort(404, f"index.html not found for project '{project}'")
+        # Try to load custom index.html from project directory (user override)
+        custom_index = project_path.joinpath("index.html")
 
-        return index_file.read_text()
+        if custom_index.is_file():
+            # User provided custom index.html - use it
+            return custom_index.read_text()
+
+        # Fallback to opendbt's enhanced template
+        opendbt_index = Path(__file__).parent.parent / "dbt" / "docs" / "index.html"
+
+        if not opendbt_index.is_file():
+            abort(500, "opendbt index.html template not found")
+
+        return opendbt_index.read_text()
 
     def _return_json(self, json_file: str):
         """Generic handler for returning JSON files."""

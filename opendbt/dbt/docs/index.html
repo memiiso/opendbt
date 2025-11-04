@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>DBT Documentation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
@@ -386,7 +389,7 @@
                     </h1>
                 </div>
                 <!-- Project Selector -->
-                <div class="flex items-center">
+                <div class="flex items-center" v-if="availableProjects.length > 1">
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="fas fa-folder-open text-gray-400 text-sm"></i>
@@ -1077,13 +1080,14 @@
 
     /**
      * Fetches and processes all necessary dbt artifact files.
+     * @param {boolean} hasBackend - Whether backend is available for multi-project support
      * @returns {Promise<object>} A promise that resolves to the processed manifest object.
      */
-    async function loadDbtFiles() {
+    async function loadDbtFiles(hasBackend = true) {
         try {
-            // Add project parameter to JSON fetches
+            // Add project parameter to JSON fetches only if backend is available
             const urlParams = new URLSearchParams(window.location.search);
-            const projectParam = urlParams.get("project") ? "?project=" + urlParams.get("project") : "";
+            const projectParam = (hasBackend && urlParams.get("project")) ? "?project=" + urlParams.get("project") : "";
             const [manifestResponse, catalogResponse, cataloglResponse, dbtRunInfoResponse] = await Promise.all([
                 fetch('manifest.json' + projectParam),
                 fetch('catalog.json' + projectParam),
@@ -1219,26 +1223,31 @@
             const allItemsById = computed(() => new Map(allItems.value.map(item => [item.unique_id, item])));
             const displayColumns = computed(() => Object.values(selectedItem.value?.columns ?? {}));
             const selectedItemStats = computed(() => Object.values(selectedItem.value?.stats ?? {}).filter(stat => stat.value));
-            // --- METHODS ---  
+            // --- METHODS ---
             const loadProjects = async () => {
                     try {
                         const urlParams = new URLSearchParams(window.location.search);
                         const projectParam = urlParams.get('project') ? `?project=${urlParams.get('project')}` : '';
-                        
+
                         const response = await fetch(`/dbt/projects${projectParam}`, {
                             credentials: 'same-origin',
                             headers: { 'Accept': 'application/json' }
                         });
-                        
+
+                        if (!response.ok) {
+                            throw new Error(`Backend not available: ${response.status}`);
+                        }
+
                         const data = await response.json();
                         availableProjects.value = data.projects.filter(p => p.is_valid);
-                        
+
                         if (!currentProject.value) {
                             currentProject.value = data.current;
                         }
                     } catch (error) {
-                        console.error('Error loading projects:', error);
+                        console.log('Backend not available, running in standalone mode');
                         availableProjects.value = [];
+                        currentProject.value = null;
                     }
                 };
                 
@@ -1465,7 +1474,9 @@
             // --- LIFECYCLE & WATCHERS ---
             onMounted(async () => {
                 await loadProjects();
-                ODBTM.value = await loadDbtFiles();
+                // Pass backend availability based on whether we successfully loaded projects
+                const hasBackend = availableProjects.value.length > 0 || currentProject.value !== null;
+                ODBTM.value = await loadDbtFiles(hasBackend);
                 isLoading.value = false;
                 await nextTick();
                 handleUrlHash();
