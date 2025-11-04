@@ -52,8 +52,6 @@ def get_projects(
     """
     Get all configured projects.
 
-    Variable (if set) overrides .py file configuration.
-
     Args:
         project_paths: Single path (str/Path) or list of paths for project(s)
 
@@ -61,37 +59,27 @@ def get_projects(
         Dictionary mapping project names to their paths
     """
     # Try to get from Variable first (this overrides .py file config)
+    projects = {}
     try:
         projects_var = Variable.get("opendbt_docs_projects", deserialize_json=True)
-
-        # If Variable exists and is valid, use it (override mode)
-        if projects_var:
-            # Handle both single string and list of strings
-            if isinstance(projects_var, str):
-                projects_list = [projects_var]
-            else:
-                projects_list = projects_var
-
-            return {Path(p).parent.name: Path(p) for p in projects_list}
-
+        # Handle both single string and list of strings
+        if projects_var and isinstance(projects_var, (str, Path)):
+            projects = projects | {Path(p).parent.name: Path(p) for p in [projects_var]}
+        if projects_var and isinstance(projects_var, list):
+            projects = projects | {Path(p).parent.name: Path(p) for p in projects_var}
     except Exception as e:
         log.error(
             "Error loading projects from Variable 'opendbt_docs_projects': %s", e
         )
 
-    # Fallback to paths from .py file initialization
+    # Combine to paths from .py file initialization
     # Normalize to list of Paths
-    paths = []
-    if project_paths is not None:
-        if isinstance(project_paths, (list, tuple)):
-            paths = [Path(p) for p in project_paths]
-        else:
-            paths = [Path(project_paths)]
+    if project_paths and isinstance(project_paths, (list, tuple)):
+        projects = projects | {path.parent.name: path for path in [Path(p) for p in project_paths]}
+    if project_paths and isinstance(project_paths, (str, Path)):
+        projects = projects | {path.parent.name: path for path in [Path(project_paths)]}
 
-    if paths:
-        return {path.parent.name: path for path in paths}
-
-    return {}
+    return projects
 
 
 class DBTDocsView(BaseView):
