@@ -61,7 +61,7 @@ class ProjectConfig:
         """
         # Normalize to list of Paths
         if project_paths is None:
-            self.paths = None
+            self.paths = []
         elif isinstance(project_paths, (list, tuple)):
             self.paths = [Path(p) for p in project_paths]
         else:
