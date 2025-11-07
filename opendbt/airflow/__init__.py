@@ -12,7 +12,15 @@ import opendbt
 class OpenDbtExecutorOperator(BaseOperator):
     """
     An Airflow operator for executing dbt commands.
+
+    Supports Jinja templating for the following fields:
+    - args: list of command-line arguments (e.g., ['--vars', '{"key": "{{ ds }}"}'])
+    - select: model selection string (e.g., "{{ var.value.model_name }}")
+    - target: dbt target (e.g., "{{ var.value.environment }}")
+    - command: dbt command to run (e.g., "{{ var.value.dbt_command }}")
     """
+
+    template_fields = ('args', 'select', 'target', 'command')
 
     def __init__(self,
                  project_dir: Path,
@@ -30,11 +38,9 @@ class OpenDbtExecutorOperator(BaseOperator):
         self.command = command
         self.profiles_dir: Path = profiles_dir
         self.target = target
+        self.select = select
         self.use_subprocess = use_subprocess
         self.args = list(args) if args else []
-
-        if select:
-            self.args += ["--select", select]
 
         # use separate colour for test and other executions
         if self.command == "test":
@@ -46,10 +52,15 @@ class OpenDbtExecutorOperator(BaseOperator):
         """
         Execute the dbt command.
         """
+        # Build final args list after templating has been applied
+        run_args = list(self.args) if self.args else []
+        if self.select:
+            run_args += ["--select", self.select]
+
         runner = opendbt.OpenDbtProject(project_dir=self.project_dir,
                                         profiles_dir=self.profiles_dir,
                                         target=self.target)
-        runner.run(command=self.command, args=self.args, use_subprocess=self.use_subprocess)
+        runner.run(command=self.command, args=run_args, use_subprocess=self.use_subprocess)
 
 
 # pylint: disable=too-many-locals, too-many-branches
