@@ -31,7 +31,7 @@ class OpenDbtExecutorOperator(BaseOperator):
         self.profiles_dir: Path = profiles_dir
         self.target = target
         self.use_subprocess = use_subprocess
-        self.args = args if args else []
+        self.args = list(args) if args else []
 
         if select:
             self.args += ["--select", select]
