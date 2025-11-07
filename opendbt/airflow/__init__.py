@@ -31,7 +31,7 @@ class OpenDbtExecutorOperator(BaseOperator):
         self.profiles_dir: Path = profiles_dir
         self.target = target
         self.use_subprocess = use_subprocess
-        self.args = args if args else []
+        self.args = list(args) if args else []
 
         if select:
             self.args += ["--select", select]
@@ -90,7 +90,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                  project_dir=self.project_dir,
                                                  profiles_dir=self.profiles_dir,
                                                  target=self.target,
-                                                 command="seed"
+                                                 command="seed",
+                                                 args=self.args
                                                  )
             start_node.set_upstream(first_node)
 
@@ -112,7 +113,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                                         profiles_dir=self.profiles_dir,
                                                                         target=self.target,
                                                                         command="test",
-                                                                        select=node.name
+                                                                        select=node.name,
+                                                                        args=self.args
                                                                         )
                 if node.resource_type == "model":
                     dbt_tasks[node.unique_id] = EmptyOperator(dag=dag, task_id=node.unique_id)
@@ -125,7 +127,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                                     profiles_dir=self.profiles_dir,
                                                                     target=self.target,
                                                                     command="build",
-                                                                    select=node.name
+                                                                    select=node.name,
+                                                                    args=self.args
                                                                     )
 
             if node.resource_type == "test" and str(node.name).startswith("source_") and resource_type in ["all",
@@ -138,7 +141,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                                     profiles_dir=self.profiles_dir,
                                                                     target=self.target,
                                                                     command="test",
-                                                                    select=node.name
+                                                                    select=node.name,
+                                                                    args=self.args
                                                                     )
 
         # set upstream dependencies using dbt dependencies
@@ -161,7 +165,8 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                                                      profiles_dir=self.profiles_dir,
                                                      target=self.target,
                                                      command="test",
-                                                     select="test_type:singular"
+                                                     select="test_type:singular",
+                                                     args=self.args
                                                      )
         for k, task in dbt_tasks.items():
             if not task.downstream_task_ids:
