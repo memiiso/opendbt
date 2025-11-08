@@ -9,6 +9,7 @@ from airflow.operators.empty import EmptyOperator
 import opendbt
 
 
+# pylint: disable=too-many-instance-attributes
 class OpenDbtExecutorOperator(BaseOperator):
     """
     An Airflow operator for executing dbt commands.
