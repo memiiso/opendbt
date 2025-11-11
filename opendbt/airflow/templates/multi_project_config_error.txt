@@ -1,0 +1,59 @@
+ISSUE: No DBT projects are configured.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The plugin requires at least one project to be configured.
+You can configure projects in two ways:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPTION 1: Use Airflow Variable (for single or multiple projects)
+
+1. Set the Airflow Variable 'opendbt_docs_projects':
+   • Go to Admin → Variables in Airflow UI
+   • Create variable: 'opendbt_docs_projects'
+   • Value can be a single path (string) or list of paths
+
+   Single project example:
+   "/opt/airflow/dbt/target"
+
+   Multiple projects example:
+   [
+      "/opt/airflow/dbt/project1/target",
+      "/opt/airflow/dbt/project2/target"
+   ]
+
+2. Verify the paths point to dbt 'target' directories containing:
+   • manifest.json (required)
+   • catalog.json (optional)
+   • index.html (required)
+
+   To generate these files, run inside each project dir:
+   ```
+    python -m opendbt docs generate
+   ```
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPTION 2: Set path in plugin initialization code
+
+Set path(s) in your Airflow plugin file:
+
+ ```
+   from pathlib import Path
+   from opendbt.airflow import plugin
+
+   # Single project
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page(
+       Path('/opt/dbtcore/target')  # <-- Set this path
+   )
+
+   # OR multiple projects
+   airflow_dbtdocs_page = plugin.init_plugins_dbtdocs_page([
+       Path('/opt/project1/target'),
+       Path('/opt/project2/target')
+   ])
+ ```
+
+NOTE: If both are set, the Airflow Variable takes precedence and overrides
+the path(s) provided in the code.

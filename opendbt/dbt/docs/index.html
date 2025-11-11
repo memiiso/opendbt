@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>DBT Documentation</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
@@ -384,6 +387,29 @@
                     <h1 class="text-xl font-bold text-gray-900">
                         {{ ODBTM.metadata?.project_name ?? 'DBT' }} Doc
                     </h1>
+                </div>
+                <!-- Project Selector -->
+                <div class="flex items-center" v-if="availableProjects.length > 1">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-folder-open text-gray-400 text-sm"></i>
+                        </div>
+                        <select id="project-selector"
+                                v-model="currentProject" 
+                                @change="switchProject"
+                                :disabled="isLoading || availableProjects.length === 0"
+                                class="appearance-none bg-white border border-gray-300 rounded-lg pl-9 pr-10 py-2 text-sm text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-colors cursor-pointer">
+                            <option v-if="availableProjects.length === 0" value="">Loading...</option>
+                            <option v-for="project in availableProjects" 
+                                    :key="project.name" 
+                                    :value="project.name">
+                                {{ project.name }}
+                            </option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!-- Search Input Container -->
@@ -1054,15 +1080,19 @@
 
     /**
      * Fetches and processes all necessary dbt artifact files.
+     * @param {boolean} hasBackend - Whether backend is available for multi-project support
      * @returns {Promise<object>} A promise that resolves to the processed manifest object.
      */
-    async function loadDbtFiles() {
+    async function loadDbtFiles(hasBackend = true) {
         try {
+            // Add project parameter to JSON fetches only if backend is available
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectParam = (hasBackend && urlParams.get("project")) ? "?project=" + urlParams.get("project") : "";
             const [manifestResponse, catalogResponse, cataloglResponse, dbtRunInfoResponse] = await Promise.all([
-                fetch('manifest.json'),
-                fetch('catalog.json'),
-                fetch('catalogl.json'),
-                fetch('run_info.json')
+                fetch('manifest.json' + projectParam),
+                fetch('catalog.json' + projectParam),
+                fetch('catalogl.json' + projectParam),
+                fetch('run_info.json' + projectParam)
             ]);
 
             if (!manifestResponse.ok) throw new Error(`Failed to load manifest.json: ${manifestResponse.statusText}`);
@@ -1145,6 +1175,8 @@
             const lineageRendering = ref(false);
             const lineageError = ref(false);
             const isLineageFullScreen = ref(false);
+            const currentProject = ref(new URLSearchParams(window.location.search).get('project'));
+            const availableProjects = ref([]);
             let currentVisNetwork = null;
 
             // --- COMPUTED PROPERTIES ---
@@ -1191,9 +1223,40 @@
             const allItemsById = computed(() => new Map(allItems.value.map(item => [item.unique_id, item])));
             const displayColumns = computed(() => Object.values(selectedItem.value?.columns ?? {}));
             const selectedItemStats = computed(() => Object.values(selectedItem.value?.stats ?? {}).filter(stat => stat.value));
-
             // --- METHODS ---
-            const selectItem = (item, updateUrlHash = true) => {
+            const loadProjects = async () => {
+                    try {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const projectParam = urlParams.get('project') ? `?project=${urlParams.get('project')}` : '';
+
+                        const response = await fetch(`/dbt/projects${projectParam}`, {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Backend not available: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        availableProjects.value = data.projects.filter(p => p.is_valid);
+
+                        if (!currentProject.value) {
+                            currentProject.value = data.current;
+                        }
+                    } catch (error) {
+                        console.log('Backend not available, running in standalone mode');
+                        availableProjects.value = [];
+                        currentProject.value = null;
+                    }
+                };
+                
+                const switchProject = () => {
+                    const url = new URL(window.location);
+                    url.searchParams.set('project', currentProject.value);
+                    window.location.href = url.toString();
+                };            
+            const selectItem = (item, updateUrlHash = true) => {                
                 selectedItem.value = item;
                 if (updateUrlHash) {
                     const newHash = `#${item.unique_id}`;
@@ -1410,7 +1473,10 @@
 
             // --- LIFECYCLE & WATCHERS ---
             onMounted(async () => {
-                ODBTM.value = await loadDbtFiles();
+                await loadProjects();
+                // Pass backend availability based on whether we successfully loaded projects
+                const hasBackend = availableProjects.value.length > 0 || currentProject.value !== null;
+                ODBTM.value = await loadDbtFiles(hasBackend);
                 isLoading.value = false;
                 await nextTick();
                 handleUrlHash();
@@ -1437,7 +1503,12 @@
                 if (newTree.length > 0 && !window.location.hash && expandedNodes.value.length === 0) {
                     const firstDb = newTree[0];
                     if (firstDb?.schemas.length > 0) {
-                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstDb.schemas[0].name}`);
+                        const firstSchema = firstDb.schemas[0];
+                        expandedNodes.value.push(firstDb.name, `${firstDb.name}.${firstSchema.name}`);
+                        // Auto-expand Models if available
+                        if (firstSchema.models && firstSchema.models.length > 0) {
+                            expandedNodes.value.push(`${firstDb.name}.${firstSchema.name}.models`);
+                        }
                     }
                 }
             });
@@ -1446,6 +1517,7 @@
                 isLoading, ODBTM, databaseTree, expandedNodes, selectedItem, searchQuery, searchResults,
                 lineageContainer, lineageGraphContainer, lineageMaxDepth, lineageRendering, lineageError,
                 activeTab, activeCodeTab, displayColumns, selectedItemStats, isLineageFullScreen,
+                currentProject, availableProjects, switchProject,
                 toggleLineageFullScreen, getModelCode, getModelRawCode, highlightMatches, performSearch, clearSearch,
                 selectItem, selectSearchResult, navigateToDependency, navigateToDependencyId,
                 renderTableLineageGraph, getDependencies, getDependents, toggleNode, setLineageDepth,

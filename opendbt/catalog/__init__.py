@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import sqlglot
 import tqdm
@@ -132,7 +132,7 @@ class OpenDbtNode(OpenDbtLogger):
         return self.node.get("compiled_code", None)
 
     @property
-    def column_names(self) -> list[str]:
+    def column_names(self) -> List[str]:
         return [item.name.lower() for item in self.columns.values()]
 
     def _sqlglot_column_ref(self, node):
