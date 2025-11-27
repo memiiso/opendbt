@@ -7,7 +7,67 @@ from typing import Dict
 
 from dbt.adapters.base import available
 from dbt.adapters.duckdb import DuckDBAdapter
+from dbt.adapters.starrocks import StarRocksAdapter
+import dlt
+from dlt.common.typing import TDataItems
+from dlt.common.schema import TTableSchema
 
+class StarRocksAdapterCustom(StarRocksAdapter):
+    def __init__(self, config, mp_context: SpawnContext = None) -> None:
+        print(f"WARNING: Using User Provided DBT Adapter: {type(self).__module__}.{type(self).__name__}")
+        # pylint: disable=no-value-for-parameter
+        if mp_context:
+            # DBT 1.8 and above
+            super().__init__(config=config, mp_context=mp_context)
+        else:
+            # DBT 1.7
+            super().__init__(config=config)
+    
+    def _execute_python_model(self, model_name: str, compiled_code: str, **kwargs):
+        try:
+            with tempfile.NamedTemporaryFile(suffix=f'.py', delete=True) as model_file:
+                try:
+                    model_file.write(compiled_code.lstrip().encode('utf-8'))
+                    model_file.flush()
+                    #print(f"Created temp py file {model_file.name}")
+
+                    # Load the module spec
+                    spec = importlib.util.spec_from_file_location(model_name, model_file.name)
+                    # Create a module object
+                    module = importlib.util.module_from_spec(spec)
+                    # Load the module
+                    sys.modules[model_name] = module
+                    spec.loader.exec_module(module)
+
+                    dbt_obj = getattr(module, "dbtObj", lambda x: None)(None)
+
+                    result = module.model(dbt=dbt_obj, **kwargs)
+
+                    print("================================")
+                    print("RESULTADO:", result)
+                    print("================================")
+                    # Access and call `model` function of the model!
+                    # IMPORTANT: here we are passing down dbt connection object from the adapter to the model
+                    return result
+                except Exception as e:
+                    raise Exception(
+                        f"Failed to load or execute python model:{model_name} from file {model_file.name} due to: {e!r}") from e
+                finally:
+                    model_file.close()
+        except Exception as e:
+            raise Exception(f"Failed to create temp py file for model:{model_name} due to: {e!r}") from e
+
+    @available
+    def submit_local_python_job(self, parsed_model: Dict, compiled_code: str):
+        connection = self.connections.get_if_exists()
+        if not connection:
+            connection = self.connections.get_thread_connection()
+        
+        return self._execute_python_model(
+            model_name=parsed_model['name'],
+            compiled_code=compiled_code,
+            connection=connection
+        )
 
 class DuckDBAdapterV2Custom(DuckDBAdapter):
     def __init__(self, config, mp_context: SpawnContext = None) -> None:
