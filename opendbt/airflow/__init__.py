@@ -210,16 +210,21 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
                 task.set_upstream(start_node)
 
         # Connect test nodes independently - they run in parallel after all model tasks
+        # We need to insert test nodes between leaf model tasks and end_node
         if run_tests_after_all_models and generic_tests:
-            for _, task in dbt_tasks.items():
-                if end_node in task.downstream_list:
-                    task.set_upstream(generic_tests)
             generic_tests.set_downstream(end_node)
+            for _, task in dbt_tasks.items():
+                # If this task points to end_node, insert generic_tests in between
+                if end_node in task.downstream_list:
+                    task.downstream_task_ids.remove(end_node.task_id)
+                    task.set_downstream(generic_tests)
 
         if include_singular_tests and singular_tests:
-            for _, task in dbt_tasks.items():
-                if end_node in task.downstream_list:
-                    task.set_upstream(singular_tests)
             singular_tests.set_downstream(end_node)
+            for _, task in dbt_tasks.items():
+                # If this task points to end_node, insert singular_tests in between
+                if end_node in task.downstream_list:
+                    task.downstream_task_ids.remove(end_node.task_id)
+                    task.set_downstream(singular_tests)
 
         return start_node, end_node
