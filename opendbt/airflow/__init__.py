@@ -67,6 +67,50 @@ class OpenDbtExecutorOperator(BaseOperator):
 # pylint: disable=too-many-locals, too-many-branches
 class OpenDbtAirflowProject(opendbt.OpenDbtProject):
 
+    def _create_test_operator(self, dag: DAG, test_type: str, tag: str = None) -> OpenDbtExecutorOperator:
+        """
+        Create a test operator with optional tag filtering.
+
+        Parameters:
+        dag (DAG): The Airflow DAG object.
+        test_type (str): The type of test ('singular' or 'generic').
+        tag (str, optional): The tag to filter tests by.
+
+        Returns:
+        OpenDbtExecutorOperator: The test operator.
+        """
+        select_str = f"test_type:{test_type}"
+        if tag:
+            select_str = f"tag:{tag},test_type:{test_type}"
+
+        return OpenDbtExecutorOperator(
+            dag=dag,
+            task_id=f"{self.project_dir.name}_{test_type}_tests",
+            project_dir=self.project_dir,
+            profiles_dir=self.profiles_dir,
+            target=self.target,
+            command="test",
+            select=select_str,
+            args=self.args
+        )
+
+    def _connect_test_nodes(self, dbt_tasks: dict, test_operator: OpenDbtExecutorOperator,
+                           end_node: BaseOperator):
+        """
+        Connect test operator between leaf tasks and end node.
+
+        Parameters:
+        dbt_tasks (dict): Dictionary of dbt tasks.
+        test_operator (OpenDbtExecutorOperator): The test operator to insert.
+        end_node (BaseOperator): The end node of the DAG.
+        """
+        test_operator.set_downstream(end_node)
+        for _, task in dbt_tasks.items():
+            if end_node in task.downstream_list:
+                task.downstream_task_ids.remove(end_node.task_id)
+                task.set_downstream(test_operator)
+
+
     def load_dbt_tasks(self,
                        dag: DAG,
                        start_node: BaseOperator = None,
@@ -176,27 +220,11 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
 
         singular_tests = None
         if include_singular_tests:
-            singular_tests = OpenDbtExecutorOperator(dag=dag,
-                                                     task_id=f"{self.project_dir.name}_singular_tests",
-                                                     project_dir=self.project_dir,
-                                                     profiles_dir=self.profiles_dir,
-                                                     target=self.target,
-                                                     command="test",
-                                                     select="test_type:singular",
-                                                     args=self.args
-                                                     )
+            singular_tests = self._create_test_operator(dag, "singular", tag)
 
         generic_tests = None
         if run_tests_after_all_models:
-            generic_tests = OpenDbtExecutorOperator(dag=dag,
-                                                    task_id=f"{self.project_dir.name}_generic_tests",
-                                                    project_dir=self.project_dir,
-                                                    profiles_dir=self.profiles_dir,
-                                                    target=self.target,
-                                                    command="test",
-                                                    select="test_type:generic",
-                                                    args=self.args
-                                                    )
+            generic_tests = self._create_test_operator(dag, "generic", tag)
 
         for _, task in dbt_tasks.items():
             if not task.downstream_task_ids:
@@ -212,19 +240,9 @@ class OpenDbtAirflowProject(opendbt.OpenDbtProject):
         # Connect test nodes independently - they run in parallel after all model tasks
         # We need to insert test nodes between leaf model tasks and end_node
         if run_tests_after_all_models and generic_tests:
-            generic_tests.set_downstream(end_node)
-            for _, task in dbt_tasks.items():
-                # If this task points to end_node, insert generic_tests in between
-                if end_node in task.downstream_list:
-                    task.downstream_task_ids.remove(end_node.task_id)
-                    task.set_downstream(generic_tests)
+            self._connect_test_nodes(dbt_tasks, generic_tests, end_node)
 
         if include_singular_tests and singular_tests:
-            singular_tests.set_downstream(end_node)
-            for _, task in dbt_tasks.items():
-                # If this task points to end_node, insert singular_tests in between
-                if end_node in task.downstream_list:
-                    task.downstream_task_ids.remove(end_node.task_id)
-                    task.set_downstream(singular_tests)
+            self._connect_test_nodes(dbt_tasks, singular_tests, end_node)
 
         return start_node, end_node
