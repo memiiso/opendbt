@@ -29,4 +29,4 @@ with DAG(
     DBT_PROJ_DIR = Path("/opt/dbtcore")
 
     p = OpenDbtAirflowProject(project_dir=DBT_PROJ_DIR, profiles_dir=DBT_PROJ_DIR, target='dev')
-    p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, include_singular_tests=True, include_dbt_seeds=True)
+    p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, run_tests_after_all_models=False, include_singular_tests=True, include_dbt_seeds=True)
