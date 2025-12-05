@@ -10,6 +10,16 @@
 
 ![airflow-dbt-flow.png](assets%2Fairflow-dbt-flow.png)
 
+#### Creating dag to run dbt tests after all models
+
+```python
+from opendbt.airflow import OpenDbtAirflowProject
+
+p = OpenDbtAirflowProject(project_dir="/dbt/project_dir", profiles_dir="/dbt/profiles_dir",
+                        target='dev')
+p.load_dbt_tasks(dag=dag, start_node=start, end_node=end, run_tests_after_all_models=True)
+```
+
 #### Creating Airflow DAG that selectively executes a specific subset of models from your dbt project.
 
 ```python
@@ -21,7 +31,7 @@ p = OpenDbtAirflowProject(resource_type='model', project_dir="/dbt/project_dir",
 p.load_dbt_tasks(dag=dag, start_node=start, end_node=end)
 ```
 
-#### Creating dag to run dbt tests
+#### Creating dag to run only dbt tests
 
 ```python
 from opendbt.airflow import OpenDbtAirflowProject
