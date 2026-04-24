@@ -86,9 +86,14 @@ class DBTDocsView(BaseView):
     route_base = "/dbt"
     default_view = "dbt_docs_index"
 
-    def __init__(self, projects: Dict[str, Path]):
+    def __init__(self, project_paths=None):
+        self._static_project_paths = project_paths
         super().__init__()
-        self.projects = projects
+
+    @property
+    def projects(self) -> Dict[str, Path]:
+        """Resolve projects dynamically so Variable changes take effect without restart."""
+        return get_projects(self._static_project_paths)
 
     def _check_configuration(self) -> Optional[Response]:
         """Check if configuration is valid. Returns error response if invalid, None if OK."""
@@ -216,8 +221,7 @@ def init_plugins_dbtdocs_page(
     Returns:
         AirflowPlugin class
     """
-    projects = get_projects(dbt_docs_dir)
-    view = DBTDocsView(projects)
+    view = DBTDocsView(project_paths=dbt_docs_dir)
 
     static_folder = None
     

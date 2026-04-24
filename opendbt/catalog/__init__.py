@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import sqlglot
 import tqdm
-from sqlglot import Expression
+from sqlglot.expressions import Expression
 from sqlglot.lineage import lineage, SqlglotError, exp
 
 from opendbt.logger import OpenDbtLogger
